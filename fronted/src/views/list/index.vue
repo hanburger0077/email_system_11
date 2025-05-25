@@ -1,6 +1,6 @@
 <template>
   <div>
-    登录页!!
+    列表页!!
   </div>
 </template>
 

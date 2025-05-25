@@ -6,7 +6,6 @@ const routes = [
     name: 'index',
     redirect: '/login',
   },
-  
 ];
 
 // Vite's way to import multiple modules from the views directory

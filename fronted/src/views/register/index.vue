@@ -1,6 +1,6 @@
 <template>
   <div>
-    登录页!!
+    注册页!!
   </div>
 </template>
 
