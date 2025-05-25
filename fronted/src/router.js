@@ -6,11 +6,7 @@ const routes = [
     name: 'index',
     redirect: '/login',
   },
-  {
-    path: '/login',
-    name: 'login',
-    component: () => import('./views/login/index.vue'),
-  },
+  
 ];
 
 // Vite's way to import multiple modules from the views directory
