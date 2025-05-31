@@ -1,15 +1,13 @@
-// 安全设置模块
-
+// router.js
 export default [
   {
-    path: '/register',
-    name: 'register',
-    component: () => import('./index.vue'),
+    path: '/login',
+    name: 'Login', // 确保名称与跳转逻辑一致
+    component: () => import('@/views/login/index.vue') // 路径根据实际项目调整
   },
   {
-    path: '/register/sub',
-    name: 'register.sub',
-    component: () =>
-      import(/* webpackChunkName: "register" */ './sub.vue'),
-  },
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/register/index.vue') // 路径根据实际项目调整
+  }
 ];
