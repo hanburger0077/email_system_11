@@ -1,15 +1,13 @@
-// 安全设置模块
-
+// router.js
 export default [
   {
     path: '/login',
     name: 'login',
-    component: () => import('./index.vue'),
+    component: () => import('@/views/login/index.vue')
   },
   {
-    path: '/login/sub',
-    name: 'login.sub',
-    component: () =>
-      import(/* webpackChunkName: "login" */ './sub.vue'),
-  },
+    path: '/main', // 新增主页面路由
+    name: 'main',
+    component: () => import('@/views/main/index.vue') // 假设路径为 views/main/index.vue
+  }
 ];
