@@ -1,7 +1,7 @@
-package com.exmaple.backend.service;
+package com.example.backend.service;
 
-import com.exmaple.backend.dao.UserDao;
-import com.exmaple.backend.entity.User;
+import com.example.backend.dao.UserDao;
+import com.example.backend.entity.User;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;

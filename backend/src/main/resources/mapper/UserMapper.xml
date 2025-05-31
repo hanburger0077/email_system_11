@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.exmaple.backend.dao.UserDao">
-    <resultMap id="UserResultMap" type="com.exmaple.backend.entity.User">
+<mapper namespace="com.example.backend.dao.UserDao">
+    <resultMap id="UserResultMap" type="com.example.backend.entity.User">
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
@@ -22,7 +22,7 @@
         SELECT * FROM user WHERE email_address = #{email}
     </select>
 
-    <insert id="insertUser" parameterType="com.exmaple.backend.entity.User"
+    <insert id="insertUser" parameterType="com.example.backend.entity.User"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user (
         username,

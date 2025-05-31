@@ -1,9 +1,10 @@
-package com.exmaple.backend.dao;
+package com.example.backend.dao;
 
-import com.exmaple.backend.entity.User;
+import com.example.backend.entity.User;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-// 移除 @Mapper 注解
+@Mapper
 public interface UserDao {
     User findByUsername(@Param("username") String username);
     User findByEmail(@Param("email") String email);
