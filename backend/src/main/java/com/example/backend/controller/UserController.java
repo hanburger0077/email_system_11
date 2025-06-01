@@ -1,48 +1,28 @@
 package com.example.backend.controller;
 
-import com.example.backend.entity.User;
 import com.example.backend.service.UserService;
+import com.example.backend.utils.ResultVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
-    private final UserService userService;
-
     @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
+    private UserService userService;
+
+    @PostMapping("/login")
+    public ResultVo login(@RequestParam String email, @RequestParam String password) {
+        return userService.login(email, password);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
-        String result = userService.register(user);
-        if ("注册成功".equals(result)) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.badRequest().body(result);
-        }
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> credentials) {
-        String username = credentials.get("username");
-        String password = credentials.get("password");
-
-        if (username == null || password == null) {
-            return ResponseEntity.badRequest().body("用户名和密码不能为空");
-        }
-
-        String result = userService.login(username, password);
-        if ("登录成功".equals(result)) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.status(401).body(result);
-        }
+    public ResultVo register(
+            @RequestParam String username,
+            @RequestParam String password,
+            @RequestParam String confirmPassword,
+            @RequestParam String email) {
+        return userService.register(username, password, confirmPassword, email);
     }
 }

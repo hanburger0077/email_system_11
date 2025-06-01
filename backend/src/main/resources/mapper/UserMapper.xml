@@ -1,43 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.backend.dao.UserDao">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.UserMapper">
+
     <resultMap id="UserResultMap" type="com.example.backend.entity.User">
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
-        <!-- 注意这里使用 email_address 映射到 emailAddress -->
-        <result property="emailAddress" column="email_address"/>
-        <!-- 注意这里使用 phone_number 映射到 phoneNumber -->
-        <result property="phoneNumber" column="phone_number"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
+        <result property="email" column="email"/>
     </resultMap>
 
-    <select id="findByUsername" resultMap="UserResultMap">
-        SELECT * FROM user WHERE username = #{username}
-    </select>
-
     <select id="findByEmail" resultMap="UserResultMap">
-        SELECT * FROM user WHERE email_address = #{email}
+        SELECT * FROM user WHERE email = #{email}
     </select>
 
     <insert id="insertUser" parameterType="com.example.backend.entity.User"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user (
-        username,
-        password,
-        email_address,
-        phone_number,
-        create_time,
-        update_time
-        ) VALUES (
-        #{username},
-        #{password},
-        #{emailAddress},
-        #{phoneNumber},
-        #{createTime},
-        #{updateTime}
-        )
+        INSERT INTO user (username, password, email)
+        VALUES(#{username}, #{password}, #{email})
     </insert>
 </mapper>
