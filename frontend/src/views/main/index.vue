@@ -11,6 +11,8 @@
       <button class="nav-btn" @click="handleReceive">收信</button>
       <div class="nav-group">
         <button class="nav-sub-btn active">收件箱</button>
+        <button class="nav-sub-btn" @click="goToDraft">草稿箱</button>
+        <button class="nav-sub-btn" @click="goToStarred">星标邮件</button>
         <button class="nav-sub-btn">已发送</button>
         <button class="nav-sub-btn">已删除</button>
       </div>
@@ -20,18 +22,25 @@
       <div class="list-header">
         <input type="checkbox" v-model="allSelected" @change="toggleSelectAll" class="header-checkbox" />
         <button class="list-btn" @click="deleteSelected">删除选中</button>
+        <div class="mark-dropdown">
+          <button class="list-btn" @click="showMarkDropdown = !showMarkDropdown">标记为...</button>
+          <div v-show="showMarkDropdown" class="dropdown-content" @click.self="showMarkDropdown = false">
+            <button @click="markSelectedAsStarred">星标邮件</button>
+            <button @click="unmarkSelectedAsStarred">取消星标</button>
+          </div>
+        </div>
         <button class="list-btn" @click="deleteAll">全部删除</button>
         <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
         <button class="list-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
         <button class="list-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
       </div>
 
-      <!-- 邮件标识栏 -->
       <div class="mail-header">
         <span class="column checkbox-col"></span>
         <span class="column sender">发件人</span>
         <span class="column subject">主题</span>
         <span class="column time">时间</span>
+        <span class="column star-col">星标</span>
       </div>
 
       <div class="list-content">
@@ -55,6 +64,11 @@
                 <span class="column sender">{{ mail.sender }}</span>
                 <span class="column subject">{{ mail.subject }}</span>
                 <span class="column time">{{ mail.time }}</span>
+                <span 
+                  class="star-icon" 
+                  :class="{ 'star-filled': mail.isStarred }" 
+                  @click="toggleStar(mail)"
+                >&#9734;</span>
               </div>
             </div>
 
@@ -77,25 +91,21 @@ export default {
       itemsPerPage: 32,
       selectedMails: [],
       allSelected: false,
+      showMarkDropdown: false,
       mailList: [
-        // 最近三天邮件
-        { sender: "admin@scut.edu.cn", subject: "校园通知", time: "2025-5-30 14:30", isRead: true },
-        { sender: "teacher@scut.edu.cn", subject: "作业提醒", time: "2025-5-30 09:00", isRead: false },
-        { sender: "friend@example.com", subject: "周末聚会", time: "2025-5-29 18:45", isRead: true },
-        { sender: "new-student@scut.edu.cn", subject: "新生指南", time: "2025-5-29 09:00", isRead: false },
-        { sender: "dean@scut.edu.cn", subject: "教学安排", time: "2025-5-28 15:30", isRead: true },
-        
-        // 最近一周邮件
-        { sender: "hr@company.com", subject: "面试邀请", time: "2025-5-26 11:15", isRead: false },
-        { sender: "system@mail.com", subject: "系统升级", time: "2025-5-26 08:00", isRead: true },
-        { sender: "alumni@scut.edu.cn", subject: "校友活动", time: "2025-5-25 15:30", isRead: true },
-        { sender: "library@scut.edu.cn", subject: "图书到期", time: "2025-5-25 09:45", isRead: false },
-        { sender: "tech-support@scut.edu.cn", subject: "网络维护", time: "2025-5-24 14:00", isRead: true },
-        
-        // 更早邮件
-        { sender: "shopping@mall.com", subject: "促销信息", time: "2023-10-10 16:20", isRead: true },
-        { sender: "news@scut.edu.cn", subject: "学术讲座", time: "2023-10-10 14:00", isRead: false },
-        { sender: "bank@example.com", subject: "账户通知", time: "2023-10-05 08:30", isRead: true },
+        { sender: "admin@scut.edu.cn", subject: "校园通知", time: "2025-5-30 14:30", isRead: true, isStarred: false },
+        { sender: "teacher@scut.edu.cn", subject: "作业提醒", time: "2025-5-30 09:00", isRead: false, isStarred: false },
+        { sender: "friend@example.com", subject: "周末聚会", time: "2025-5-29 18:45", isRead: true, isStarred: false },
+        { sender: "new-student@scut.edu.cn", subject: "新生指南", time: "2025-5-29 09:00", isRead: false, isStarred: false },
+        { sender: "dean@scut.edu.cn", subject: "教学安排", time: "2025-5-28 15:30", isRead: true, isStarred: false },
+        { sender: "hr@company.com", subject: "面试邀请", time: "2025-5-26 11:15", isRead: false, isStarred: false },
+        { sender: "system@mail.com", subject: "系统升级", time: "2025-5-26 08:00", isRead: true, isStarred: false },
+        { sender: "alumni@scut.edu.cn", subject: "校友活动", time: "2025-5-25 15:30", isRead: true, isStarred: false },
+        { sender: "library@scut.edu.cn", subject: "图书到期", time: "2025-5-25 09:45", isRead: false, isStarred: false },
+        { sender: "tech-support@scut.edu.cn", subject: "网络维护", time: "2025-5-24 14:00", isRead: true, isStarred: false },
+        { sender: "shopping@mall.com", subject: "促销信息", time: "2023-10-10 16:20", isRead: true, isStarred: false },
+        { sender: "news@scut.edu.cn", subject: "学术讲座", time: "2023-10-10 14:00", isRead: false, isStarred: false },
+        { sender: "bank@example.com", subject: "账户通知", time: "2023-10-05 08:30", isRead: true, isStarred: false },
       ],
       groupedMails: [
         { title: "最近三天", isExpanded: true, mails: [] },
@@ -157,7 +167,7 @@ export default {
     deleteSelected() {
       if (this.selectedMails.length === 0) return;
       if (confirm('确认删除选中的邮件吗？')) {
-        this.mailList = this.mailList.filter((mail, index) => !this.selectedMails.includes(index));
+        this.mailList = this.mailList.filter((_, index) => !this.selectedMails.includes(index));
         this.selectedMails = [];
         this.allSelected = false;
         this.groupAndIndexMails();
@@ -173,11 +183,36 @@ export default {
       }
     },
     goToWrite() {
-      alert("跳转写信页面（示意）");
+      this.$router.push('/write');
+    },
+    goToDraft() {
+      this.$router.push('/draft');
+    },
+    goToStarred() {
+      this.$router.push('/star');
     },
     toggleSelectAll() {
       const indexes = this.paginatedMails.map(mail => mail.globalIndex);
       this.selectedMails = this.allSelected ? indexes : [];
+    },
+    toggleStar(mail) {
+      const realMail = this.mailList.find((m, idx) => idx === mail.globalIndex);
+      if (realMail) realMail.isStarred = !realMail.isStarred;
+      this.groupAndIndexMails();
+    },
+    markSelectedAsStarred() {
+      this.selectedMails.forEach(index => {
+        if (this.mailList[index]) this.mailList[index].isStarred = true;
+      });
+      this.groupAndIndexMails();
+      this.showMarkDropdown = false;
+    },
+    unmarkSelectedAsStarred() {
+      this.selectedMails.forEach(index => {
+        if (this.mailList[index]) this.mailList[index].isStarred = false;
+      });
+      this.groupAndIndexMails();
+      this.showMarkDropdown = false;
     }
   },
   watch: {
@@ -192,86 +227,6 @@ export default {
 </script>
 
 <style scoped>
-/* 重置主题加粗样式 */
-.unread .subject {
-  font-weight: normal;
-}
-
-/* 新增折叠图标样式 */
-.group-title {
-  font-weight: bold;
-  color: #1f74c0;
-  margin: 20px 0 8px 0;
-  font-size: 17px;
-  border-bottom: 1px solid #cce2fa;
-  padding-bottom: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.expand-icon {
-  font-size: 1.2em;
-  color: #666;
-}
-
-.mail-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.mail-item:hover {
-  background-color: #f5f7fa;
-}
-
-.checkbox-container {
-  min-width: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* 确保复选框居中对齐 */
-}
-
-.mail-content {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-}
-
-.column {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; /* 确保内容左对齐 */
-}
-
-.sender {
-  min-width: 180px;
-  color: #666;
-  font-size: 0.9em;
-  text-align: left; /* 确保发件人邮箱左对齐 */
-}
-
-.subject {
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left; /* 确保主题左对齐 */
-}
-
-.time {
-  min-width: 120px;
-  text-align: right;
-  color: #999;
-  font-size: 0.85em;
-}
-
 .main-page {
   display: flex;
   flex-direction: row;
@@ -364,6 +319,9 @@ export default {
   cursor: pointer;
   margin-bottom: 3px;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-sub-btn.active {
@@ -403,6 +361,39 @@ export default {
   font-size: 14px;
 }
 
+.mark-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.dropdown-content {
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 10;
+  min-width: 120px;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+}
+
+.dropdown-content button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-content button:hover {
+  background-color: #f5f7fa;
+}
+
 .page-info {
   color: #666;
   margin-left: auto;
@@ -425,27 +416,85 @@ export default {
   font-size: 17px;
   border-bottom: 2px solid #cce2fa;
   padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
 }
 
-.empty-message {
-  text-align: center;
-  padding: 30px;
-  color: #999;
+.expand-icon {
+  font-size: 1.2em;
+  color: #666;
 }
 
-.mail-checkbox {
-  margin-right: 8px;
+.mail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-/* 标识栏占位列 */
-.mail-header .checkbox-col {
+.mail-item:hover {
+  background-color: #f5f7fa;
+}
+
+.checkbox-container {
   min-width: 24px;
   display: flex;
   align-items: center;
-  justify-content: center; /* 确保标识栏复选框列居中 */
+  justify-content: center;
 }
 
-/* 新增标识栏样式 */
+.mail-content {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sender {
+  min-width: 180px;
+  color: #666;
+  font-size: 0.9em;
+  text-align: left;
+}
+
+.subject {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.time {
+  min-width: 120px;
+  text-align: right;
+  color: #999;
+  font-size: 0.85em;
+}
+
+.star-icon {
+  font-size: 1.2em;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #999;
+}
+
+.star-filled {
+  content: "\9733";
+  color: #ffc107;
+}
+
 .mail-header {
   padding: 12px 16px;
   border-radius: 4px;
@@ -459,13 +508,17 @@ export default {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* 列布局样式 */
-.column {
-  display: flex;
-  align-items: center;
+.mail-header .star-col {
+  min-width: 40px;
+  text-align: center;
 }
 
-/* 调整复选框对齐 */
+.empty-message {
+  text-align: center;
+  padding: 30px;
+  color: #999;
+}
+
 .header-checkbox,
 .item-checkbox {
   margin: 0;
