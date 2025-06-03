@@ -1,35 +1,32 @@
 <template>
-  <layout>
-    <div class="main-container">
-      <h2 class="box-title">账号登录</h2>
-      <form>
-        <!-- 新增 v-model 绑定 -->
-        <input 
-          type="text" 
-          placeholder="邮箱账号" 
-          class="input" 
-          v-model="email" 
-        />
-        <input 
-          type="password" 
-          placeholder="输入密码" 
-          class="input" 
-          v-model="password" 
-        />
-        <button 
-          type="button"
-          class="btn-submit" 
-          @click="handleLogin"
-        >登录</button>
-        <p v-if="!email || !password" class="error">请填写完整账号和密码</p>
-      </form>
-      <p class="register-link" @click="goToRegister">注册新账号</p>
-    </div>
-  </layout>
+  <div class="main-container">
+    <h2 class="box-title">账号登录</h2>
+    <form>
+      <!-- 新增 v-model 绑定 -->
+      <input 
+        type="text" 
+        placeholder="邮箱账号" 
+        class="input" 
+        v-model="email" 
+      />
+      <input 
+        type="password" 
+        placeholder="输入密码" 
+        class="input" 
+        v-model="password" 
+      />
+      <button 
+        type="button"
+        class="btn-submit" 
+        @click="handleLogin"
+      >登录</button>
+      <p v-if="!email || !password" class="error">请填写完整账号和密码</p>
+    </form>
+    <p class="register-link" @click="goToRegister">注册新账号</p>
+  </div>
 </template>
 
 <script setup>
-import layout from '@/components/authLayout/index.vue';
 </script>
 
 <style scoped>

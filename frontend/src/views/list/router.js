@@ -6,10 +6,4 @@ export default [
     name: 'list',
     component: () => import('./index.vue'),
   },
-  {
-    path: '/list/sub',
-    name: 'list.sub',
-    component: () =>
-      import(/* webpackChunkName: "list" */ './sub.vue'),
-  },
 ];

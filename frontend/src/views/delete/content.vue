@@ -453,7 +453,6 @@ export default {
   background: #fff;
   display: flex;
   flex-direction: column;
-  margin-top: 80px;
   border-radius: 0 0 20px 20px;
   margin-left: 0;
   height: calc(100vh - 80px);

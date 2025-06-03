@@ -22,7 +22,7 @@
   justify-content: flex-start;
   &-inner {
     height: 100%;
-    padding: 18px 24px;
+    padding: 0 24px;
     flex: 1;
     display: flex;
     align-items: center;
