@@ -1,0 +1,41 @@
+$g-width-lg: 1280px !default;
+$g-width-sm: 768px !default;
+// 中屏
+@mixin screen-md {
+  @media screen and (min-width: #{$g-width-sm + 1px}) and (max-width: #{$g-width-lg - 1px}) {
+    @content;
+  }
+}
+
+// 小屏
+@mixin screen-sm {
+  @media screen and (max-width: $g-width-sm) {
+    @content;
+  }
+}
+
+// pc视图（大屏+中屏）
+@mixin screen-pc {
+  @media screen and (min-width: 0px) {
+    // @media screen and (min-width: #{$g-width-sm + 1px}) {
+    @content;
+  }
+}
+
+// 移动端视图（小屏）
+@mixin screen-mobile {
+
+  // @media screen and (max-width: 1px) {.hasMStyle .el-picker-panel__sidebar
+  @media screen and (max-width: $g-width-sm) {
+    @content;
+  }
+}
+
+// 非移动端视图（中屏+大屏）
+@mixin screen-no-mobile {
+
+  // @media screen and (max-width: 1px) {.hasMStyle .el-picker-panel__sidebar
+  @media screen and (min-width: #{$g-width-sm + 1px}) {
+    @content;
+  }
+}
