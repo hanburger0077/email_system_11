@@ -1,5 +1,7 @@
 package com.example.backend.service.impl;
 
+import com.example.backend.entity.User;
+import com.example.backend.mapper.UserMapper;
 import com.example.backend.service.MailService;
 import com.icegreen.greenmail.util.GreenMail;
 import jakarta.mail.*;
@@ -19,7 +21,10 @@ public class MailServiceImpl implements MailService {
 
 
     @Autowired
-    private final MailMapper mailMapper;
+    private MailMapper mailMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     //邮件发送器
     @Autowired
@@ -32,10 +37,6 @@ public class MailServiceImpl implements MailService {
     //发送方
     @Value("${spring.mail.username}")
     private String from;
-
-    public MailServiceImpl(MailMapper mailMapper) {
-        this.mailMapper= mailMapper;
-    }
 
     //发送无附件邮件
     public void sendMail(String to, String subject, String content) throws MessagingException {
@@ -58,12 +59,14 @@ public class MailServiceImpl implements MailService {
         // 解析发件人
         Address[] from = message.getFrom();
         String senderEmail = from.length > 0 ? from[0].toString() : "unknown@example.com";
-        mail.setSender_id(Long.parseLong(senderEmail));
+        User sender = userMapper.findByEmail(senderEmail);
+        mail.setSender_id(sender.getId());
 
         // 解析收件人
         Address[] to = message.getRecipients(Message.RecipientType.TO);
         String receiverEmail = to.length > 0 ? to[0].toString() : "unknown@example.com";
-        mail.setReceiver_id(Long.parseLong(receiverEmail));
+        User receiver = userMapper.findByEmail(receiverEmail);
+        mail.setReceiver_id(receiver.getId());
 
         // 解析邮件主题
         mail.setSubject(message.getSubject());

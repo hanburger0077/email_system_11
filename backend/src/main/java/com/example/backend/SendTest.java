@@ -26,7 +26,7 @@ public class SendTest {
 
             // 启动 GreenMail 服务器（监听 SMTP 端口）
             GreenMail greenMail = new GreenMail(new ServerSetup(3025, "localhost", "smtp"));
-            greenMail.setUser("1","123456");
+            greenMail.setUser("admin@example.com","123456");
             greenMail.start();
             Message[] receivedMessages;
             while(true) {
