@@ -10,11 +10,12 @@ import { computed,  } from 'vue'
 import defaultLayout from '@/components/emailLayout/index.vue';
 import authLayout from '@/components/authLayout/index.vue';
 
+const route = useRoute();
+console.log(route.path);
 const layoutMap = {
   'auth': authLayout,
 }
 
-const route = useRoute();
 const layoutComponent = computed(() => {
   const key = route.path.split('/')[1];
   return layoutMap[key] || defaultLayout;

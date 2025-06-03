@@ -1,6 +1,14 @@
 // router.js
 export default [
   {
+    path: '/login',
+    redirect: '/auth/login'
+  },
+  {
+    path: '/register',
+    redirect: '/auth/register'
+  },
+  {
     path: '/auth/login',
     name: 'auth.login',
     component: () => import('./login/index.vue')

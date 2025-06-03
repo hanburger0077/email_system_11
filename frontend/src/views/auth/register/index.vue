@@ -59,9 +59,6 @@
 <script>
 export default {
   name: 'RegisterPage',
-  components: {
-    layout,
-  },
   data() {
     return {
       form: {
