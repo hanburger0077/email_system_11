@@ -1,70 +1,64 @@
 <template>
-  <layout>
-    <div class="main-container">
-      <h2 class="box-title">账号注册</h2>
-      <form @submit.prevent="handleRegister">
+  <div class="main-container">
+    <h2 class="box-title">账号注册</h2>
+    <form @submit.prevent="handleRegister">
+      <input 
+        type="text" 
+        placeholder="设置用户名" 
+        class="input" 
+        v-model="form.username" 
+      />
+      <input 
+        type="password" 
+        placeholder="设置密码" 
+        class="input" 
+        v-model="form.password" 
+      />
+      <input 
+        type="password" 
+        placeholder="确认密码" 
+        class="input" 
+        v-model="form.confirmPassword" 
+        @blur="checkPasswordMatch"  
+      />
+      <p 
+        v-if="isPasswordMismatch && form.confirmPassword" 
+        class="error"
+      >
+        两次输入的密码不一致
+      </p>
+      <input 
+        type="text" 
+        placeholder="手机号/邮箱" 
+        class="input" 
+        v-model="form.contact" 
+      />
+      <div class="captcha-group">
         <input 
           type="text" 
-          placeholder="设置用户名" 
-          class="input" 
-          v-model="form.username" 
+          placeholder="验证码" 
+          class="input captcha-input" 
+          v-model="form.captcha" 
         />
+        <button class="captcha-btn">获取验证码</button>
+      </div>
+      <div class="terms-group">
         <input 
-          type="password" 
-          placeholder="设置密码" 
-          class="input" 
-          v-model="form.password" 
+          type="checkbox" 
+          id="terms" 
+          v-model="form.agreeTerms" 
         />
-        <input 
-          type="password" 
-          placeholder="确认密码" 
-          class="input" 
-          v-model="form.confirmPassword" 
-          @blur="checkPasswordMatch"  
-        />
-        <p 
-          v-if="isPasswordMismatch && form.confirmPassword" 
-          class="error"
-        >
-          两次输入的密码不一致
-        </p>
-        <input 
-          type="text" 
-          placeholder="手机号/邮箱" 
-          class="input" 
-          v-model="form.contact" 
-        />
-        <div class="captcha-group">
-          <input 
-            type="text" 
-            placeholder="验证码" 
-            class="input captcha-input" 
-            v-model="form.captcha" 
-          />
-          <button class="captcha-btn">获取验证码</button>
-        </div>
-        <div class="terms-group">
-          <input 
-            type="checkbox" 
-            id="terms" 
-            v-model="form.agreeTerms" 
-          />
-          <label for="terms">我已阅读并同意服务条款和隐私政策</label>
-        </div>
-        <button class="btn-submit">注册</button>
-        <p class="login-link">如已有账号？<a @click="goToLogin">去登录</a></p>
-      </form>
-    </div>
-  </layout>
+        <label for="terms">我已阅读并同意服务条款和隐私政策</label>
+      </div>
+      <button class="btn-submit">注册</button>
+      <p class="login-link">如已有账号？<a @click="goToLogin">去登录</a></p>
+    </form>
+  </div>
 </template>
 
 <script>
-import layout from '@/components/authLayout/index.vue';
 export default {
   name: 'RegisterPage',
-  components: {
-    layout,
-  },
   data() {
     return {
       form: {
