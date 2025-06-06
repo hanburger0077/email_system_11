@@ -1,60 +1,24 @@
 <template>
-  <div class="main-page">
-    <div class="top-bar">
-      <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
-      <div class="account-container">
-        <button class="account-btn">账号中心</button>
+  <div class="write-content">
+    <h2 class="page-title">写邮件</h2>
+    <form @submit.prevent="sendEmail">
+      <div class="form-field">
+        <label>收件人：</label>
+        <input type="email" v-model="to" required placeholder="请输入收件人邮箱" class="form-input" />
       </div>
-    </div>
-
-    <div class="left-nav">
-      <!-- 写信按钮，高亮当前写信页面（edit路由） -->
-      <button class="nav-btn write-btn" @click="$router.push('/edit')" :class="{ active: $route.name === 'edit' }">
-        写信
-      </button>
-      <!-- 收信按钮，跳转至收件箱（main路由），高亮收件箱页面 -->
-      <button class="nav-btn" @click="$router.push('/main')" :class="{ active: $route.name === 'main' }">
-        收信
-      </button>
-      <div class="nav-group">
-        <!-- 收件箱，与收信按钮同跳转（main），高亮收件箱页面 -->
-        <button class="nav-sub-btn" @click="$router.push('/main')" :class="{ active: $route.name === 'main' }">
-          收件箱
-        </button>
-        <!-- 草稿箱，跳转至draft路由 -->
-        <button class="nav-sub-btn" @click="$router.push('/draft')" :class="{ active: $route.name === 'draft' }">
-          草稿箱
-        </button>
-        <!-- 星标邮件，跳转至star路由 -->
-        <button class="nav-sub-btn" @click="$router.push('/star')" :class="{ active: $route.name === 'star' }">
-          星标邮件
-        </button>
-        <button class="nav-sub-btn">已发送</button>
-        <button class="nav-sub-btn">已删除</button>
+      <div class="form-field">
+        <label>主题：</label>
+        <input type="text" v-model="subject" required placeholder="请输入邮件主题" class="form-input" />
       </div>
-    </div>
-
-    <div class="write-content">
-      <h2 class="page-title">写邮件</h2>
-      <form @submit.prevent="sendEmail">
-        <div class="form-field">
-          <label>收件人：</label>
-          <input type="email" v-model="to" required placeholder="请输入收件人邮箱" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label>主题：</label>
-          <input type="text" v-model="subject" required placeholder="请输入邮件主题" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label>正文：</label>
-          <textarea v-model="content" required placeholder="请输入邮件正文" rows="8" class="form-textarea"></textarea>
-        </div>
-        <div class="button-group">
-          <button type="submit" class="send-btn">发送邮件</button>
-          <button type="button" class="draft-btn-sm" @click="showDraftModal = true">存为草稿</button>
-        </div>
-      </form>
-    </div>
+      <div class="form-field">
+        <label>正文：</label>
+        <textarea v-model="content" required placeholder="请输入邮件正文" rows="8" class="form-textarea"></textarea>
+      </div>
+      <div class="button-group">
+        <button type="submit" class="send-btn">发送邮件</button>
+        <button type="button" class="draft-btn-sm" @click="showDraftModal = true">存为草稿</button>
+      </div>
+    </form>
 
     <!-- 浮窗和弹窗组件 -->
     <div v-if="showToast" class="toast-message" :class="{ 'toast-success': toastType === 'success', 'toast-error': toastType === 'error' }">
@@ -110,110 +74,10 @@ export default {
 </script>
 
 <style scoped>
-.main-page {
-  display: flex;
-  flex-direction: row;
-  height: 99vh;
-  width: 97vw;
-  background: #e6f2fb;
-  overflow: hidden;
-}
-
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 80px;
-  background: #fff;
-  border-bottom: 2px solid #cce2fa;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-  padding: 0 48px;
-}
-
-.account-container {
-  margin-left: auto;
-}
-
-.logo {
-  height: 60px;
-  margin-right: 32px;
-}
-
-.account-btn {
-  padding: 14px 28px;
-  background: #f5f7fa;
-  color: #1f74c0;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.left-nav {
-  margin-top: 80px;
-  width: 165px;
-  background: #e6f2fb;
-  border-right: 2px solid #cce2fa;
-  height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
-
-.nav-btn {
-  width: 100%;
-  padding: 10px 0;
-  text-align: center;
-  border: none;
-  background: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #1f74c0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.write-btn {
-  border: 2px solid #1f74c0;
-}
-
-.nav-group {
-  margin-top: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  padding: 8px 0;
-}
-
-.nav-sub-btn {
-  width: 100%;
-  padding: 8px 0;
-  text-align: center;
-  border: none;
-  background: none;
-  color: #1f74c0;
-  cursor: pointer;
-  margin-bottom: 3px;
-  font-size: 14px;
-}
-
-.nav-sub-btn.active {
-  font-weight: bold;
-  background: #e6f2fb;
-  border-left: 4px solid #1f74c0;
-}
-
 .write-content {
-  flex: 1;
   padding: 32px 48px;
   background: #fff;
-  height: calc(100vh - 80px);
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -290,13 +154,6 @@ export default {
 
 .draft-btn-sm:hover {
   background: #e6f2fb;
-}
-
-.left-nav .nav-btn.active {
-  background: #e6f2fb;
-  color: #1f74c0;
-  font-weight: bold;
-  border-left: 4px solid #1f74c0;
 }
 
 /* 浮窗样式 */
@@ -402,4 +259,3 @@ export default {
   background: #1a5f9e;
 }
 </style>
-    

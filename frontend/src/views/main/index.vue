@@ -1,80 +1,60 @@
 <template>
-  <div class="main-page">
-    <div class="top-bar">
-      <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
-      <input type="text" placeholder="邮箱搜索" class="search-input" />
-      <button class="account-btn">账号中心</button>
-    </div>
-
-    <div class="left-nav">
-      <button class="nav-btn" @click="goToWrite">写信</button>
-      <button class="nav-btn" @click="handleReceive">收信</button>
-      <div class="nav-group">
-        <button class="nav-sub-btn active">收件箱</button>
-        <button class="nav-sub-btn" @click="goToDraft">草稿箱</button>
-        <button class="nav-sub-btn" @click="goToStarred">星标邮件</button>
-        <button class="nav-sub-btn">已发送</button>
-        <button class="nav-sub-btn">已删除</button>
-      </div>
-    </div>
-
-    <div class="mail-list">
-      <div class="list-header">
-        <input type="checkbox" v-model="allSelected" @change="toggleSelectAll" class="header-checkbox" />
-        <button class="list-btn" @click="deleteSelected">删除选中</button>
-        <div class="mark-dropdown">
-          <button class="list-btn" @click="showMarkDropdown = !showMarkDropdown">标记为...</button>
-          <div v-show="showMarkDropdown" class="dropdown-content" @click.self="showMarkDropdown = false">
-            <button @click="markSelectedAsStarred">星标邮件</button>
-            <button @click="unmarkSelectedAsStarred">取消星标</button>
-          </div>
+  <div class="mail-list">
+    <div class="list-header">
+      <input type="checkbox" v-model="allSelected" @change="toggleSelectAll" class="header-checkbox" />
+      <button class="list-btn" @click="deleteSelected">删除选中</button>
+      <div class="mark-dropdown">
+        <button class="list-btn" @click="showMarkDropdown = !showMarkDropdown">标记为...</button>
+        <div v-show="showMarkDropdown" class="dropdown-content" @click.self="showMarkDropdown = false">
+          <button @click="markSelectedAsStarred">星标邮件</button>
+          <button @click="unmarkSelectedAsStarred">取消星标</button>
         </div>
-        <button class="list-btn" @click="deleteAll">全部删除</button>
-        <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
-        <button class="list-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
-        <button class="list-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
       </div>
+      <button class="list-btn" @click="deleteAll">全部删除</button>
+      <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
+      <button class="list-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
+      <button class="list-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+    </div>
 
-      <div class="mail-header">
-        <span class="column checkbox-col"></span>
-        <span class="column sender">发件人</span>
-        <span class="column subject">主题</span>
-        <span class="column time">时间</span>
-        <span class="column star-col">星标</span>
-      </div>
+    <div class="mail-header">
+      <span class="column checkbox-col"></span>
+      <span class="column sender">发件人</span>
+      <span class="column subject">主题</span>
+      <span class="column time">时间</span>
+      <span class="column star-col">星标</span>
+    </div>
 
-      <div class="list-content">
-        <div v-for="(group, index) in groupedMails" :key="index" class="mail-group">
-          <h3 class="group-title" @click="toggleExpand(index)">
-            {{ group.title }}
-            <span class="expand-icon">{{ group.isExpanded ? '−' : '+' }}</span>
-          </h3>
+    <div class="list-content">
+      <div v-for="(group, index) in groupedMails" :key="index" class="mail-group">
+        <h3 class="group-title" @click="toggleExpand(index)">
+          {{ group.title }}
+          <span class="expand-icon">{{ group.isExpanded ? '−' : '+' }}</span>
+        </h3>
 
-          <div v-show="group.isExpanded" class="mail-items">
-            <div 
-              v-for="(mail, mailIndex) in group.mails" 
-              :key="mail.globalIndex" 
-              class="mail-item" 
-              :class="{ 'unread': !mail.isRead }"
-            >
-              <div class="checkbox-container">
-                <input type="checkbox" v-model="selectedMails" :value="mail.globalIndex" class="item-checkbox" />
-              </div>
-              <div class="mail-content">
-                <span class="column sender">{{ mail.sender }}</span>
-                <span class="column subject">{{ mail.subject }}</span>
-                <span class="column time">{{ mail.time }}</span>
-                <span 
-                  class="star-icon" 
-                  :class="{ 'star-filled': mail.isStarred }" 
-                  @click="toggleStar(mail)"
-                >&#9734;</span>
-              </div>
+        <div v-show="group.isExpanded" class="mail-items">
+          <div 
+            v-for="(mail, mailIndex) in group.mails" 
+            :key="mail.globalIndex" 
+            class="mail-item" 
+            :class="{ 'unread': !mail.isRead }"
+          >
+            <div class="checkbox-container">
+              <input type="checkbox" v-model="selectedMails" :value="mail.globalIndex" class="item-checkbox" />
             </div>
-
-            <div v-if="group.mails.length === 0 && group.isExpanded" class="empty-message">
-              该分类暂无邮件
+            <div class="mail-content" @click="openMail(mail)">
+              <span class="column sender">{{ mail.sender }}</span>
+              <span class="column subject">{{ mail.subject }}</span>
+              <span class="column time">{{ mail.time }}</span>
+              <span 
+                class="star-icon" 
+                :class="{ 'star-filled': mail.isStarred }" 
+                @click.stop="toggleStar(mail)"
+              >&#9734;</span>
             </div>
+          </div>
+
+          <div v-if="group.mails.length === 0 && group.isExpanded" class="empty-message">
+            该分类暂无邮件
           </div>
         </div>
       </div>
@@ -182,14 +162,14 @@ export default {
         this.groupAndIndexMails();
       }
     },
-    goToWrite() {
-      this.$router.push('/write');
-    },
-    goToDraft() {
-      this.$router.push('/draft');
-    },
-    goToStarred() {
-      this.$router.push('/star');
+    openMail(mail) {
+      // 标记邮件为已读
+      if (!mail.isRead) {
+        const realMail = this.mailList.find((m, idx) => idx === mail.globalIndex);
+        if (realMail) realMail.isRead = true;
+      }
+      // 这里可以添加邮件详情页导航
+      console.log("打开邮件:", mail);
     },
     toggleSelectAll() {
       const indexes = this.paginatedMails.map(mail => mail.globalIndex);
@@ -227,117 +207,9 @@ export default {
 </script>
 
 <style scoped>
-.main-page {
-  display: flex;
-  flex-direction: row;
-  height: 99vh;
-  width: 97vw;
-  background: #e6f2fb;
-  overflow: hidden;
-}
-
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 80px;
-  background: #fff;
-  border-bottom: 2px solid #cce2fa;
-  display: flex;
-  align-items: center;
-  z-index: 10;
-  padding: 0 48px;
-}
-
-.logo {
-  height: 60px;
-  margin-right: 32px;
-}
-
-.search-input {
-  flex-grow: 1;
-  padding: 14px;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  margin-right: 32px;
-  background: #f8faff;
-  font-size: 18px;
-}
-
-.account-btn {
-  padding: 14px 28px;
-  background: #f5f7fa;
-  color: #1f74c0;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.left-nav {
-  margin-top: 80px;
-  width: 165px;
-  background: #e6f2fb;
-  border-right: 2px solid #cce2fa;
-  height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
-
-.nav-btn {
-  width: 100%;
-  padding: 10px 0;
-  text-align: center;
-  border: none;
-  background: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #1f74c0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.nav-group {
-  margin-top: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  padding: 8px 0;
-}
-
-.nav-sub-btn {
-  width: 100%;
-  padding: 8px 0;
-  text-align: center;
-  border: none;
-  background: none;
-  color: #1f74c0;
-  cursor: pointer;
-  margin-bottom: 3px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-sub-btn.active {
-  font-weight: bold;
-  background: #e6f2fb;
-  border-left: 4px solid #1f74c0;
-}
-
 .mail-list {
-  margin-top: 80px;
-  flex: 1;
-  background: #fff;
-  border-radius: 0 0 20px 20px;
-  margin-left: 0;
   padding: 20px 28px 28px 28px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 48px);
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   display: flex;
@@ -359,6 +231,10 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+}
+
+.list-btn:hover {
+  background: #e6f2fb;
 }
 
 .mark-dropdown {
@@ -440,6 +316,15 @@ export default {
   background-color: #f5f7fa;
 }
 
+.unread {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.unread .subject {
+  font-weight: bold;
+}
+
 .checkbox-container {
   min-width: 24px;
   display: flex;
@@ -453,6 +338,7 @@ export default {
   align-items: center;
   gap: 20px;
   width: 100%;
+  cursor: pointer;
 }
 
 .column {
@@ -524,5 +410,10 @@ export default {
   margin: 0;
   width: 16px;
   height: 16px;
+}
+
+.list-content {
+  flex: 1;
+  overflow-y: auto;
 }
 </style>
