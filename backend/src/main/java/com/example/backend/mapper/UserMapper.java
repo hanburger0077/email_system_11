@@ -7,4 +7,6 @@ import org.apache.ibatis.annotations.Mapper;
 public interface UserMapper {
     User findByEmail(String email);
     int insertUser(User user); // 返回int类型以检查插入结果
+    User findById(long id);
+    boolean authenticate(String email, String password);
 }

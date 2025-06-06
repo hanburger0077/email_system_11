@@ -51,54 +51,69 @@ public class SmtpClient {
         channel = future.channel();
     }
 
+
+    //发送纯文本文件
     public void sendSimpleMail(String from, String to, String subject, String body) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             SmtpClientHandler handler = channel.pipeline().get(SmtpClientHandler.class);
+            String response;
             // 发送 HELO 命令并等待响应
-            handler.sendCommand(channel, "HELO localhost");
+            response = handler.sendCommand(channel, "HELO localhost");
+            System.out.println("SMTP return：" + response);
 
             // 发送 MAIL FROM 命令并等待响应
             handler.sendCommand(channel, "MAIL FROM:<" + from + ">");
+            System.out.println("SMTP return：" + response);
 
             // 发送 RCPT TO 命令并等待响应
             handler.sendCommand(channel, "RCPT TO:<" + to + ">");
+            System.out.println("SMTP return：" + response);
 
             // 发送 DATA 命令并等待响应
             handler.sendCommand(channel, "DATA");
+            System.out.println("SMTP return：" + response);
+
+            // 构建邮件内容
+            String emailMessage = "From: " + from + "\r\n" +
+                    "To: " + to + "\r\n" +
+                    "Subject: " + subject + "\r\n" +
+                    "MIME-Version: 1.0\r\n" +
+                    "Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
+                    body + "\r\n" +
+                    ".\r\n";
+
+            // 发送邮件内容
+            channel.writeAndFlush(emailMessage).addListener(future -> {
+                if (!future.isSuccess()) {
+                    future.cause().printStackTrace();
+                }
+            });
+
+            System.out.println("Sending mail successfully");
         }
-
-        // 构建邮件内容
-        String emailMessage = "From: " + from + "\r\n" +
-                "To: " + to + "\r\n" +
-                "Subject: " + subject + "\r\n" +
-                "MIME-Version: 1.0\r\n" +
-                "Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
-                body + "\r\n" +
-                ".\r\n";
-
-        // 发送邮件内容
-        channel.writeAndFlush(emailMessage).addListener(future -> {
-            if (!future.isSuccess()) {
-                future.cause().printStackTrace();
-            }
-        });
     }
 
+
+    //发送带附件邮件
     public void sendMail(String from, String to, String subject, String textBody, String htmlBody, String attachmentName, byte[] attachmentContent) throws Exception {
         if (channel != null && channel.isActive()) {
             SmtpClientHandler handler = channel.pipeline().get(SmtpClientHandler.class);
-
+            String response;
             // 发送 HELO 命令并等待响应
-            handler.sendCommand(channel, "HELO localhost");
+            response = handler.sendCommand(channel, "HELO localhost");
+            System.out.println("SMTP return：" + response);
 
             // 发送 MAIL FROM 命令并等待响应
             handler.sendCommand(channel, "MAIL FROM:<" + from + ">");
+            System.out.println("SMTP return：" + response);
 
             // 发送 RCPT TO 命令并等待响应
             handler.sendCommand(channel, "RCPT TO:<" + to + ">");
+            System.out.println("SMTP return：" + response);
 
             // 发送 DATA 命令并等待响应
             handler.sendCommand(channel, "DATA");
+            System.out.println("SMTP return：" + response);
 
             // 构建 MIME 消息
             String boundary = "==MultipartBoundary" + System.currentTimeMillis();

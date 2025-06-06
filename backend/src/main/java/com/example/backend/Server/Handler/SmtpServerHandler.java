@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,6 +106,8 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.close();
     }
 
+
+    //邮件解析
     private void parseMimeMessage(String mimeMessage) throws Exception {
         Properties props = new Properties();
         props.put("mail.smtp.ssl.trust", "false");
@@ -124,8 +127,9 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         User receiver= userMapper.findByEmail(receiverEmail);
         mail.setReceiver_id(receiver != null ? receiver.getId() : null);
 
-
-        mail.setSubject(message.getSubject());
+        // 解决中文乱码
+        String subject=new String(message.getSubject().getBytes("ISO8859_1"), StandardCharsets.UTF_8);
+        mail.setSubject(subject);
 
         Object content = message.getContent();
 
@@ -149,7 +153,8 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
             }
             mail.setContent(contentBuilder.toString());
         } else if (content instanceof String) {
-            mail.setContent(content.toString());
+            // 去除末尾的 \r\n
+            mail.setContent(content.toString().replace("\r\n", ""));
         }
         mail.setCreate_at(LocalDateTime.now());
         mailMapper.insertMail(mail);
