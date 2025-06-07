@@ -55,16 +55,16 @@ onMounted(() => {
 .email-layout-sidebar {
   position: relative;
   flex-shrink: 0;
-  width: 200px;
+  width: 232px;
   background: #fff;
   box-shadow: 0 8px 8px #646e9018;
   overflow: initial;
-  height: calc(100vh -  48px);
-  max-height: calc(100vh - 48px);
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
   .item-container {
     display: flex;
     align-items: center;
-    height: 48px;
+    height: 52px;
     padding: 0 16px;
     cursor: pointer;
     &:hover {

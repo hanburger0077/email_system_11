@@ -1,11 +1,13 @@
 <template>
   <div class="header-container">
     <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
-    <div class="header-spacer"></div>
-    <el-input placeholder="邮箱搜索" class="search-input" />
-    <div class="header-spacer"></div>
-    <div class="account-circle" @click="handleAccountClick">
-      <span>账号</span>
+    <div class="header-content">
+      <el-input placeholder="邮箱搜索" class="search-input" />
+      <div class="header-right">
+        <div class="account-circle" @click="handleAccountClick">
+          <span>账号</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -22,27 +24,38 @@ const handleAccountClick = () => {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 48px;
+  height: 68px;
   background: #fff;
   border-bottom: 2px solid #cce2fa;
   display: flex;
   align-items: center;
-  z-index: 100; /* 提高z-index确保在其他元素上方 */
+  z-index: 100;
   padding: 0 24px;
 
   .logo {
-    height: 32px;
+    height: 50px;
     margin-right: 16px;
   }
 }
 
-.header-spacer {
+.header-content {
   flex: 1;
+  display: flex;
+  align-items: center;
+  max-width: calc(100vw - 200px); /* 为侧边栏留出空间 */
+  margin-left: 10px; /* 与侧边栏宽度对齐 */
 }
 
 .search-input {
   width: 320px;
   max-width: 600px;
+  height: 36px;
+  margin-right: auto; /* 推向左边 */
+}
+
+.header-right {
+  margin-left: auto;
+  margin-right: 40px; /* 与右边保持24px距离 */
 }
 
 .account-circle {
@@ -58,7 +71,7 @@ const handleAccountClick = () => {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
-  margin-left: 16px;
+
   user-select: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative; /* 确保定位正确 */
