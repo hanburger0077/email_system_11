@@ -12,7 +12,7 @@ public interface MailMapper {
     void insertMail(Mail mail);
 
     //根据接收用户id返回邮件信息
-    List<Mail> selectByUserId(long userId, int pageSize, int offset);
+    List<Mail> selectByRecieverUserId(long userId, int pageSize, int offset);
 
     //根据发送用户id返回邮件信息
     List<Mail> selectBySenderId(long userId, int pageSize, int offset);

@@ -18,4 +18,12 @@
         INSERT INTO user (username, password, email)
         VALUES(#{username}, #{password}, #{email})
     </insert>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <select id="authenticate" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM user WHERE email = #{email} AND password = #{password}
+    </select>
 </mapper>

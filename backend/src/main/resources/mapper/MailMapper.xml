@@ -8,7 +8,7 @@
     </insert>
 
     <!-- 根据用户ID查询邮件并分页 -->
-    <select id="selectByUserId" resultMap="mailResultMap">
+    <select id="selectByReceiverUserId" resultMap="mailResultMap">
         SELECT
             mail_id,
             sender_id,
@@ -35,8 +35,8 @@
         <id property="mail_id" column="mail_id" javaType="long" jdbcType="BIGINT"/>
         <result property="sender_id" column="sender_id" javaType="long" jdbcType="BIGINT"/>
         <result property="receiver_id" column="receiver_id" javaType="long" jdbcType="BIGINT"/>
-        <result property="subject" column="subject" javaType="string" jdbcType="VARCHAR"/>
-        <result property="content" column="content" javaType="string" jdbcType="VARCHAR"/>
+        <result property="subject" column="subject" javaType="String" jdbcType="VARCHAR"/>
+        <result property="content" column="content" javaType="String" jdbcType="VARCHAR"/>
         <result property="create_at" column="create_at" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 

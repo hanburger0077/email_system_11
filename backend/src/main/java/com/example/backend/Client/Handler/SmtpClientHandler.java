@@ -16,7 +16,6 @@ public class SmtpClientHandler extends SimpleChannelInboundHandler<String> {
         lastResponse = msg;
         //异步处理
         if (latch != null) {
-            System.out.println("SMTP return：" + msg);
             latch.countDown(); // 通知等待的线程
         }
     }
