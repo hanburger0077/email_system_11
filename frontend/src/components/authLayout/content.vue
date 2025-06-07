@@ -47,14 +47,12 @@
     }
     
     &-right {
-      width: 420px;
-      min-width: 420px;
+      min-width: 400px;
       min-height: 480px;
+      height: 480px;
       border-radius: 20px;
       background: #fff;
       box-shadow: 0px 5px 15px 1px rgba(0, 0, 0, 0.05);
-      display: flex;
-      flex-direction: column;
       padding: 24px;
             
       :deep() & > * {
@@ -75,6 +73,8 @@
       background-color: #fff;
       padding: 20px;
       gap: 20px;
+      align-items: center;
+      justify-content: flex-start;
       
       &-left {
         display: none;
@@ -83,6 +83,7 @@
       &-right {
         width: 100%;
         min-width: 0;
+        box-shadow: none;
       }
     }
   }

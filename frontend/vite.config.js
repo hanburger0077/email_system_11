@@ -32,7 +32,11 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         // 使用 @use 语法替代弃用的 @import
-        additionalData: `@use "@/utils/styles/mixin.scss" as *;`
+        additionalData: 
+        `
+        @use "@/utils/styles/mixin.scss" as *; 
+        @use "@/utils/styles/element-reset.scss" as *;
+        `
       }
     }
   }
