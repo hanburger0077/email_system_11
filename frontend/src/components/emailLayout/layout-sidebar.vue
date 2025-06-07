@@ -53,9 +53,11 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .email-layout-sidebar {
-  position: relative;
+  position: fixed;
+  top: 70px;
   flex-shrink: 0;
-  width: 232px;
+  padding: 10px;
+  width: 200px;
   background: #fff;
   box-shadow: 0 8px 8px #646e9018;
   overflow: initial;

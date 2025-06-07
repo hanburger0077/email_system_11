@@ -1,4 +1,8 @@
-/* @import './base.css'; */
+// 全局样式
+html,body{
+  margin: 0;
+  padding: 0;
+}
 
 #app {
   padding: 0;
@@ -8,6 +12,7 @@
   box-sizing: border-box;
 }
 
+// 个性化主题样式
 // 变量定义
 $color-primary: #005691;
 $color-primary-hover: #5086ab;

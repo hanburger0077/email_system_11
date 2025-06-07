@@ -18,12 +18,13 @@ import layoutHeader from './layout-header.vue';
 
 <style lang="scss" scoped>
 .email-layout-main{
-  margin-top: 48px;
+  padding-top: 70px;
   display: flex;
-  // flex-direction: row;
   background: #e6f2fb;
   overflow: hidden;
   .email-layout-main-content{
+    padding: 16px;
+    margin-left: 220px;
     flex: 1;
     background: #fff;
   }
