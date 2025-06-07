@@ -14,7 +14,8 @@ public class ImapClientHandler extends SimpleChannelInboundHandler<String> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        responseBuffer.append(msg).append("\r\n");
+        responseBuffer.append(msg);
+        System.out.println(msg);
         // 检查是否完整
         if (msg.startsWith("* BAD") || msg.startsWith("1 OK")) {
             completeResponse = responseBuffer.toString();

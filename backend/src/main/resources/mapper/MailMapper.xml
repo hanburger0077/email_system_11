@@ -7,27 +7,110 @@
         VALUES (#{sender_id}, #{receiver_id}, #{subject}, #{content}, #{create_at})
     </insert>
 
+
+    <select id="selectByReceiverIdWithSign" resultType="Long">
+        SELECT
+            mail_id
+        FROM
+            mail
+        WHERE
+            receiver_id = #{userId}
+            AND sender_sign = 0
+            AND receiver_sign = #{receiver_sign}
+            <if test="senderId != 0">
+                AND sender_id = #{senderId}
+            </if>
+            <if test="subject != null">
+                AND subject LIKE #{subject}
+            </if>
+            <if test="body != null">
+                AND content LIKE #{body}
+            </if>
+            <if test="since != null">
+                AND create_at BETWEEN #{create_at} AND NOW()
+            </if>
+            <if test="read != null">
+                <if test="read == 'UNSEEN'">
+                    AND `read` = 0
+                </if>
+                <if test="read == 'SEEN'">
+                    AND `read` = 1
+                </if>
+            </if>
+            <if test="star != null">
+                AND star = 1
+            </if>
+        ORDER BY
+            create_at
+    </select>
+
     <!-- 根据用户ID查询邮件并分页 -->
-    <select id="selectByReceiverUserId" resultMap="mailResultMap">
+    <select id="selectBySenderIdWithSign" resultType="Long">
+        SELECT
+            mail_id
+        FROM
+            mail
+        WHERE
+            sender_id = #{userId}
+            AND sender_sign = #{sender_sign}
+            <if test="receiverId != 0">
+                AND receiver_id = #{receiverId}
+            </if>
+            <if test="subject != null">
+                AND subject LIKE #{subject}
+            </if>
+            <if test="body != null">
+                AND content LIKE #{body}
+            </if>
+            <if test="since != null">
+                AND create_at BETWEEN #{create_at} AND NOW()
+            </if>
+            <if test="star != null">
+                AND star = 1
+            </if>
+        ORDER BY
+            create_at
+    </select>
+
+    <select id="countByReceiverIdWithSign" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            mail
+        WHERE
+            receiver_id = #{userId}
+            AND sender_sign = 0
+            AND receiver_sign = #{receiver_sign}
+    </select>
+
+    <select id="countBySenderIdWithSign" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            mail
+        WHERE
+            Sender_id = #{userId}
+            AND sender_sign = #{sender_sign}
+    </select>
+
+    <select id="selectByMailId" resultMap="mailResultMap">
         SELECT
             mail_id,
             sender_id,
             receiver_id,
             subject,
             content,
-            create_at
+            create_at,
+            sender_sign,
+            receiver_sign,
+            `read`,
+            star
         FROM
             mail
         WHERE
-            receiver_id = #{userId}
-        ORDER BY
-            create_at
-        LIMIT #{pageSize} OFFSET #{offset}
+            mail_id = #{mailId}
     </select>
 
-    <select id="selectByMailId" resultMap="mailResultMap">
-        SELECT * FROM mail WHERE mail_id = #{mailId}
-    </select>
 
 
     <!-- 定义结果映射 -->
@@ -38,6 +121,10 @@
         <result property="subject" column="subject" javaType="String" jdbcType="VARCHAR"/>
         <result property="content" column="content" javaType="String" jdbcType="VARCHAR"/>
         <result property="create_at" column="create_at" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+        <result property="sender_sign" column="sender_sign" javaType="short" jdbcType="TINYINT"/>
+        <result property="receiver_sign" column="receiver_sign" javaType="short" jdbcType="TINYINT"/>
+        <result property="read" column="read" javaType="short" jdbcType="TINYINT"/>
+        <result property="star" column="star" javaType="short" jdbcType="TINYINT"/>
     </resultMap>
 
 </mapper>
