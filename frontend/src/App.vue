@@ -14,12 +14,12 @@ import defaultLayout from '@/components/defaultLayout/index.vue';
 const route = useRoute();
 const layoutMap = {
   'auth': authLayout,
-  'service': defaultLayout,
+  'protocol': defaultLayout,
 }
 
 const layoutComponent = computed(() => {
   const key = route.path.split('/')[1];
-  return layoutMap[key] || defaultLayout;
+  return layoutMap[key] || emailLayout;
 });
 </script>
 

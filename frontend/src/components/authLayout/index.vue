@@ -24,7 +24,7 @@ import layoutContent from './content.vue';
     overflow: visible;
   }
   &-header {
-    height: 64px;
+    height: 68px;
     position: fixed;
     z-index: 1;
     top: 0;
