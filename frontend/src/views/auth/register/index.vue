@@ -56,7 +56,7 @@
         
         <el-form-item prop="protocol">
           <div class="protocol">
-            <el-checkbox v-model="protocol">我已阅读并同意
+            <el-checkbox v-model="form.protocol">我已阅读并同意
               <span class="email-link" @click="handleProtocol('serviceterm')">《服务条款》</span>
               和
               <span class="email-link" @click="handleProtocol('privacypolicy')">《隐私政策》</span></el-checkbox>
@@ -84,7 +84,8 @@ const form = ref({
   password: '',
   passwordConfirm: '',
   username: '',
-  phone: ''
+  phone: '',
+  protocol: false,
 })
 
 const validatePassword = (rule, value, callback) => {
@@ -117,7 +118,14 @@ const rules = ref({
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
   protocol: [
-    { required: true, message: '请阅读并同意服务条款和隐私政策', trigger: 'blur' }
+    {
+        validator: (rule, value, callback) => {
+          if (!value) {
+            return callback(new Error('请阅读并同意协议'));
+          }
+          return callback();
+        },
+      },
   ]
 })
 
