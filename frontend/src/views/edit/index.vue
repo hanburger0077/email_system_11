@@ -1,60 +1,50 @@
 <template>
-  <div class="main-page">
-    <div class="top-bar">
-      <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
-      <div class="account-container">
-        <button class="account-btn">账号中心</button>
+  <div class="write-content">
+    <h2 class="page-title">{{ isReply ? '回复邮件' : '写邮件' }}</h2>
+    <form @submit.prevent="sendEmail">
+      <div class="form-field">
+        <label>收件人：</label>
+        <input type="email" v-model="to" required placeholder="请输入收件人邮箱" class="form-input" />
       </div>
-    </div>
-
-    <div class="left-nav">
-      <!-- 写信按钮，高亮当前写信页面（edit路由） -->
-      <button class="nav-btn write-btn" @click="$router.push('/edit')" :class="{ active: $route.name === 'edit' }">
-        写信
-      </button>
-      <!-- 收信按钮，跳转至收件箱（main路由），高亮收件箱页面 -->
-      <button class="nav-btn" @click="$router.push('/main')" :class="{ active: $route.name === 'main' }">
-        收信
-      </button>
-      <div class="nav-group">
-        <!-- 收件箱，与收信按钮同跳转（main），高亮收件箱页面 -->
-        <button class="nav-sub-btn" @click="$router.push('/main')" :class="{ active: $route.name === 'main' }">
-          收件箱
-        </button>
-        <!-- 草稿箱，跳转至draft路由 -->
-        <button class="nav-sub-btn" @click="$router.push('/draft')" :class="{ active: $route.name === 'draft' }">
-          草稿箱
-        </button>
-        <!-- 星标邮件，跳转至star路由 -->
-        <button class="nav-sub-btn" @click="$router.push('/star')" :class="{ active: $route.name === 'star' }">
-          星标邮件
-        </button>
-        <button class="nav-sub-btn">已发送</button>
-        <button class="nav-sub-btn">已删除</button>
+      <div class="form-field">
+        <label>主题：</label>
+        <input type="text" v-model="subject" required placeholder="请输入邮件主题" class="form-input" />
       </div>
-    </div>
 
-    <div class="write-content">
-      <h2 class="page-title">写邮件</h2>
-      <form @submit.prevent="sendEmail">
-        <div class="form-field">
-          <label>收件人：</label>
-          <input type="email" v-model="to" required placeholder="请输入收件人邮箱" class="form-input" />
+      <!-- 附件上传区域 -->
+      <div class="form-field attachment-section">
+        <div class="attachment-header">
+          <label>附件：</label>
+          <button type="button" class="attachment-btn" @click="triggerFileInput">
+            <i class="attachment-icon">📎</i> 添加附件
+          </button>
+          <input 
+            type="file" 
+            ref="fileInput" 
+            @change="handleFileUpload" 
+            multiple
+            style="display: none" 
+          />
         </div>
-        <div class="form-field">
-          <label>主题：</label>
-          <input type="text" v-model="subject" required placeholder="请输入邮件主题" class="form-input" />
+        
+        <div v-if="attachments.length > 0" class="attachment-list">
+          <div v-for="(file, index) in attachments" :key="index" class="attachment-item">
+            <span class="attachment-name">{{ file.name }}</span>
+            <span class="attachment-size">({{ formatFileSize(file.size) }})</span>
+            <button type="button" class="attachment-remove" @click="removeAttachment(index)">×</button>
+          </div>
         </div>
-        <div class="form-field">
-          <label>正文：</label>
-          <textarea v-model="content" required placeholder="请输入邮件正文" rows="8" class="form-textarea"></textarea>
-        </div>
-        <div class="button-group">
-          <button type="submit" class="send-btn">发送邮件</button>
-          <button type="button" class="draft-btn-sm" @click="showDraftModal = true">存为草稿</button>
-        </div>
-      </form>
-    </div>
+      </div>
+
+      <div class="form-field">
+        <label>正文：</label>
+        <textarea v-model="content" required placeholder="请输入邮件正文" rows="12" class="form-textarea"></textarea>
+      </div>
+      <div class="button-group">
+        <button type="submit" class="send-btn">发送邮件</button>
+        <button type="button" class="draft-btn-sm" @click="showDraftModal = true">存为草稿</button>
+      </div>
+    </form>
 
     <!-- 浮窗和弹窗组件 -->
     <div v-if="showToast" class="toast-message" :class="{ 'toast-success': toastType === 'success', 'toast-error': toastType === 'error' }">
@@ -83,19 +73,116 @@ export default {
       showToast: false,
       toastMessage: '',
       toastType: 'success',
-      showDraftModal: false
+      showDraftModal: false,
+      attachments: [], // 存储上传的附件
+      isReply: false,
+      originalMail: null // 存储原始邮件信息
     };
   },
+  created() {
+    // 检查路由参数，确定是否为回复邮件
+    const { reply, to, subject, originalMail } = this.$route.query;
+    
+    if (reply === 'true') {
+      this.isReply = true;
+      this.to = to || '';
+      
+      // 尝试从sessionStorage获取被回复的邮件信息
+      const storedMail = sessionStorage.getItem('currentMail');
+      if (storedMail) {
+        try {
+          this.originalMail = JSON.parse(storedMail);
+          // 构建回复邮件的正文，包含原邮件信息
+          this.formatReplyContent();
+        } catch (e) {
+          console.error('解析原始邮件数据失败:', e);
+        }
+      }
+    }
+  },
   methods: {
+    // 格式化回复邮件的内容，加入原始邮件信息
+    formatReplyContent() {
+      if (!this.originalMail) return;
+      
+      const original = this.originalMail;
+      const separator = '\n\n' + '-'.repeat(60) + '\n';
+      const quotePrefix = '> ';
+      
+      let replyContent = '\n\n' + separator;
+      replyContent += `发件人: ${original.sender}\n`;
+      replyContent += `时间: ${original.time}\n`;
+      replyContent += `主题: ${original.subject}\n\n`;
+      
+      // 处理原邮件内容，每行前添加引用符号
+      const originalLines = original.content.split('\n');
+      const quotedContent = originalLines.map(line => quotePrefix + line).join('\n');
+      
+      replyContent += quotedContent;
+      
+      this.content = replyContent;
+    },
+    triggerFileInput() {
+      // 触发文件选择框
+      this.$refs.fileInput.click();
+    },
+    handleFileUpload(event) {
+      // 处理文件上传
+      const files = event.target.files;
+      if (!files.length) return;
+      
+      // 将文件添加到附件列表
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > 10 * 1024 * 1024) { // 10MB 大小限制
+          this.showToastMessage(`文件 ${files[i].name} 超过10MB，无法上传`, 'error');
+          continue;
+        }
+        this.attachments.push(files[i]);
+      }
+      
+      // 清空文件输入以便再次选择相同文件
+      event.target.value = '';
+    },
+    removeAttachment(index) {
+      // 从列表中移除附件
+      this.attachments.splice(index, 1);
+    },
+    formatFileSize(bytes) {
+      // 格式化文件大小显示
+      if (bytes < 1024) return bytes + ' B';
+      else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    },
     sendEmail() {
       if (!this.to || !this.subject || !this.content) {
         this.showToastMessage('请填写完整信息', 'error');
         return;
       }
+      
+      // 这里可以进行附件的上传处理，比如创建FormData并发送到服务器
+      const formData = new FormData();
+      formData.append('to', this.to);
+      formData.append('subject', this.subject);
+      formData.append('content', this.content);
+      formData.append('isReply', this.isReply);
+      
+      if (this.originalMail) {
+        formData.append('originalMailId', this.originalMail.id);
+      }
+      
+      this.attachments.forEach((file, index) => {
+        formData.append(`attachment_${index}`, file);
+      });
+      
+      // 模拟发送请求
+      console.log('准备发送邮件，包含附件数量:', this.attachments.length);
+      
       this.showToastMessage('邮件发送成功', 'success');
       setTimeout(() => this.$router.push('/main'), 1500);
     },
     saveAsDraft() {
+      // 保存草稿逻辑，同样可以包含附件
+      console.log('保存草稿，包含附件数量:', this.attachments.length);
       this.showToastMessage('草稿保存成功', 'success');
       this.showDraftModal = false;
     },
@@ -110,110 +197,10 @@ export default {
 </script>
 
 <style scoped>
-.main-page {
-  display: flex;
-  flex-direction: row;
-  height: 99vh;
-  width: 97vw;
-  background: #e6f2fb;
-  overflow: hidden;
-}
-
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 80px;
-  background: #fff;
-  border-bottom: 2px solid #cce2fa;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-  padding: 0 48px;
-}
-
-.account-container {
-  margin-left: auto;
-}
-
-.logo {
-  height: 60px;
-  margin-right: 32px;
-}
-
-.account-btn {
-  padding: 14px 28px;
-  background: #f5f7fa;
-  color: #1f74c0;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.left-nav {
-  margin-top: 80px;
-  width: 165px;
-  background: #e6f2fb;
-  border-right: 2px solid #cce2fa;
-  height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
-
-.nav-btn {
-  width: 100%;
-  padding: 10px 0;
-  text-align: center;
-  border: none;
-  background: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #1f74c0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.write-btn {
-  border: 2px solid #1f74c0;
-}
-
-.nav-group {
-  margin-top: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  padding: 8px 0;
-}
-
-.nav-sub-btn {
-  width: 100%;
-  padding: 8px 0;
-  text-align: center;
-  border: none;
-  background: none;
-  color: #1f74c0;
-  cursor: pointer;
-  margin-bottom: 3px;
-  font-size: 14px;
-}
-
-.nav-sub-btn.active {
-  font-weight: bold;
-  background: #e6f2fb;
-  border-left: 4px solid #1f74c0;
-}
-
 .write-content {
-  flex: 1;
   padding: 32px 48px;
   background: #fff;
-  height: calc(100vh - 80px);
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -252,6 +239,91 @@ export default {
   resize: vertical;
 }
 
+/* 附件上传样式 */
+.attachment-section {
+  margin-bottom: 20px;
+}
+
+.attachment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.attachment-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #f5f7fa;
+  border: 1px dashed #cce2fa;
+  border-radius: 4px;
+  color: #1f74c0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+
+.attachment-btn:hover {
+  background-color: #e6f2fb;
+  border-color: #1f74c0;
+}
+
+.attachment-icon {
+  margin-right: 6px;
+  font-style: normal;
+}
+
+.attachment-list {
+  margin-top: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+  background-color: #f9f9f9;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: white;
+  border-radius: 3px;
+  border: 1px solid #eee;
+}
+
+.attachment-name {
+  flex: 1;
+  font-size: 14px;
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  font-size: 12px;
+  color: #999;
+  margin-right: 8px;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  color: #f44336;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.attachment-remove:hover {
+  color: #d32f2f;
+}
+
+/* 原有按钮样式 */
 .button-group {
   display: flex;
   gap: 16px;
@@ -290,13 +362,6 @@ export default {
 
 .draft-btn-sm:hover {
   background: #e6f2fb;
-}
-
-.left-nav .nav-btn.active {
-  background: #e6f2fb;
-  color: #1f74c0;
-  font-weight: bold;
-  border-left: 4px solid #1f74c0;
 }
 
 /* 浮窗样式 */
@@ -402,4 +467,3 @@ export default {
   background: #1a5f9e;
 }
 </style>
-    

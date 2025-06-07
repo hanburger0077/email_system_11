@@ -1,88 +1,66 @@
 <template>
-  <div class="main-page">
-    <div class="top-bar">
-      <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
-      <input type="text" placeholder="邮箱搜索" class="search-input" />
-      <button class="account-btn">账号中心</button>
+  <div class="mail-list">
+    <div class="list-header">
+      <input 
+        type="checkbox" 
+        v-model="allSelected" 
+        @change="toggleSelectAll" 
+        class="header-checkbox" 
+      />
+      <button 
+        class="list-btn" 
+        @click="deleteSelected"
+      >删除选中</button>
+      <button 
+        class="list-btn" 
+        @click="deleteAll"
+      >全部删除</button>
+      <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
+      <button 
+        class="list-btn" 
+        @click="prevPage" 
+        :disabled="currentPage === 1"
+      >上一页</button>
+      <button 
+        class="list-btn" 
+        @click="nextPage" 
+        :disabled="currentPage === totalPages"
+      >下一页</button>
     </div>
 
-    <div class="left-nav">
-      <button class="nav-btn" @click="goToWrite">写信</button>
-      <button class="nav-btn" @click="handleReceive">收信</button>
-      <div class="nav-group">
-        <button class="nav-sub-btn" @click="goToMain">收件箱</button>
-        <button 
-          class="nav-sub-btn active" 
-          :class="{ active: $route.name === 'draft' }" 
-          @click="goToDraft"
-        >草稿箱</button>
-        <button class="nav-sub-btn" @click="goToStarred">星标邮件</button>
-        <button class="nav-sub-btn">已发送</button>
-        <button class="nav-sub-btn">已删除</button>
-      </div>
+    <div class="mail-header">
+      <span class="column checkbox-col"></span>
+      <span class="column sender">发件人</span>
+      <span class="column subject">主题</span>
+      <span class="column time">保存时间</span>
     </div>
 
-    <div class="mail-list">
-      <div class="list-header">
-        <input 
-          type="checkbox" 
-          v-model="allSelected" 
-          @change="toggleSelectAll" 
-          class="header-checkbox" 
-        />
-        <button 
-          class="list-btn" 
-          @click="deleteSelected"
-        >删除选中</button>
-        <button 
-          class="list-btn" 
-          @click="deleteAll"
-        >全部删除</button>
-        <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
-        <button 
-          class="list-btn" 
-          @click="prevPage" 
-          :disabled="currentPage === 1"
-        >上一页</button>
-        <button 
-          class="list-btn" 
-          @click="nextPage" 
-          :disabled="currentPage === totalPages"
-        >下一页</button>
+    <div class="list-content">
+      <div 
+        v-for="(mail, index) in paginatedDrafts" 
+        :key="mail.globalIndex" 
+        class="mail-item"
+        :class="{ 'unread': !mail.isRead }"
+        @click="editDraft(mail)"
+      >
+        <div class="checkbox-container">
+          <input 
+            type="checkbox" 
+            v-model="selectedMails" 
+            :value="mail.globalIndex" 
+            class="item-checkbox"
+            @click.stop 
+          />
+        </div>
+        <div class="mail-content">
+          <span class="column sender">{{ mail.sender }}</span>
+          <span class="column subject">{{ mail.subject }}</span>
+          <span class="column time">{{ mail.time }}</span>
+        </div>
       </div>
 
-      <div class="mail-header">
-        <span class="column checkbox-col"></span>
-        <span class="column sender">发件人</span>
-        <span class="column subject">主题</span>
-        <span class="column time">保存时间</span>
-      </div>
-
-      <div class="list-content">
-        <div 
-          v-for="(mail, index) in paginatedDrafts" 
-          :key="mail.globalIndex" 
-          class="mail-item"
-          :class="{ 'unread': !mail.isRead }"
-        >
-          <div class="checkbox-container">
-            <input 
-              type="checkbox" 
-              v-model="selectedMails" 
-              :value="mail.globalIndex" 
-              class="item-checkbox" 
-            />
-          </div>
-          <div class="mail-content">
-            <span class="column sender">{{ mail.sender }}</span>
-            <span class="column subject">{{ mail.subject }}</span>
-            <span class="column time">{{ mail.time }}</span>
-          </div>
-        </div>
-
-        <div v-if="draftMails.length === 0" class="empty-message">
-          草稿箱暂无邮件
-        </div>
+      <div v-if="draftMails.length === 0" class="empty-message">
+        草稿箱暂无邮件
       </div>
     </div>
   </div>
@@ -164,134 +142,25 @@ export default {
     nextPage() {
       if (this.currentPage < this.totalPages) this.currentPage++;
     },
-    goToWrite() {
-      this.$router.push('/write');
-    },
-    goToMain() {
-      this.$router.push('/main');
-    },
-    goToDraft() {
-      // 保持当前页面
-    },
-    goToStarred() {
-      this.$router.push('/star');
+    editDraft(mail) {
+      console.log('编辑草稿:', mail);
+      // 这里可以跳转到写邮件页面，并且加载草稿内容
+      this.$router.push({
+        path: '/edit',
+        query: { 
+          draft: true,
+          id: mail.globalIndex 
+        }
+      });
     }
   }
 };
 </script>
 
 <style scoped>
-.main-page {
-  display: flex;
-  flex-direction: row;
-  height: 99vh;
-  width: 97vw;
-  background: #e6f2fb;
-  overflow: hidden;
-}
-
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 80px;
-  background: #fff;
-  border-bottom: 2px solid #cce2fa;
-  display: flex;
-  align-items: center;
-  z-index: 10;
-  padding: 0 48px;
-}
-
-.logo {
-  height: 60px;
-  margin-right: 32px;
-}
-
-.search-input {
-  flex-grow: 1;
-  padding: 14px;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  margin-right: 32px;
-  background: #f8faff;
-  font-size: 18px;
-}
-
-.account-btn {
-  padding: 14px 28px;
-  background: #f5f7fa;
-  color: #1f74c0;
-  border: 1px solid #cce2fa;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.left-nav {
-  margin-top: 80px;
-  width: 165px;
-  background: #e6f2fb;
-  border-right: 2px solid #cce2fa;
-  height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
-
-.nav-btn {
-  width: 100%;
-  padding: 10px 0;
-  text-align: center;
-  border: none;
-  background: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #1f74c0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.nav-group {
-  margin-top: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  padding: 8px 0;
-}
-
-.nav-sub-btn {
-  width: 100%;
-  padding: 8px 0;
-  text-align: center;
-  border: none;
-  background: none;
-  color: #1f74c0;
-  cursor: pointer;
-  margin-bottom: 3px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-sub-btn.active {
-  font-weight: bold;
-  background: #e6f2fb;
-  border-left: 4px solid #1f74c0;
-}
-
 .mail-list {
-  margin-top: 80px;
-  flex: 1;
-  background: #fff;
-  border-radius: 0 0 20px 20px;
-  margin-left: 0;
   padding: 20px 28px 28px 28px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 48px);
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   display: flex;
@@ -315,6 +184,10 @@ export default {
   font-size: 14px;
 }
 
+.list-btn:hover {
+  background: #e6f2fb;
+}
+
 .page-info {
   color: #666;
   margin-left: auto;
@@ -335,6 +208,11 @@ export default {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
+.list-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .mail-item {
   border: 1px solid #e6f2fb;
   margin-bottom: 12px;
@@ -345,6 +223,7 @@ export default {
   gap: 10px;
   padding: 12px 16px;
   transition: background-color 0.2s;
+  cursor: pointer;
 }
 
 .mail-item:hover {
@@ -367,6 +246,12 @@ export default {
   align-items: center;
   gap: 20px;
   width: 100%;
+}
+
+.column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .sender {
@@ -403,5 +288,14 @@ export default {
   margin: 0;
   width: 16px;
   height: 16px;
+}
+
+.unread {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.unread .subject {
+  font-weight: bold;
 }
 </style>

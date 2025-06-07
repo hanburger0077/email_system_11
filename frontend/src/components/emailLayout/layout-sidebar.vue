@@ -12,16 +12,43 @@
 
 <script setup>
 import { menuList } from './menuList';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 const activeIndex = ref(0);
 const router = useRouter();
+const route = useRoute();
 
 const handleClick = (item, index) => {
   console.log(item);
   activeIndex.value = index;
   router.push(item.link);
 };
+
+// 根据当前路由路径更新activeIndex
+const updateActiveIndex = (path) => {
+  const foundIndex = menuList.findIndex(item => {
+    // 检查当前路径是否匹配菜单项的链接
+    // 使用startsWith是为了处理带查询参数的路径
+    return path.startsWith(item.link);
+  });
+  
+  if (foundIndex !== -1) {
+    activeIndex.value = foundIndex;
+  }
+};
+
+// 监听路由变化，实时更新侧边栏高亮状态
+watch(
+  () => route.path,
+  (newPath) => {
+    updateActiveIndex(newPath);
+  }
+);
+
+// 组件挂载时，根据当前路径设置高亮
+onMounted(() => {
+  updateActiveIndex(route.path);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -54,8 +81,5 @@ const handleClick = (item, index) => {
     border-left: 4px solid #1f74c0;
   }
   }
-  
 }
-
-
 </style>

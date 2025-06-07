@@ -1,10 +1,10 @@
 package com.example.backend.controller;
 
 
-import com.example.backend.service.impl.MailServiceImpl;
-import jakarta.mail.MessagingException;
+import com.example.backend.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -12,11 +12,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class MailController {
 
     @Autowired
-    private MailServiceImpl mailService;
+    private MailService mailService;
 
     @RequestMapping("/send-mail")
-    public String sendMail(String to, String subject, String content) throws MessagingException {
-        mailService.sendMail(to, subject, content);
-        return "Email sent successfully!";
+    public String sendMail(
+            @RequestParam String to,
+            @RequestParam String subject,
+            @RequestParam String content,
+            @RequestParam(required = false) String attachmentName,
+            @RequestParam(required = false) byte[] attachmentContent) {
+        return mailService.sendMail(to, subject, content, attachmentName, attachmentContent);
+    }
+
+    @RequestMapping("/fetch-mail")
+    public String fetchMail(
+            @RequestParam long mailId){
+        return mailService.fetchMail(mailId);
     }
 }

@@ -1,9 +1,10 @@
 package com.example.backend.service;
 
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
 
 public interface MailService {
-    void sendMail(String to, String subject, String content) throws MessagingException;
-    void parseMail(Message message) throws Exception;
+
+    public String sendMail(String to, String subject, String content, String attachmentName, byte[] attachmentContent);
+
+    public String fetchMail(long mailId);
+
 }
