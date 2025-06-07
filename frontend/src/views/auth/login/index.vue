@@ -1,130 +1,104 @@
 <template>
-  <div class="main-container">
-    <h2 class="box-title">账号登录</h2>
-    <form>
-      <!-- 新增 v-model 绑定 -->
-      <input 
-        type="text" 
-        placeholder="邮箱账号" 
-        class="input" 
-        v-model="email" 
-      />
-      <input 
-        type="password" 
-        placeholder="输入密码" 
-        class="input" 
-        v-model="password" 
-      />
-      <button 
-        type="button"
-        class="btn-submit" 
-        @click="handleLogin"
-      >登录</button>
-      <p v-if="!email || !password" class="error">请填写完整账号和密码</p>
-    </form>
-    <p class="register-link" @click="goToRegister">注册新账号</p>
-  </div>
+  <LoginForm type="login">
+    <template #default>
+      <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
+        <el-form-item prop="username">
+          <el-input 
+            v-model="form.username"
+            type="email" 
+            placeholder="请输入邮箱账号" 
+            size="large"
+            clearable
+          />
+        </el-form-item> 
+        <el-form-item prop="password" >
+          <el-input 
+            v-model="form.password"
+            type="password" 
+            placeholder="请输入密码" 
+            size="large"
+            show-password
+            clearable
+          />
+        </el-form-item>
+        <el-form-item prop="protocol">
+          <div class="protocol">
+            <el-checkbox v-model="protocol">我已阅读并同意
+              <span class="email-link" @click="handleProtocol('serviceterm')">《服务条款》</span>
+              和
+              <span class="email-link" @click="handleProtocol('privacypolicy')">《隐私政策》</span></el-checkbox>
+          </div>
+        </el-form-item>
+        
+          <el-button 
+            class="email-button"
+            size="large"
+            :loading="loading"
+            @click="handleLogin"
+          >
+            登录
+          </el-button>
+      </el-form>
+    </template>
+  </LoginForm>
 </template>
 
 <script setup>
+import LoginForm from '../components/loginForm.vue'
+
+const form = ref({
+  username: '',
+  password: ''
+})
+
+const rules = ref({
+  username: [
+    { required: true, message: '请输入邮箱账号', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ],
+  protocol: [
+    { required: true, message: '请阅读并同意服务条款和隐私政策', trigger: 'blur' }
+  ]
+})
+
+const formRef = ref(null)
+const loading = ref(false)
+
+const handleProtocol = (type) => {
+  window.open(`${window.location.origin}/protocol/${type}`)
+}
+const handleLogin = async () => {
+  if (!formRef.value) return
+  
+  try {
+    // 验证表单
+    await formRef.value.validate()
+    
+    loading.value = true
+    console.log('login', form.value)
+    
+    // 这里添加登录逻辑
+    // await loginApi(form.value)
+    
+    // 登录成功后的处理
+    ElMessage.success('登录成功！')
+    
+  } catch (error) {
+    console.error('登录失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
-
-.error {
-  color: red;
-  font-size: 12px;
-  margin-top: 8px;
-  text-align: center;
+.protocol{
+  font-size: 10px;
+  height: 20px;
 }
 
-/* 全局填满并禁止滚动 */
-html, body, #app {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-}
-
-/* 右侧：登录框 */
-.login-box {
-  width: 90%;           /* 原来是70%，改大一点 */
-  max-width: 500px;     /* 原来是400px，改大一点 */
-  min-width: 350px;     /* 新增，防止太窄 */
-  padding: 2.5em;       /* 可适当加大 */
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.box-title {
-  font-size: 1.5em;
-  margin-bottom: 1em;
-  text-align: center;
-}
-
-.input {
-  width: 100%;
-  padding: 0.75em;
-  margin-bottom: 1em;
-  font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box; /* 新增，统一盒模型 */
-}
-
-.btn-submit {
-  display: block;
-  width: 100%; /* 新增，与输入框等宽 */
-  box-sizing: border-box; /* 新增，统一盒模型 */
-  padding: 0.75em;
-  font-size: 1em;
-  background-color: #005691;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.register-link {
-  margin-top: 1em;
-  text-align: center;
-  color: #666;
-  font-size: 0.9em;
-  cursor: pointer;
-}
-
-/* 底部横条 */
-.footer {
-  height: 6vh;
-  background-color: #005691;
-  flex-shrink: 0;
-}
-
-/* ✅ 响应式处理：适配小屏 */
-@media (max-width: 768px) {
-  .main-container {
-    flex-direction: column;
-    padding: 0 0 }
-
-  .left-section,
-  .right-section {
-    flex: none;
-    width: 100%;
-    padding: 2vh 0;
-  }
-
-  .bg-image {
-    width: 80%;
-  }
-
-  .title {
-    font-size: 6vw;
-  }
-
-  .login-box {
-    width: 90%;
-    padding: 1.5em;
-  }
-}
 </style>
