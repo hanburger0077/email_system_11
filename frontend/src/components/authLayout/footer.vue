@@ -1,7 +1,7 @@
 <template>
   <div class="layout-footer">
     <div class="layout-footer-inner">
-     （可选：） 组员信息：韩启慧
+     <!-- （可选：） 组员信息：韩启慧 -->
     </div>
   </div>
 </template>

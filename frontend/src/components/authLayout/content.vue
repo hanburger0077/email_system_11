@@ -28,7 +28,7 @@
     width: 100vw;
     justify-content: center;
     align-items: center;
-    background-color: #eee;
+    background-color: #fff;
     padding: 40px;
     gap: 60px;
     

@@ -1,6 +1,6 @@
 <template>
-  <div>
-
+  <div class="layout-wrapper">
+      <slot />
   </div>
 </template>
 
@@ -9,5 +9,4 @@
 </script>
 
 <style lang="scss" scoped>
-
 </style>

@@ -7,13 +7,14 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
 import { computed,  } from 'vue'
-import defaultLayout from '@/components/emailLayout/index.vue';
+import emailLayout from '@/components/emailLayout/index.vue';
 import authLayout from '@/components/authLayout/index.vue';
+import defaultLayout from '@/components/defaultLayout/index.vue';
 
 const route = useRoute();
-console.log(route.path);
 const layoutMap = {
   'auth': authLayout,
+  'service': defaultLayout,
 }
 
 const layoutComponent = computed(() => {

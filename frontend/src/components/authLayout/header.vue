@@ -6,7 +6,7 @@
         title="华南理工大学"
         class="layout-header-logo"
       />
-      <div class="right-title">十一组邮箱</div>
+      <!-- <div class="right-title">十一组邮箱</div> -->
     </div>
   </div>
 </template>

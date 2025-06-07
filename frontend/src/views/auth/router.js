@@ -14,8 +14,8 @@ export default [
     component: () => import('./login/index.vue')
   },
   {
-    path: '/auth/register', // 新增主页面路由
+    path: '/auth/register', 
     name: 'auth.register',
-    component: () => import('./register/index.vue') // 假设路径为 views/main/index.vue
+    component: () => import('./register/index.vue') 
   },
 ];
