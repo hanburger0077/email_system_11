@@ -3,7 +3,6 @@ package com.example.backend.controller;
 
 import com.example.backend.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,16 +24,9 @@ public class MailController {
         return mailService.sendMail(to, subject, content, attachmentName, attachmentContent);
     }
 
-    @RequestMapping("/fetch-mail/{mailId}")
+    @RequestMapping("/fetch-mail")
     public String fetchMail(
-            @PathVariable long mailId){
+            @RequestParam long mailId){
         return mailService.fetchMail(mailId);
-    }
-
-    @RequestMapping("/view-mail/{mailbox}/{pageNum}")
-    public String viewMailInbox(
-            @PathVariable String mailbox,
-            @PathVariable int pageNum){
-        return mailService.viewMail(mailbox, pageNum, 10);
     }
 }

@@ -1,4 +1,5 @@
-package com.example.backend.entity;
+package com.example.backend.vo;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Mail implements Serializable {
+public class MailVO  {
     private long mail_id;
     private long sender_id;
     private long receiver_id;

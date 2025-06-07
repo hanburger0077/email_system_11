@@ -157,10 +157,6 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
             mail.setContent(content.toString().replace("\r\n", ""));
         }
         mail.setCreate_at(LocalDateTime.now());
-        mail.setSender_sign((short) 0);
-        mail.setReceiver_sign((short) 0);
-        mail.setRead((short) 0);
-        mail.setStar((short) 0);
         mailMapper.insertMail(mail);
     }
 }

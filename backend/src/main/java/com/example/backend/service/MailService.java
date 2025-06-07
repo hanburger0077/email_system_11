@@ -7,5 +7,4 @@ public interface MailService {
 
     public String fetchMail(long mailId);
 
-    public String viewMail(String mailbox, int pageNum, int pageSize);
 }
