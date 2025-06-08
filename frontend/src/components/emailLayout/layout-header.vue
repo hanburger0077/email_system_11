@@ -3,9 +3,10 @@
     <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
     <div class="header-content">
       <el-input placeholder="邮箱搜索" class="search-input" />
-      <div class="header-right">
-        <div class="account-circle" @click="handleAccountClick">
+      <div class="header-right" @mouseleave="handleAccountMouseLeave">
+        <div class="account-circle" @click="handleAccountClick" @mouseenter="handleAccountMouseEnter">
           <span>账号</span>
+          <DropDown v-show="isMenuVisible" class="account-dropdown" />
         </div>
       </div>
     </div>
@@ -13,8 +14,26 @@
 </template>
 
 <script setup>
+import DropDown from './drop-down.vue';
+const isMenuVisible = ref(false)
 const handleAccountClick = () => {
   console.log('账号按钮点击');
+};
+
+const timer = ref(null)
+
+const handleAccountMouseEnter = () => {
+  console.log('账号按钮鼠标进入');
+  isMenuVisible.value = true
+  clearTimeout(timer.value)
+};
+
+const handleAccountMouseLeave = () => {
+  console.log('账号按钮鼠标离开');
+  clearTimeout(timer.value)
+  timer.value = setTimeout(() => {
+    isMenuVisible.value = false
+  }, 300)
 };
 </script>
 
@@ -80,13 +99,19 @@ const handleAccountClick = () => {
     background-color: #1a5f9e;
   }
 
-  &:active {
-    transform: scale(0.95);
-  }
+  // &:active {
+  //   transform: scale(0.95);
+  // }
   
   span {
     display: block; /* 确保文本显示 */
     line-height: 1; /* 设置行高 */
+  }
+  .account-dropdown{
+    position: absolute;
+    top: 36px;
+    right: 0px;
+    cursor: auto;
   }
 }
 </style>
