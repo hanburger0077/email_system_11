@@ -17,4 +17,9 @@ public class Mail implements Serializable {
     private String subject;
     private String content;
     private LocalDateTime create_at;
+    private short sender_sign;
+    private short receiver_sign;
+    private short read;
+    private short sender_star;
+    private short receiver_star;
 }

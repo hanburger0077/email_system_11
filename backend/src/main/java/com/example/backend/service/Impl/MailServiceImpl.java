@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 public class MailServiceImpl implements MailService {
@@ -72,6 +76,7 @@ public class MailServiceImpl implements MailService {
         }
     }
 
+
     public String fetchMail(long mailId) {
         try {
             this.imapClient.connect();
@@ -82,19 +87,75 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.loginCommand(userEmail, userPassword);
         } catch (InterruptedException e) {
+            imapClient.disconnect();
             throw new RuntimeException("Failed to send Login command", e);
         }
         MailDTO mailDTO;
         try {
-            mailDTO = imapClient.fetchCommand(mailId);
+            mailDTO = imapClient.fetchCommand("DETAIL", mailId);
+            String mailStr = "发件人：\t" + mailDTO.getSender_email() + "<br>"
+                    + "收件人：\t" + mailDTO.getReceiver_email() + "<br>"
+                    + "主题：\t" + mailDTO.getSubject() + "<br>"
+                    + "内容：\t" + mailDTO.getContent() + "<br>"
+                    + "时间：\t" + mailDTO.getCreate_at().toString();
+            return mailStr.replace("\n","<br>");
         } catch (InterruptedException e) {
             throw new RuntimeException("Failed to send FETCH command",e);
+        } finally {
+            imapClient.disconnect();
         }
-        String mailStr = "发件人：\t" + mailDTO.getSender_email() + "<br>"
-                        + "收件人：\t" + mailDTO.getReceiver_email() + "<br>"
-                        + "主题：\t" + mailDTO.getSubject() + "<br>"
-                        + "内容：\t" + mailDTO.getContent() + "<br>"
-                        + "时间：\t" + mailDTO.getCreate_at().toString();
-        return mailStr.replace("\n","<br>");
+    }
+
+
+    public String viewMail(String mailbox, int pageNum, int pageSize){
+        List<Long> mailId = null;
+        List<MailDTO> mails = null;
+        try {
+            this.imapClient.connect();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to connect to IMAP server", e);
+        }
+        try {
+            imapClient.loginCommand(userEmail, userPassword);
+        } catch (InterruptedException e) {
+            imapClient.disconnect();
+            throw new RuntimeException("Failed to send Login command", e);
+        }
+        try {
+            imapClient.selectCommand(mailbox);
+        } catch (InterruptedException e) {
+            imapClient.disconnect();
+            throw new RuntimeException("Failed to send SELECT command", e);
+        }
+        try {
+            mailId = imapClient.searchCommand(null, null, null, null, null, null, false, false);
+        } catch (InterruptedException e) {
+            imapClient.disconnect();
+            throw new RuntimeException("Failed to send SEARCH command", e);
+        }
+        try {
+            if(mailId != null) {
+                mails = new ArrayList<>();
+                for(long id : mailId) {
+                    System.out.println(id);
+                    mails.add(imapClient.fetchCommand("SIMPLE", id));
+                }
+            }
+            StringBuffer s = new StringBuffer("");
+            for(MailDTO mailDTO : mails) {
+                s.append(mailDTO.getSender_email()).append("&ensp;&ensp;")
+                        .append(mailDTO.getReceiver_email()).append("&ensp;&ensp;")
+                        .append(mailDTO.getSubject()).append("&ensp;&ensp;")
+                        .append(mailDTO.getContent()).append("……&ensp;&ensp;")
+                        .append(mailDTO.getCreate_at().toString()).append("    ")
+                        .append("<a href=\"/fetch-mail/" + mailDTO.getMail_id() + "\">详情</a>").append("<br>");
+            }
+            return s.toString();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Failed to send SEARCH command", e);
+        } finally {
+            imapClient.disconnect();
+        }
     }
 }

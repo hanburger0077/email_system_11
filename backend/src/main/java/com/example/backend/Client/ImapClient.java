@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class ImapClient {
@@ -59,10 +61,10 @@ public class ImapClient {
         }
     }
 
-    public MailDTO fetchCommand(long mailId) throws InterruptedException {
+    public MailDTO fetchCommand(String DorS, long mailId) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
-            String response = handler.sendCommand(channel, "FETCH " + mailId);
+            String response = handler.sendCommand(channel, "FETCH "+ DorS + " " + mailId);
             // 解析响应
             return parseFetchResponse(response, mailId);
         }
@@ -80,10 +82,16 @@ public class ImapClient {
         int getCount = 0;
         int contentLength = 0;
 
+        System.out.println();
+
         for (String line : lines) {
-            if (line.startsWith("* " + mailId + " FETCH (BODY[] {")) {
+            if (line.startsWith("* " + mailId + " FETCH (DATA[] {")) {
                 // Extract content length (optional, if needed for validation)
                 contentLength = Integer.parseInt(line.split("\\{")[1].split("}")[0]);
+            } else if (line.startsWith("ID ")) {
+                buffer = line.substring(3);
+                getCount += buffer.length();
+                mailDTO.setMail_id(Long.parseLong(buffer));
             } else if (line.startsWith("FROM ")) {
                 buffer = line.substring(5);
                 getCount += buffer.length();
@@ -100,7 +108,15 @@ public class ImapClient {
                 buffer = line.substring(5);
                 getCount += buffer.length();
                 mailDTO.setCreate_at(LocalDateTime.parse(buffer));
-            } else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
+            } else if (line.startsWith("READ ")) {
+                buffer = line.substring(5);
+                getCount += buffer.length();
+                mailDTO.setRead(Short.parseShort(buffer));
+            } else if (line.startsWith("STAR ")) {
+                buffer = line.substring(5);
+                getCount += buffer.length();
+                mailDTO.setSender_star(Short.parseShort(buffer));
+            }else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
                 // Assume this is part of the email content
                 if (content == null) {
                     content = line;
@@ -121,13 +137,101 @@ public class ImapClient {
 
         // 打印解析结果
         System.out.println("Parsed Mail Info:");
+        System.out.println("Id: " + mailDTO.getMail_id());
         System.out.println("Sender: " + mailDTO.getSender_email());
         System.out.println("Receiver: " + mailDTO.getReceiver_email());
         System.out.println("Subject: " + mailDTO.getSubject());
         System.out.println("Date: " + mailDTO.getCreate_at());
         System.out.println("Content: " + mailDTO.getContent());
-
+        System.out.println("READ: " + mailDTO.getRead());
+        System.out.println("STAR: " + mailDTO.getSender_star());
         return mailDTO;
+    }
+
+    public void selectCommand(String mailbox) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            // 发送 SELECT 命令并等待响应
+            String response = handler.sendCommand(channel, "SELECT " + mailbox);
+            String[] lines= response.split("\r\n");
+            for(String line : lines) {
+                System.out.println("IMAP return：" + line);
+            }
+        }
+    }
+
+    public List<Long> searchCommand(String from, String to, String subject, String body, LocalDateTime since, String unseen, boolean sender_star, boolean receiver_star) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            StringBuffer command = new StringBuffer("SEARCH");
+            int count = 0;
+            if (from != null){
+                command.append(" FROM:").append(from);
+                count++;
+            }
+            if (to != null){
+                command.append(" TO:").append(to);
+                count++;
+            }
+            if (subject != null){
+                command.append(" SUBJECT:").append(subject);
+                count++;
+            }
+            if (body != null){
+                command.append(" BODY:").append(body);
+                count++;
+            }
+            if (since != null){
+                command.append(" SINCE:").append(since);
+                count++;
+            }
+            //unseen 标签为 1 时取未读，为 2 时取已读，其他情况都取
+            if (unseen == "UNSEEN"){
+                command.append(" UNSEEN");
+                count++;
+            }
+            else if(unseen == "SEEN") {
+                command.append(" SEEN");
+                count++;
+            }
+            if (sender_star){
+                command.append(" S_STAR");
+                count++;
+            }
+            if (receiver_star){
+                command.append(" R_STAR");
+                count++;
+            }
+            if(count == 0){
+                command.append(" ALL");
+            }
+            // 发送 SEARCH 命令并等待响应
+            String response = handler.sendCommand(channel, command.toString());
+            String[] lines= response.split("\r\n");
+            List<Long> mailId = null;
+            if(lines.length == 1) {
+                System.out.println("IMAP return: " + lines[0]);
+            }
+            else {
+                if (lines[0].startsWith("* SEARCH ")) {
+                    System.out.println("IMAP return: " + lines[0]);
+                    mailId = new ArrayList<>();
+                    String[] ids = lines[0].substring(9).split(" ");
+                    for(String id : ids) {
+                        mailId.add(Long.parseLong(id));
+                    }
+
+                }
+                else {
+                    System.out.println("SEARCH FAILED");
+                }
+                System.out.println("IMAP return: " + lines[1]);
+            }
+            return mailId;
+        }
+        else {
+            return null;
+        }
     }
 
     public void disconnect() {
