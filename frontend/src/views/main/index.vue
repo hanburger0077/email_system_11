@@ -1,19 +1,115 @@
 <template>
   <div class="mail-list">
-    <div class="list-header">
-      <input type="checkbox" v-model="allSelected" @change="toggleSelectAll" class="header-checkbox" />
-      <button class="list-btn" @click="deleteSelected">删除选中</button>
-      <div class="mark-dropdown">
-        <button class="list-btn" @click="showMarkDropdown = !showMarkDropdown">标记为...</button>
-        <div v-show="showMarkDropdown" class="dropdown-content" @click.self="showMarkDropdown = false">
-          <button @click="markSelectedAsStarred">星标邮件</button>
-          <button @click="unmarkSelectedAsStarred">取消星标</button>
+    <div class="mail-toolbar">
+      <div class="toolbar-left">
+        <el-checkbox 
+          v-model="allSelected" 
+          @change="toggleSelectAll" 
+          class="select-all-checkbox" 
+        />
+
+        <el-button  
+          :disabled="selectedMails.length === 0"
+          @click="deleteSelected"
+          class="delete-button"
+        >
+          删除
+        </el-button>
+
+        <el-tooltip 
+          content="标为已读"
+          placement="bottom"
+        >
+          <el-button 
+            @click="markAsRead"
+            :disabled="selectedMails.length === 0"
+            class="mark-button"
+          >
+            <img 
+              :src="mark1Icon" 
+              class="mark-icon"
+              alt="标为已读"
+            />
+          </el-button>
+        </el-tooltip>
+
+        <el-tooltip 
+          content="标为未读"
+          placement="bottom"
+        >
+          <el-button 
+            @click="markAsUnread"
+            :disabled="selectedMails.length === 0"
+            class="mark-button"
+          >
+            <img 
+              :src="mark2Icon" 
+              class="mark-icon"
+              alt="标为未读"
+            />
+          </el-button>
+        </el-tooltip>
+
+        <el-dropdown @command="handleMarkCommand" :disabled="selectedMails.length === 0">
+          <el-button 
+            class="mark-more-button" 
+            :disabled="selectedMails.length === 0"
+          >
+            更多标记 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="star" class="dropdown-item">
+                <i class="star-icon starred">★</i>
+                <span>星标邮件</span>
+              </el-dropdown-item>
+              <el-dropdown-item command="unstar" class="dropdown-item">
+                <i class="star-icon">☆</i>
+                <span>取消星标</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
+        <el-tooltip content="刷新" placement="bottom">
+          <el-button 
+            class="refresh-button" 
+            @click="handleReceive"
+          >
+            <img :src="mark3Icon" class="refresh-icon" alt="刷新" />
+          </el-button>
+        </el-tooltip>
+        
+        <el-tooltip content="全部删除" placement="bottom">
+          <el-button 
+            class="delete-all-button" 
+            @click="deleteAll"
+          >
+            全部删除
+          </el-button>
+        </el-tooltip>
+      </div>
+
+      <div class="toolbar-right">
+        <span class="mail-count">{{ mailList.length }} 封邮件</span>
+        <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
+        <div class="pagination-controls">
+          <el-button 
+            size="small" 
+            :disabled="currentPage === 1"
+            @click="prevPage"
+          >
+            上一页
+          </el-button>
+          <el-button 
+            size="small" 
+            :disabled="currentPage === totalPages"
+            @click="nextPage"
+          >
+            下一页
+          </el-button>
         </div>
       </div>
-      <button class="list-btn" @click="deleteAll">全部删除</button>
-      <span class="page-info">{{ currentPage }}/{{ totalPages }}页</span>
-      <button class="list-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
-      <button class="list-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
     </div>
 
     <div class="mail-header">
@@ -39,7 +135,7 @@
             :class="{ 'unread': !mail.isRead }"
           >
             <div class="checkbox-container">
-              <input type="checkbox" v-model="selectedMails" :value="mail.globalIndex" class="item-checkbox" />
+              <el-checkbox v-model="selectedMails" :value="mail.globalIndex" class="item-checkbox" />
             </div>
             <div class="mail-content" @click="openMail(mail)">
               <span class="column sender">{{ mail.sender }}</span>
@@ -63,10 +159,23 @@
 </template>
 
 <script>
+import { ArrowDown } from '@element-plus/icons-vue'
+import mark1Icon from './assets/mark1.png'
+import mark2Icon from './assets/mark2.png'
+import mark3Icon from './assets/mark3.png'
+import mark4Icon from './assets/mark4.png'
+
 export default {
   name: 'MainPage',
+  components: {
+    ArrowDown
+  },
   data() {
     return {
+      mark1Icon,
+      mark2Icon,
+      mark3Icon,
+      mark4Icon,
       currentPage: 1,
       itemsPerPage: 32,
       selectedMails: [],
@@ -238,25 +347,38 @@ export default {
     },
     handleReceive() {
       this.currentPage = 1;
-      alert('刷新成功，已获取最新邮件');
+      this.$message.success('刷新成功，已获取最新邮件');
     },
     deleteSelected() {
       if (this.selectedMails.length === 0) return;
-      if (confirm('确认删除选中的邮件吗？')) {
+      
+      this.$confirm('确认删除选中的邮件吗？', '提示', {
+        type: 'warning'
+      }).then(() => {
         this.mailList = this.mailList.filter((_, index) => !this.selectedMails.includes(index));
         this.selectedMails = [];
         this.allSelected = false;
         this.groupAndIndexMails();
-      }
+        this.$message.success('删除成功');
+      }).catch(() => {
+        // 取消删除操作
+      });
     },
     deleteAll() {
-      if (confirm('确认删除所有邮件吗？')) {
+      this.$confirm('确认删除所有邮件吗？', '警告', {
+        type: 'warning',
+        confirmButtonText: '确定删除',
+        confirmButtonClass: 'el-button--danger'
+      }).then(() => {
         this.mailList = [];
         this.selectedMails = [];
         this.allSelected = false;
         this.currentPage = 1;
         this.groupAndIndexMails();
-      }
+        this.$message.success('已删除所有邮件');
+      }).catch(() => {
+        // 取消删除操作
+      });
     },
     loadSavedMailsData() {
       // 从sessionStorage加载可能被修改过的邮件数据
@@ -313,7 +435,70 @@ export default {
       }
       this.groupAndIndexMails();
     },
+    markAsRead() {
+      if (this.selectedMails.length === 0) return;
+      
+      // 检查是否所有选中邮件都已经是已读状态
+      const allAlreadyRead = this.selectedMails.every(index => {
+        return this.mailList[index] && this.mailList[index].isRead;
+      });
+      
+      if (allAlreadyRead) {
+        this.$message({
+          message: '所选邮件已是已读状态',
+          type: 'info'
+        });
+        return;
+      }
+      
+      this.selectedMails.forEach(index => {
+        if (this.mailList[index]) {
+          this.mailList[index].isRead = true;
+        }
+      });
+      
+      sessionStorage.setItem('allMails', JSON.stringify(this.mailList));
+      this.groupAndIndexMails();
+      this.$message.success('已标记为已读');
+    },
+    markAsUnread() {
+      if (this.selectedMails.length === 0) return;
+      
+      // 检查是否所有选中邮件都已经是未读状态
+      const allAlreadyUnread = this.selectedMails.every(index => {
+        return this.mailList[index] && !this.mailList[index].isRead;
+      });
+      
+      if (allAlreadyUnread) {
+        this.$message({
+          message: '所选邮件已是未读状态',
+          type: 'info'
+        });
+        return;
+      }
+      
+      this.selectedMails.forEach(index => {
+        if (this.mailList[index]) {
+          this.mailList[index].isRead = false;
+        }
+      });
+      
+      sessionStorage.setItem('allMails', JSON.stringify(this.mailList));
+      this.groupAndIndexMails();
+      this.$message.success('已标记为未读');
+    },
+    handleMarkCommand(command) {
+      if (this.selectedMails.length === 0) return;
+      
+      if (command === 'star') {
+        this.markSelectedAsStarred();
+      } else if (command === 'unstar') {
+        this.unmarkSelectedAsStarred();
+      }
+    },
     markSelectedAsStarred() {
+      if (this.selectedMails.length === 0) return;
+      
       this.selectedMails.forEach(index => {
         if (this.mailList[index]) this.mailList[index].isStarred = true;
       });
@@ -322,9 +507,11 @@ export default {
       sessionStorage.setItem('allMails', JSON.stringify(this.mailList));
       
       this.groupAndIndexMails();
-      this.showMarkDropdown = false;
+      this.$message.success('已添加星标');
     },
     unmarkSelectedAsStarred() {
+      if (this.selectedMails.length === 0) return;
+      
       this.selectedMails.forEach(index => {
         if (this.mailList[index]) this.mailList[index].isStarred = false;
       });
@@ -333,7 +520,7 @@ export default {
       sessionStorage.setItem('allMails', JSON.stringify(this.mailList));
       
       this.groupAndIndexMails();
-      this.showMarkDropdown = false;
+      this.$message.success('已取消星标');
     }
   },
   watch: {
@@ -362,65 +549,233 @@ export default {
   flex-direction: column;
 }
 
-.list-header {
+.mail-toolbar {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e6f2fb;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  background: #f8faff;
   margin-bottom: 14px;
+  border-radius: 6px;
 }
 
-.list-btn {
-  padding: 4px 10px;
-  border: 1px solid #cce2fa;
-  background: #f5f7fa;
-  color: #1f74c0;
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-left > * {
+  margin: 0;
+}
+
+.select-all-checkbox {
+  margin-right: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+  color: #666;
+}
+
+/* 删除按钮样式 */
+/* 删除按钮样式 */
+.delete-button {
+  font-size: 14px;
+  border: 1px solid #dcdfe6;  
+  background: #fff;         
+  color: #606266;         
   border-radius: 4px;
   cursor: pointer;
+  height: 32px;
+  padding: 0 12px;
+  line-height: 30px;
+}
+
+.delete-button:hover {
+  background: #f5f7fa;        
+  border-color: #c6e2ff;      
+  color: #409eff;            
+}
+
+.delete-button:active {
+  background: #f5f7fa;        /* 改为普通点击背景 */
+  border-color: #3a8ee6;      /* 改为普通点击边框 */
+}
+
+.delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f7fa;
+}
+
+/* 更多标记按钮样式 */
+.mark-more-button {
+  font-size: 14px;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+  color: #606266;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 12px;
+  line-height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.mark-more-button:hover {
+  background: #f5f7fa;
+  color: #409eff;
+}
+
+.mark-more-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f7fa;
+}
+
+.delete-all-button {
+  padding: 0;
+  margin: 0;
+  width: 70px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #f56c6c;
+  background: #f56c6c;
+  color: white;
   font-size: 14px;
 }
 
-.list-btn:hover {
-  background: #e6f2fb;
+.delete-all-button:hover {
+  background: #f78989;
+  border-color: #f78989;
 }
 
-.mark-dropdown {
-  position: relative;
-  display: inline-block;
-  margin-right: 10px;
+.delete-all-button:active {
+  background: #e64242;
+  border-color: #e64242;
 }
 
-.dropdown-content {
-  position: absolute;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.mark-button {
+  padding: 0;
+  margin: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   border-radius: 4px;
-  z-index: 10;
-  min-width: 120px;
-  right: 0;
-  top: 100%;
-  margin-top: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dcdfe6;
+  background: #fff;
 }
 
-.dropdown-content button {
-  display: block;
+.mark-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mark-button:disabled .mark-icon {
+  filter: grayscale(100%);
+}
+
+.mark-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
   width: 100%;
-  padding: 8px 12px;
   text-align: left;
-  border: none;
-  background: none;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 14px;
+  padding: 8px 12px;
 }
 
-.dropdown-content button:hover {
-  background-color: #f5f7fa;
+.dropdown-item span {
+  margin-left: 8px;
+  flex-grow: 1;
+}
+
+.refresh-button {
+  padding: 0;
+  margin: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+}
+
+.refresh-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  display: block;
+}
+
+.star-icon {
+  margin-right: 8px;
+  color: #ccc;
+}
+
+.star-icon.starred {
+  color: #ffc107;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.mail-count {
+  font-size: 14px;
+  color: #666;
+  margin-right: 20px;
 }
 
 .page-info {
   color: #666;
-  margin-left: auto;
   margin-right: 8px;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.mail-header {
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 12px 0;
+  background-color: #f5f7fa;
+  font-weight: bold;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.mail-header .star-col {
+  min-width: 40px;
+  text-align: center;
 }
 
 .mail-group {
@@ -527,24 +882,6 @@ export default {
   color: #ffc107;
 }
 
-.mail-header {
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin: 12px 0;
-  background-color: #f5f7fa;
-  font-weight: bold;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.mail-header .star-col {
-  min-width: 40px;
-  text-align: center;
-}
-
 .empty-message {
   text-align: center;
   padding: 30px;
@@ -561,5 +898,32 @@ export default {
 .list-content {
   flex: 1;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .mail-toolbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .toolbar-left {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .sender {
+    min-width: 140px;
+  }
+
+  .time {
+    min-width: 100px;
+  }
 }
 </style>
