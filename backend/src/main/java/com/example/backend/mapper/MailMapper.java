@@ -30,4 +30,7 @@ public interface MailMapper {
 
     //根据邮件id返回邮件信息
     Mail selectByMailId(long mailId);
+
+    //修改邮件状态
+    void changeState(long mailId, String sign, String op);
 }

@@ -202,6 +202,19 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             response.append("\r\n");
             ctx.writeAndFlush(response.toString());
             ctx.writeAndFlush("1 OK SEARCH completed\r\n");
+        } else if (command.startsWith("STORE")) {
+            String[] items = command.split(" ");
+            if (items.length == 4) {
+                long mailId = Long.parseLong(items[1]);
+                String op = items[2];
+                String sign = items[3];
+                mailMapper.changeState(mailId, sign, op);
+                System.out.println(sign);
+                ctx.writeAndFlush("1 OK STORE completed\r\n");
+            }
+            else {
+                ctx.writeAndFlush("* BAD STORE command error\r\n");
+            }
         } else if (command.startsWith("IDLE")) {
             // Handle idle command
             // IDLE is a special command that waits for server notifications

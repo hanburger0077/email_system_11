@@ -104,13 +104,68 @@
             sender_sign,
             receiver_sign,
             `read`,
-            sender_star
+            sender_star,
             receiver_star
         FROM
             mail
         WHERE
             mail_id = #{mailId}
     </select>
+
+    <!-- 更新邮件状态 -->
+    <update id="changeState">
+        UPDATE
+            mail
+        SET
+            <if test="sign == 'READ'">
+                <if test="op == '+FLAG'">
+                    `read` = 1
+                </if>
+                <if test="op == '-FLAG'">
+                    `read` = 0
+                </if>
+                <if test="op == 'FLAGS'">
+                    <!-- 1为已读 0为未读 -->
+                    `read` = 1 - `read`
+                </if>
+            </if>
+            <if test="sign == 'S_STAR'">
+                <if test="op == '+FLAG'">
+                    sender_star = 1
+                </if>
+                <if test="op == '-FLAG'">
+                    sender_star = 0
+                </if>
+                <if test="op == 'FLAGS'">
+                    <!-- 1为已读 0为未读 -->
+                    sender_star = 1 - sender_star
+                </if>
+            </if>
+            <if test="sign == 'R_STAR'">
+                <if test="op == '+FLAG'">
+                    receiver_star = 1
+                </if>
+                <if test="op == '-FLAG'">
+                    receiver_star = 0
+                </if>
+                <if test="op == 'FLAGS'">
+                    <!-- 1为已读 0为未读 -->
+                    receiver_star = 1 - receiver_star
+                </if>
+            </if>
+            <if test="sign == 'TRASH'">
+                <if test="op == '+FLAG'">
+                    receiver_sign = 1,
+                    receiver_star = 0
+                </if>
+                <if test="op == '-FLAG'">
+                    receiver_sign = 0
+                </if>
+            </if>
+        WHERE
+            mail_id = #{mailId}
+    </update>
+
 
 
 
@@ -125,7 +180,8 @@
         <result property="sender_sign" column="sender_sign" javaType="short" jdbcType="TINYINT"/>
         <result property="receiver_sign" column="receiver_sign" javaType="short" jdbcType="TINYINT"/>
         <result property="read" column="read" javaType="short" jdbcType="TINYINT"/>
-        <result property="star" column="star" javaType="short" jdbcType="TINYINT"/>
+        <result property="sender_star" column="sender_star" javaType="short" jdbcType="TINYINT"/>
+        <result property="receiver_star" column="receiver_star" javaType="short" jdbcType="TINYINT"/>
     </resultMap>
 
 </mapper>

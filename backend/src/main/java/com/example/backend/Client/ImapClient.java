@@ -81,9 +81,6 @@ public class ImapClient {
         String buffer = null;
         int getCount = 0;
         int contentLength = 0;
-
-        System.out.println();
-
         for (String line : lines) {
             if (line.startsWith("* " + mailId + " FETCH (DATA[] {")) {
                 // Extract content length (optional, if needed for validation)
@@ -112,11 +109,15 @@ public class ImapClient {
                 buffer = line.substring(5);
                 getCount += buffer.length();
                 mailDTO.setRead(Short.parseShort(buffer));
-            } else if (line.startsWith("STAR ")) {
-                buffer = line.substring(5);
+            } else if (line.startsWith("S_STAR ")) {
+                buffer = line.substring(7);
                 getCount += buffer.length();
                 mailDTO.setSender_star(Short.parseShort(buffer));
-            }else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
+            } else if (line.startsWith("R_STAR ")) {
+                buffer = line.substring(7);
+                getCount += buffer.length();
+                mailDTO.setReceiver_star(Short.parseShort(buffer));
+            } else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
                 // Assume this is part of the email content
                 if (content == null) {
                     content = line;
@@ -144,7 +145,8 @@ public class ImapClient {
         System.out.println("Date: " + mailDTO.getCreate_at());
         System.out.println("Content: " + mailDTO.getContent());
         System.out.println("READ: " + mailDTO.getRead());
-        System.out.println("STAR: " + mailDTO.getSender_star());
+        System.out.println("S_STAR: " + mailDTO.getSender_star());
+        System.out.println("R_STAR: " + mailDTO.getReceiver_star());
         return mailDTO;
     }
 
@@ -185,14 +187,16 @@ public class ImapClient {
                 command.append(" SINCE:").append(since);
                 count++;
             }
-            //unseen 标签为 1 时取未读，为 2 时取已读，其他情况都取
-            if (unseen == "UNSEEN"){
-                command.append(" UNSEEN");
-                count++;
-            }
-            else if(unseen == "SEEN") {
-                command.append(" SEEN");
-                count++;
+            //已读和未读
+            if (unseen != null) {
+                if (unseen.equals("UNSEEN")){
+                    command.append(" UNSEEN");
+                    count++;
+                }
+                else if(unseen.equals("SEEN")) {
+                    command.append(" SEEN");
+                    count++;
+                }
             }
             if (sender_star){
                 command.append(" S_STAR");
@@ -233,6 +237,17 @@ public class ImapClient {
             return null;
         }
     }
+
+
+    public void storeCommand(long mailId, String sign, String op) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            // 发送 SELECT 命令并等待响应
+            String response = handler.sendCommand(channel, "STORE " + mailId + " " + op + " " + sign);
+            System.out.println(response);
+        }
+    }
+
 
     public void disconnect() {
         if (channel != null) {
