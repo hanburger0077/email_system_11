@@ -23,7 +23,7 @@
         </el-form-item>
         <el-form-item prop="protocol">
           <div class="protocol">
-            <el-checkbox v-model="protocol">我已阅读并同意
+            <el-checkbox v-model="form.protocol">我已阅读并同意
               <span class="email-link" @click="handleProtocol('serviceterm')">《服务条款》</span>
               和
               <span class="email-link" @click="handleProtocol('privacypolicy')">《隐私政策》</span></el-checkbox>
@@ -48,7 +48,8 @@ import LoginForm from '../components/loginForm.vue'
 
 const form = ref({
   username: '',
-  password: ''
+  password: '',
+  protocol: false,
 })
 
 const rules = ref({
@@ -61,7 +62,14 @@ const rules = ref({
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
   protocol: [
-    { required: true, message: '请阅读并同意服务条款和隐私政策', trigger: 'blur' }
+    {
+      validator: (rule, value, callback) => {
+        if (!value) {
+          return callback(new Error('请阅读并同意协议'));
+        }
+        return callback();
+      },
+    },
   ]
 })
 

@@ -160,7 +160,8 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         mail.setSender_sign((short) 0);
         mail.setReceiver_sign((short) 0);
         mail.setRead((short) 0);
-        mail.setStar((short) 0);
+        mail.setSender_star((short) 0);
+        mail.setReceiver_star((short) 0);
         mailMapper.insertMail(mail);
     }
 }

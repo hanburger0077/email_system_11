@@ -21,13 +21,13 @@
                 AND sender_id = #{senderId}
             </if>
             <if test="subject != null">
-                AND subject LIKE #{subject}
+                AND subject LIKE CONCAT('%', #{subject}, '%')
             </if>
             <if test="body != null">
-                AND content LIKE #{body}
+                AND content LIKE CONCAT('%', #{body}, '%')
             </if>
             <if test="since != null">
-                AND create_at BETWEEN #{create_at} AND NOW()
+                AND create_at BETWEEN #{since} AND NOW()
             </if>
             <if test="read != null">
                 <if test="read == 'UNSEEN'">
@@ -37,8 +37,8 @@
                     AND `read` = 1
                 </if>
             </if>
-            <if test="star != null">
-                AND star = 1
+            <if test="receiver_star != null">
+                AND receiver_star = 1
             </if>
         ORDER BY
             create_at
@@ -57,16 +57,16 @@
                 AND receiver_id = #{receiverId}
             </if>
             <if test="subject != null">
-                AND subject LIKE #{subject}
+                AND subject LIKE CONCAT('%', #{subject}, '%')
             </if>
             <if test="body != null">
-                AND content LIKE #{body}
+                AND content LIKE CONCAT('%', #{body}, '%')
             </if>
             <if test="since != null">
-                AND create_at BETWEEN #{create_at} AND NOW()
+                AND create_at BETWEEN #{since} AND NOW()
             </if>
-            <if test="star != null">
-                AND star = 1
+            <if test="sender_star != null">
+                AND sender_star = 1
             </if>
         ORDER BY
             create_at
@@ -104,7 +104,8 @@
             sender_sign,
             receiver_sign,
             `read`,
-            star
+            sender_star
+            receiver_star
         FROM
             mail
         WHERE

@@ -11,6 +11,7 @@ public class SmtpClientHandler extends SimpleChannelInboundHandler<String> {
     private String lastResponse;
 
     // 异步需要确保在发送每条命令后等待服务器的响应，然后再发送下一条命令。这种处理方式可以避免消息粘连问题
+    // SMTP服务器响应每次都是一行命令
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         lastResponse = msg;

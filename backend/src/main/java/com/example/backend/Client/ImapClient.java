@@ -13,7 +13,6 @@ import io.netty.util.CharsetUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.sql.SQLOutput;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,7 +115,7 @@ public class ImapClient {
             } else if (line.startsWith("STAR ")) {
                 buffer = line.substring(5);
                 getCount += buffer.length();
-                mailDTO.setStar(Short.parseShort(buffer));
+                mailDTO.setSender_star(Short.parseShort(buffer));
             }else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
                 // Assume this is part of the email content
                 if (content == null) {
@@ -145,7 +144,7 @@ public class ImapClient {
         System.out.println("Date: " + mailDTO.getCreate_at());
         System.out.println("Content: " + mailDTO.getContent());
         System.out.println("READ: " + mailDTO.getRead());
-        System.out.println("STAR: " + mailDTO.getStar());
+        System.out.println("STAR: " + mailDTO.getSender_star());
         return mailDTO;
     }
 
@@ -161,7 +160,7 @@ public class ImapClient {
         }
     }
 
-    public List<Long> searchCommand(String from, String to, String subject, String body, String since, short unseen, boolean star) throws InterruptedException {
+    public List<Long> searchCommand(String from, String to, String subject, String body, LocalDateTime since, String unseen, boolean sender_star, boolean receiver_star) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
             StringBuffer command = new StringBuffer("SEARCH");
@@ -187,16 +186,20 @@ public class ImapClient {
                 count++;
             }
             //unseen 标签为 1 时取未读，为 2 时取已读，其他情况都取
-            if (unseen == 1){
+            if (unseen == "UNSEEN"){
                 command.append(" UNSEEN");
                 count++;
             }
-            else if(unseen == 2) {
+            else if(unseen == "SEEN") {
                 command.append(" SEEN");
                 count++;
             }
-            if (star){
-                command.append(" STAR");
+            if (sender_star){
+                command.append(" S_STAR");
+                count++;
+            }
+            if (receiver_star){
+                command.append(" R_STAR");
                 count++;
             }
             if(count == 0){
@@ -206,13 +209,12 @@ public class ImapClient {
             String response = handler.sendCommand(channel, command.toString());
             String[] lines= response.split("\r\n");
             List<Long> mailId = null;
-            System.out.println(lines.length);
             if(lines.length == 1) {
-                System.out.println(lines[0]);
+                System.out.println("IMAP return: " + lines[0]);
             }
             else {
                 if (lines[0].startsWith("* SEARCH ")) {
-                    System.out.println(lines[0]);
+                    System.out.println("IMAP return: " + lines[0]);
                     mailId = new ArrayList<>();
                     String[] ids = lines[0].substring(9).split(" ");
                     for(String id : ids) {
@@ -223,7 +225,7 @@ public class ImapClient {
                 else {
                     System.out.println("SEARCH FAILED");
                 }
-                System.out.println(lines[1]);
+                System.out.println("IMAP return: " + lines[1]);
             }
             return mailId;
         }

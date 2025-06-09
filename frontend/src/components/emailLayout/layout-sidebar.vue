@@ -1,19 +1,29 @@
 <template>
-  <div class="email-layout-sidebar">
-    <div v-for="(item, index) in menuList"  :key="item.text"
-      class="item-container" :class="{ active: activeIndex === index }"
-      @click="handleClick(item, index)"
-    >
-      <div v-if="item.icon" class="item-icon"></div>
-      <div class="item-text" >{{ item.text }}</div>
+  <div class="email-layout-sidebar" >
+    <div v-if="!isInfo" class="sidebar-content">
+      <div v-for="(item, index) in menuList"  :key="item.text"
+        class="item-container" :class="{ active: activeIndex === index }"
+        @click="handleClick(item, index)"
+      >
+        <div v-if="item.icon" class="item-icon"></div>
+        <div class="item-text" >{{ item.text }}</div>
+      </div>
+    </div>
+    <div class="email-layout-sidebar" v-else>
+      <div class="item-container">
+        <div class="item-text">个人资料卡</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { menuList } from './menuList';
-import { ref, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+
+const isInfo = computed(() => {
+  return route.path === '/info';
+});
+
 const activeIndex = ref(0);
 const router = useRouter();
 const route = useRoute();

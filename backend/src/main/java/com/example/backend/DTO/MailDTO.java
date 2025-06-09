@@ -24,7 +24,8 @@ public class MailDTO {
     private short sender_sign;
     private short receiver_sign;
     private short read;
-    private short star;
+    private short sender_star;
+    private short receiver_star;
 
 
     public MailDTO (Mail mail, UserMapper userMapper) {
@@ -39,7 +40,8 @@ public class MailDTO {
         sender_sign = mail.getSender_sign();
         receiver_sign = mail.getReceiver_sign();
         read = mail.getRead();
-        star = mail.getStar();
+        sender_star = mail.getSender_star();
+        receiver_star = mail.getReceiver_star();
     }
 
     public String getMailDetail() {
@@ -51,7 +53,8 @@ public class MailDTO {
         s.append("SUBJECT ").append(subject).append("\r\n");
         s.append("DATE ").append(create_at.toString()).append("\r\n");
         s.append("READ ").append(read).append("\r\n");
-        s.append("STAR ").append(star);
+        s.append("S_STAR ").append(sender_star).append("\r\n");
+        s.append("R_STAR ").append(receiver_star);
         return s.toString();
     }
 
@@ -64,7 +67,8 @@ public class MailDTO {
         length += content.length();
         length += create_at.toString().length();
         length += String.valueOf(read).length();
-        length += String.valueOf(star).length();
+        length += String.valueOf(sender_star).length();
+        length += String.valueOf(receiver_star).length();
         return length;
     }
 
@@ -77,7 +81,8 @@ public class MailDTO {
         s.append("SUBJECT ").append(subject).append("\r\n");
         s.append("DATE ").append(create_at.toString()).append("\r\n");
         s.append("READ ").append(read).append("\r\n");
-        s.append("STAR ").append(star);
+        s.append("S_STAR ").append(sender_star).append("\r\n");
+        s.append("R_STAR ").append(receiver_star);
         return s.toString();
     }
 
@@ -90,7 +95,8 @@ public class MailDTO {
         length += Math.min(content.length(),20);
         length += create_at.toString().length();
         length += String.valueOf(read).length();
-        length += String.valueOf(star).length();
+        length += String.valueOf(sender_star).length();
+        length += String.valueOf(receiver_star).length();
         return length;
     }
 }

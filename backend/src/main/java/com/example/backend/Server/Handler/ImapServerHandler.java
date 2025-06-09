@@ -96,7 +96,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
                     break;
                 // 处理其他文件夹...
                 default:
-                    ctx.writeAndFlush("A NO [TRYCREATE] Folder doesn't exist\r\n");
+                    ctx.writeAndFlush("* BAD [TRYCREATE] Folder doesn't exist\r\n");
                     return;
             }
             ctx.writeAndFlush("* " + count +" EXISTS\r\n");
@@ -152,7 +152,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
                 String body = null;
                 LocalDateTime since = null;
                 String read = null;
-                String star = null;
+                String sender_star = null;
+                String receiver_star = null;
                 for (String item : items) {
                     if (item.startsWith("FROM:")) {
                         from = item.substring(5);
@@ -170,21 +171,24 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
                     if (item.startsWith("BODY:")) {
                         body = item.substring(5);
                     }
-                    if (item.startsWith("DATE:")) {
-                        since = LocalDateTime.parse(item.substring(5));
+                    if (item.startsWith("SINCE:")) {
+                        since = LocalDateTime.parse(item.substring(6));
                     }
                     if (item.equals("UNSEEN") || item.equals("SEEN")){
                         read = item;
                     }
-                    if (item.equals("STAR")){
-                        star = item;
+                    if (item.equals("S_STAR")){
+                        sender_star = item;
+                    }
+                    if (item.equals("R_STAR")){
+                        receiver_star = item;
                     }
                 }
                 if (mailbox.equals("INBOX") || mailbox.equals("TRASH") || mailbox.equals("JUNK")) {
-                    mailId = mailMapper.selectByReceiverIdWithSign(userId, senderId, subject, body, since, receiver_sign, read, star);
+                    mailId = mailMapper.selectByReceiverIdWithSign(userId, senderId, subject, body, since, receiver_sign, read, receiver_star);
                 }
                 else if (mailbox.equals("SENT") || mailbox.equals("DRAFT")) {
-                    mailId = mailMapper.selectBySenderIdWithSign(userId, receiverId, subject, body, since, sender_sign, star);
+                    mailId = mailMapper.selectBySenderIdWithSign(userId, receiverId, subject, body, since, sender_sign, sender_star);
                 }
                 else {
                     ctx.writeAndFlush("* BAD SEARCH failed because mailbox does not existing\r\n");
