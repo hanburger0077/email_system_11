@@ -10,12 +10,20 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 
 @Component
 public class ImapClient {
@@ -24,6 +32,12 @@ public class ImapClient {
     private final int port;
     private Channel channel;
     private EventLoopGroup group;
+    private ScheduledExecutorService scheduler;
+    int HEARTBEAT_period = 30;
+
+    @Setter
+    private SseEmitter sseEmitter;
+
 
     public ImapClient(
             @Value("${server.imap.host}") String host,
@@ -44,7 +58,13 @@ public class ImapClient {
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8));
                         pipeline.addLast(new StringEncoder(CharsetUtil.UTF_8));
-                        pipeline.addLast(new ImapClientHandler());
+                        ImapClientHandler handler = new ImapClientHandler();
+                        // 设置事件回调
+                        handler.setEventCallback(event -> {
+                            handleNewMailEvent(event);
+                        });
+
+                        pipeline.addLast(handler);
                     }
                 });
 
@@ -52,14 +72,45 @@ public class ImapClient {
         channel = future.channel();
     }
 
+
+    public void disconnect() {
+        // 停止心跳
+        //stopHeartbeat();
+        if (channel != null) {
+            channel.close();
+        }
+        if (group != null) {
+            group.shutdownGracefully();
+        }
+    }
+
+
+    // 处理新邮件事件
+    private void handleNewMailEvent(String event) {
+        System.out.println("New mail event received: " + event);
+        // 通过SSE发送事件给客户端
+        if (sseEmitter != null) {
+            try {
+                String message = "New mail arrived: " + event;
+                sseEmitter.send(message, MediaType.TEXT_EVENT_STREAM);
+            } catch (IOException e) {
+                sseEmitter.completeWithError(e);
+            }
+        }
+    }
+
+
     public void loginCommand(String userEmail, String password) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
             // 发送 Login 命令并等待响应
-            String response = handler.sendCommand(channel, "Login " + userEmail + " " + password);
+            String response = handler.sendCommand(channel, "LOGIN " + userEmail + " " + password);
             System.out.println("IMAP return：" + response);
         }
+        // 启动心跳机制
+        //startHeartbeat();
     }
+
 
     public MailDTO fetchCommand(String DorS, long mailId) throws InterruptedException {
         if (channel != null && channel.isActive()) {
@@ -150,6 +201,7 @@ public class ImapClient {
         return mailDTO;
     }
 
+
     public void selectCommand(String mailbox) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
@@ -161,6 +213,7 @@ public class ImapClient {
             }
         }
     }
+
 
     public List<Long> searchCommand(String from, String to, String subject, String body, LocalDateTime since, String unseen, boolean sender_star, boolean receiver_star) throws InterruptedException {
         if (channel != null && channel.isActive()) {
@@ -249,12 +302,75 @@ public class ImapClient {
     }
 
 
-    public void disconnect() {
-        if (channel != null) {
-            channel.close();
+    public void idleCommand() throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String response = handler.sendCommand(channel, "IDLE");
+            System.out.println("IMAP return：" + response);
         }
-        if (group != null) {
-            group.shutdownGracefully();
+    }
+
+
+    public void deleteCommand(long mailId) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String response = handler.sendCommand(channel, "DELETE " + mailId);
+            System.out.println("IMAP return：" + response);
+        }
+    }
+
+
+    public void draftCommand(long mailId, String from, String to, String subject, String content) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String command = "DRAFT\r\n"
+                            + from + "\r\n"
+                            + to + "\r\n"
+                            + subject + "\r\n"
+                            + content + "\r\n"
+                            + mailId;
+            String response = handler.sendCommand(channel, command);
+            System.out.println("IMAP return：" + response);
+        }
+    }
+
+
+    public void sendEvent(String event) {
+        if (sseEmitter != null) {
+            try {
+                sseEmitter.send(event, MediaType.TEXT_EVENT_STREAM);
+            } catch (IOException e) {
+                sseEmitter.completeWithError(e);
+            }
+        }
+    }
+
+
+    //心跳机制，在超时时间之前发布心跳
+    public void startHeartbeat() {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                sendNoop();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Heartbeat interrupted: " + e.getMessage());
+            }
+        }, 0, HEARTBEAT_period, TimeUnit.SECONDS);
+    }
+
+
+    public void stopHeartbeat() {
+        if (scheduler != null) {
+            scheduler.shutdown();
+        }
+    }
+
+    public void sendNoop() throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String response = handler.sendCommand(channel, "NOOP");
+            System.out.println("NOOP response: " + response);
         }
     }
 }

@@ -33,4 +33,16 @@ public interface MailMapper {
 
     //修改邮件状态
     void changeState(long mailId, String sign, String op);
+
+    //新邮件获取
+    int checkNewMail(long userId, LocalDateTime lastCheckTime);
+
+    //删除邮件
+    int deleteMail(long mailId);
+
+    //设置删除标签
+    void setDeleteSign(long mailId, String SorR);
+
+    //草稿的修改
+    void draftChange(Mail mail);
 }

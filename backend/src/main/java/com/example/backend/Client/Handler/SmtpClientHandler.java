@@ -1,5 +1,6 @@
 package com.example.backend.Client.Handler;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -21,9 +22,9 @@ public class SmtpClientHandler extends SimpleChannelInboundHandler<String> {
         }
     }
 
-    public String sendCommand(Channel channel, String command) throws InterruptedException {
+    public String sendMessage(Channel channel, String msg) throws InterruptedException {
         latch = new CountDownLatch(1);
-        channel.writeAndFlush(command + "\r\n");
+        channel.writeAndFlush(msg);
         //异步处理
         latch.await(); // 等待响应
         return lastResponse;

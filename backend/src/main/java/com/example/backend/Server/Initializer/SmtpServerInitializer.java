@@ -20,7 +20,7 @@ public class SmtpServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final ApplicationContext applicationContext;
 
-    private final int READER_IDLE_TIMEOUT = 5;
+    private final int READER_IDLE_TIMEOUT = 60;
 
     @Autowired
     public SmtpServerInitializer(ApplicationContext applicationContext) {

@@ -2,19 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Email System</title>
 </head>
 <body>
-<form action="/send-mail">
-    to:<input type="text" name="to" >  <br>
-    subject:<input type="text" name="subject"> <br>
-    content:<input type="text" name="content"> <br>
-    <input type="submit" >
+<h1>Email System</h1>
+
+<form id="sendMailForm" action="/api/mail/send" method="post" enctype="multipart/form-data">
+    <div>
+        <label for="to">To:</label>
+        <input type="email" id="to" name="to" required>
+    </div>
+    <div>
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required>
+    </div>
+    <div>
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" rows="4" cols="50" required></textarea>
+    </div>
+    <div>
+        <label for="attachments">Attachments:</label>
+        <input type="file" id="attachments" name="attachmentFiles" multiple required="">
+    </div>
+    <button type="submit">Send Email</button>
 </form>
 
-<form action="/fetch-mail">
-    mailId:<input type="number" name="mailId" >  <br>
-    <input type="submit" >
+<script>
+    // 如果有任何JavaScript代码，请确保它不会在未选择文件时设置文件输入的值
+    document.getElementById('sendMailForm').addEventListener('submit', function(event) {
+        // 可以在这里添加调试信息，查看文件输入的状态
+        const fileInput = document.getElementById('attachments');
+        if (fileInput.files.length === 0) {
+            console.log("No files selected.");
+        } else {
+            console.log("Files selected: ", fileInput.files.length);
+        }
+    });
+</script>
+
+<form action="/api/mail/drafts" method="post">
+    <div>
+        <label for="to">To:</label>
+        <input type="text" id="to" name="to" required>
+    </div>
+    <div>
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required>
+    </div>
+    <div>
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" rows="4" cols="50" required></textarea>
+    </div>
+    <div>
+        <input type="submit" value="保存">
+    </div>
 </form>
+
+<form action="/api/mail/drafts/20" method="post">
+    <div>
+        <label for="to">To:</label>
+        <input type="text" id="to" name="to" required>
+    </div>
+    <div>
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required>
+    </div>
+    <div>
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" rows="4" cols="50" required></textarea>
+    </div>
+    <div>
+        <input type="submit" value="草稿更新测试">
+    </div>
+</form>
+
+<div>
+    <a href="/api/mail/INBOX/pages/1">
+        <button type="button">收件箱</button>
+    </a>
+</div>
+
+<div>
+    <a href="/api/mail/SENT/pages/1">
+        <button type="button">已发送</button>
+    </a>
+</div>
+<div>
+    <a href="/api/mail/DRAFT/pages/1">
+        <button type="button">草稿</button>
+    </a>
+</div>
+
+<div>
+    <a href="/api/mail/TRASH/pages/1">
+        <button type="button">回收站</button>
+    </a>
+</div>
+
+<div>
+    <a href="/api/mail/JUNK/pages/1">
+        <button type="button">垃圾箱</button>
+    </a>
+</div>
+
+
+
 </body>
 </html>

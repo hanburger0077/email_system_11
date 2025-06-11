@@ -20,7 +20,7 @@ public class ImapServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final ApplicationContext applicationContext;
 
-    private final int READER_IDLE_TIMEOUT = 5;
+    private final int READER_IDLE_TIMEOUT = 5 * 60;
 
     @Autowired
     public ImapServerInitializer(ApplicationContext applicationContext) {
@@ -37,11 +37,12 @@ public class ImapServerInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new ChannelInboundHandlerAdapter() {
                              @Override
                              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                                 if (evt instanceof IdleStateEvent) {
-                                     IdleStateEvent e = (IdleStateEvent) evt;
-                                     if (e.state() == IdleState.READER_IDLE) {
-                                         System.out.println("No data received for " + READER_IDLE_TIMEOUT + " seconds, closing connection.");
-                                         ctx.close(); // 关闭连接
+                                 if (evt instanceof io.netty.handler.timeout.IdleStateEvent) {
+                                     io.netty.handler.timeout.IdleStateEvent e = (io.netty.handler.timeout.IdleStateEvent) evt;
+                                     if (e.state() == io.netty.handler.timeout.IdleState.READER_IDLE) {
+                                         System.out.println("Idle timeout, closing connection");
+                                         pipeline.get(ImapServerHandler.class).clearAndClose(ctx);
+                                         ctx.close();
                                      }
                                  }
                              }

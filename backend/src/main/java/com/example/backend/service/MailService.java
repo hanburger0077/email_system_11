@@ -1,11 +1,18 @@
 package com.example.backend.service;
 
 
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface MailService {
-
-    public String sendMail(String to, String subject, String content, String attachmentName, byte[] attachmentContent);
+    //
+    SseEmitter streamEmails();
+    //
+    public String sendMail(String to, String subject, String content, List<MultipartFile> attachmentFiles);
     //
     public String fetchMail(long mailId, String mailbox);
 
@@ -15,4 +22,7 @@ public interface MailService {
 
     public void changeMail(long mailId, String sign, String op);
 
+    public void deleteMail(long mailId);
+
+    public void draft(long mailId, String to, String subject, String content);
 }

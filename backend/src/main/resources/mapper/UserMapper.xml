@@ -37,4 +37,12 @@
         UPDATE user SET phone = #{phone} WHERE email = #{email}
     </update>
 
+    <select id="findById" resultMap="UserResultMap">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <select id="authenticate" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM user WHERE email = #{email} AND password = #{password}
+    </select>
+
 </mapper>

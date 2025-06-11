@@ -15,7 +15,7 @@
             mail
         WHERE
             receiver_id = #{userId}
-            AND sender_sign = 0
+            AND (sender_sign = 0 OR sender_sign = 2)
             AND receiver_sign = #{receiver_sign}
             <if test="senderId != 0">
                 AND sender_id = #{senderId}
@@ -79,7 +79,7 @@
             mail
         WHERE
             receiver_id = #{userId}
-            AND sender_sign = 0
+            AND (sender_sign = 0 OR sender_sign = 2)
             AND receiver_sign = #{receiver_sign}
     </select>
 
@@ -167,6 +167,51 @@
     </update>
 
 
+    <select id="checkNewMail" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            mail
+        WHERE
+            receiver_id = #{userId}
+            AND `read` = 0
+            AND create_at BETWEEN #{lastCheckTime} AND NOW()
+    </select>
+
+
+    <!-- 彻底删除邮件 -->
+    <delete id="deleteMail" parameterType="long">
+        DELETE FROM mail
+        WHERE mail_id = #{mailId}
+    </delete>
+
+    <!-- 设置删除标签，使邮件不可见 -->
+    <update id="setDeleteSign">
+        UPDATE
+            mail
+        SET
+        <if test="SorR == 'sender'">
+            sender_sign = 2
+        </if>
+        <if test="SorR == 'receiver'">
+            receiver_sign = 3
+        </if>
+        WHERE
+            mail_id = #{mailId}
+    </update>
+
+    <!-- 草稿的修改 -->
+    <update id="draftChange" parameterType="com.example.backend.entity.Mail">
+        UPDATE
+            mail
+        SET
+            receiver_id = #{receiver_id},
+            subject = #{subject},
+            content = #{content}
+        WHERE
+            mail_id = #{mail_id}
+            AND sender_sign = 1
+    </update>
 
 
     <!-- 定义结果映射 -->
@@ -183,5 +228,4 @@
         <result property="sender_star" column="sender_star" javaType="short" jdbcType="TINYINT"/>
         <result property="receiver_star" column="receiver_star" javaType="short" jdbcType="TINYINT"/>
     </resultMap>
-
 </mapper>
