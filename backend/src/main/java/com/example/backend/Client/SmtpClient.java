@@ -141,16 +141,18 @@ public class SmtpClient {
             StringBuilder textHtmlPart = new StringBuilder();
             textHtmlPart.append("--" + boundary + "\r\n")
                     .append("Content-Type: multipart/alternative; boundary=\"").append(altBoundary).append("\"\r\n\r\n")
+                    // 开始 multipart/alternative 部分
                     .append("--" + altBoundary + "\r\n")
                     .append("Content-Type: text/plain; charset=UTF-8\r\n\r\n")
-                    .append(textBody).append("\r\n\r\n")
+                    .append(textBody).append("\r\n\r\n") // 纯文本部分
                     .append("--" + altBoundary + "\r\n")
                     .append("Content-Type: text/html; charset=UTF-8\r\n\r\n")
-                    .append(htmlBody).append("\r\n\r\n")
-                    .append("--" + altBoundary + "--\r\n");
+                    .append(htmlBody).append("\r\n\r\n") // HTML 部分
+                    .append("--" + altBoundary + "--\r\n"); // multipart/alternative 结束标记
 
             // 发送文本和HTML部分
             response = handler.sendMessage(channel, textHtmlPart.toString());
+            System.out.println(response);
 
             // 发送附件数据块
             for (int i = 0; i < attachmentNames.size(); i++) {
@@ -189,6 +191,7 @@ public class SmtpClient {
 
 
     public void disconnect() {
+        System.out.println("连接关闭");
         if (channel != null) {
             channel.close();
         }

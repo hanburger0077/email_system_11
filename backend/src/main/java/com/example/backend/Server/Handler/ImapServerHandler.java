@@ -332,6 +332,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         if (parts.length == 3) {
             if (Objects.equals(parts[1], "DETAIL")) {
                 long mailId = Long.parseLong(parts[2]);
+                mailMapper.changeState(mailId, "READ", "+FLAG");
                 Mail mail = mailMapper.selectByMailId(mailId);
                 if (mail != null) {
                     sendMailDetailResponse(ctx, mail);

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Mail</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .mail-details {
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #eee;
+        border-radius: 5px;
+    }
+    .mail-header {
+        margin-bottom: 20px;
+    }
+    .mail-subject {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .mail-meta {
+        color: #666;
+        margin-bottom: 20px;
+    }
+    .mail-content {
+        line-height: 1.6;
+    }
+    .back-button, .action-button, .delete-button {
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        margin-right: 10px;
+    }
+    .back-button:hover, .action-button:hover, .delete-button:hover {
+        background-color: #e0e0e0;
+    }
+    .delete-button {
+        background-color: #dc3545;
+        color: white;
+    }
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+    .star-indicator, .read-indicator {
+        margin-top: 10px;
+        color: #666;
+    }
+    .star-indicator span, .read-indicator span {
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>View Mail</h1>
+  <div id="mailDetails" class="mail-details">
+    <!-- 邮件详情将通过JavaScript动态加载 -->
+  </div>
+  <button class="back-button" onclick="goBackToMailbox()">Back to Mailbox</button>
+</div>
+
+<script>
+  let currentMailbox = 'INBOX'; // 默认邮箱，可以从URL获取
+
+  function initMailDetails() {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentMailbox = urlParams.get('mailbox');
+      const mailId = urlParams.get('mailId');
+
+      fetchMailDetails(currentMailbox, mailId);
+  }
+
+  async function fetchMailDetails(mailbox, mailId) {
+      try {
+          const response = await fetch(`/api/mail/${mailbox}/mails/${mailId}`);
+          const result = await response.json();
+          if (result.code === 1001) {
+              displayMailDetails(result.data, mailbox);
+          } else {
+              alert(result.msg);
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to load mail details.');
+      }
+  }
+
+  function displayMailDetails(mail, mailbox) {
+      const mailDetails = document.getElementById('mailDetails');
+      mailDetails.innerHTML = `
+          <div class="mail-header">
+              <div class="mail-subject">${mail.subject}</div>
+              <div class="mail-meta">
+                  From: ${mail.sender_email} |
+                  To: ${mail.receiver_email} |
+                  Date: ${new Date(mail.create_at).toLocaleString()}
+              </div>
+          </div>
+          <div class="mail-content">
+              ${mail.content}
+          </div>
+      `;
+
+      if (mailbox === 'SENT') {
+          mailDetails.innerHTML += `
+              <div class="star-indicator">
+                  Sender Star: <span onclick="toggleStar('S_STAR', ${mail.mail_id}, ${mail.sender_star === 1})">${mail.sender_star === 1 ? '★' : '☆'}</span>
+              </div>
+          `;
+      } else if (mailbox === 'INBOX') {
+          const readStatus = mail.read === 1 ? '<span onclick="setUnread(' + mail.mail_id + ')">No (Set Unread)</span>' : 'No';
+          mailDetails.innerHTML += `
+              <div class="star-indicator">
+                  Receiver Star: <span onclick="toggleStar('R_STAR', ${mail.mail_id}, ${mail.receiver_star === 1})">${mail.receiver_star === 1 ? '★' : '☆'}</span>
+              </div>
+              <div class="read-indicator">
+                  Read: ${readStatus}
+              </div>
+          `;
+      }
+
+      // 根据mailbox显示不同的操作按钮
+      if (mailbox === 'INBOX' || mailbox === 'JUNK') {
+          const button = document.createElement('button');
+          button.textContent = 'Move to Trash';
+          button.className = 'action-button';
+          button.onclick = () => handleMailStatusChange(mailbox, mail.mail_id, 'TRASH', '+FLAG');
+          document.querySelector('.container').appendChild(button);
+      } else if (mailbox === 'TRASH') {
+          const button = document.createElement('button');
+          button.textContent = 'Restore';
+          button.className = 'action-button';
+          button.onclick = () => handleMailStatusChange(mailbox, mail.mail_id, 'TRASH', '-FLAG');
+          document.querySelector('.container').appendChild(button);
+      }
+
+      // 添加永久删除按钮
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete Permanently';
+      deleteButton.className = 'delete-button';
+      deleteButton.onclick = () => deleteMail(mailbox, mail.mail_id);
+      document.querySelector('.container').appendChild(deleteButton);
+  }
+
+  async function toggleStar(sign, mailId, isStarred) {
+      const op = isStarred ? '-FLAG' : '+FLAG';
+      await changeMailStatus(currentMailbox, mailId, sign, op);
+      fetchMailDetails(currentMailbox, mailId); // 重新加载邮件详情
+  }
+
+  async function setUnread(mailId) {
+      await changeMailStatus(currentMailbox, mailId, 'READ', '-FLAG'); // 仅设置为未读
+      goBackToMailbox(); // 返回邮箱页面
+  }
+
+  async function handleMailStatusChange(mailbox, mailId, targetMailbox, op) {
+      await changeMailStatus(mailbox, mailId, targetMailbox, op);
+      goBackToMailbox(); // 返回邮箱页面
+  }
+
+  async function changeMailStatus(mailbox, mailId, sign, op) {
+      try {
+          const response = await fetch(`/api/mail/${mailbox}/mails/${mailId}/change/${sign}/${op}`, {
+              method: 'POST'
+          });
+          const result = await response.json();
+          if (result.code !== 1001) {
+              alert(result.msg);
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to change mail status.');
+      }
+  }
+
+  async function deleteMail(mailbox, mailId) {
+      if (confirm('Are you sure you want to delete this mail permanently?')) {
+          try {
+              const response = await fetch(`/api/mail/${mailbox}/mails/${mailId}/delete`, {
+                  method: 'DELETE'
+              });
+              const result = await response.json();
+              if (result.code === 1001) {
+                  goBackToMailbox(); // 删除成功后返回邮箱页面
+              } else {
+                  alert(result.msg);
+              }
+          } catch (error) {
+              console.error('Error:', error);
+              alert('Failed to delete mail.');
+          }
+      }
+  }
+
+  function goBackToMailbox() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mailbox = urlParams.get('mailbox');
+      window.location.href = `/mailbox.html?folder=${mailbox}`;
+  }
+
+  initMailDetails();
+</script>
+</body>
+</html>

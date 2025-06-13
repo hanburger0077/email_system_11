@@ -42,6 +42,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         System.out.println("SMTP Received: " + msg);
         String[] lines = msg.split("\r\n");
+        System.out.println(lines.length);
         for (String line : lines) {
             String command = line.trim();
 
@@ -59,9 +60,10 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                     sender = null;
                     ctx.writeAndFlush("250 OK: queued as 12345\r\n");
                 } else {
+                    System.out.println(command);
                     mailContent.append(command).append("\r\n");
-                    ctx.writeAndFlush("250 OK: successfully getting content");
                 }
+                ctx.writeAndFlush("250 OK: successfully getting content");
             } else {
                 if (command.startsWith("HELO") || command.startsWith("EHLO")) {
                     String domain = command.split("\\s+", 2)[1];
@@ -110,6 +112,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
 
     //邮件解析
     private void parseMimeMessage(String mimeMessage) throws Exception {
+        System.out.println(mimeMessage);
         Properties props = new Properties();
         props.put("mail.smtp.ssl.trust", "false");
         Session session = Session.getInstance(props, null);

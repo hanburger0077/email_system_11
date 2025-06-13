@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mailbox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .nav-bar {
+            margin-bottom: 20px;
+        }
+        .nav-button {
+            padding: 10px;
+            margin-right: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .nav-button:hover {
+            background-color: #e0e0e0;
+        }
+        .mail-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        .view-button, .compose-button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .view-button:hover, .compose-button:hover {
+            background-color: #0056b3;
+        }
+        .search-form {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .search-form input, .search-form select {
+            margin-right: 10px;
+            padding: 5px;
+        }
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .search-form button:hover {
+            background-color: #218838;
+        }
+        .hidden {
+            display: none;
+        }
+        .star-icon {
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .read-indicator, .star-indicator {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        .compose-btn-container {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="compose-btn-container">
+        <button class="compose-button" onclick="composeMail()">写信</button>
+    </div>
+    <h1>Mailbox: <span id="currentFolder">INBOX</span></h1>
+    <div class="nav-bar">
+        <button class="nav-button" onclick="navigateToFolder('INBOX')">INBOX</button>
+        <button class="nav-button" onclick="navigateToFolder('SENT')">SENT</button>
+        <button class="nav-button" onclick="navigateToFolder('DRAFT')">DRAFT</button>
+        <button class="nav-button" onclick="navigateToFolder('TRASH')">TRASH</button>
+        <button class="nav-button" onclick="navigateToFolder('JUNK')">JUNK</button>
+    </div>
+    <div class="search-form">
+        <input type="text" id="from" placeholder="From">
+        <input type="text" id="to" placeholder="To">
+        <input type="text" id="subject" placeholder="Subject">
+        <input type="text" id="body" placeholder="Body">
+        <input type="number" id="since" placeholder="Since (days)">
+        <select id="read">
+            <option value="">Any</option>
+            <option value="UNSEEN">Unread</option>
+            <option value="SEEN">Read</option>
+        </select>
+        <div id="star-options"></div>
+        <button onclick="searchMails(1)">Search</button>
+    </div>
+    <div id="mailList"></div>
+    <button onclick="loadMails(1)">Refresh</button>
+</div>
+
+<script>
+    let currentFolder = 'INBOX';
+
+    function initFolder() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const folder = urlParams.get('folder') || 'INBOX';
+        currentFolder = folder;
+        document.getElementById('currentFolder').textContent = folder;
+        updateSearchFormVisibility();
+        loadMails(1);
+    }
+
+    function updateSearchFormVisibility() {
+        const fromInput = document.getElementById('from');
+        const toInput = document.getElementById('to');
+        const readSelect = document.getElementById('read');
+        const starOptions = document.getElementById('star-options');
+        starOptions.innerHTML = ''; // Clear previous star options
+
+        if (currentFolder === 'SENT') {
+            fromInput.style.display = 'none';
+            readSelect.style.display = 'none';
+            starOptions.innerHTML = '<label><input type="checkbox" id="sender_star"> Sender Star</label>';
+        } else if (currentFolder === 'INBOX') {
+            toInput.style.display = 'none';
+            starOptions.innerHTML = '<label><input type="checkbox" id="receiver_star"> Receiver Star</label>';
+            readSelect.style.display = 'inline-block';
+        } else if (currentFolder === 'DRAFT' || currentFolder === 'TRASH' || currentFolder === 'JUNK') {
+            fromInput.style.display = 'inline-block';
+            toInput.style.display = 'inline-block';
+            readSelect.style.display = 'none';
+            starOptions.innerHTML = ''; // No star options
+        }
+    }
+
+    async function loadMails(pageNum) {
+        try {
+            const response = await fetch(`/api/mail/${currentFolder}/pages/${pageNum}`);
+            const result = await response.json();
+            if (result.code === 1001) {
+                displayMails(result.data);
+            } else {
+                alert(result.msg);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to load mails.');
+        }
+    }
+
+    function displayMails(mails) {
+        const mailList = document.getElementById('mailList');
+        mailList.innerHTML = '';
+        mails.forEach(mail => {
+            const mailElement = document.createElement('div');
+            mailElement.className = 'mail-item';
+            let detailText = '';
+
+            if (currentFolder === 'SENT' || currentFolder === 'DRAFT') {
+                detailText = `To: ${mail.receiver_email}`;
+            } else {
+                detailText = `From: ${mail.sender_email}`;
+            }
+
+            // Display read status
+            const readStatus = mail.read === 1 ? 'Read' : 'Unread';
+            // Display star status
+            const starStatus = (currentFolder === 'SENT' && mail.sender_star === 1) ||
+                              (currentFolder === 'INBOX' && mail.receiver_star === 1) ? '★' : '☆';
+
+            mailElement.innerHTML = `
+                <h3>${mail.subject}</h3>
+                <p>${detailText}</p>
+                <p>${mail.content.substring(0, 20)}...</p>
+                <div class="read-indicator">Status: ${readStatus}</div>
+                <div class="star-indicator">Star: ${starStatus}</div>
+                <button class="view-button" onclick="viewMail(${mail.mail_id})">View Details</button>
+                ${currentFolder === 'DRAFT' ?
+                    `<button class="view-button" onclick="editDraft(${mail.mail_id})">Edit</button>` : ''}
+            `;
+            mailList.appendChild(mailElement);
+        });
+    }
+
+    async function searchMails(pageNum) {
+        try {
+            const from = document.getElementById('from').value;
+            const to = document.getElementById('to').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('body').value;
+            const since = document.getElementById('since').value;
+            const read = document.getElementById('read').value;
+            const receiverStar = document.getElementById('receiver_star') ? document.getElementById('receiver_star').checked : false;
+            const senderStar = document.getElementById('sender_star') ? document.getElementById('sender_star').checked : false;
+
+            const url = new URL(`/api/mail/${currentFolder}/pages/${pageNum}/search`, window.location.origin);
+            url.searchParams.append('from', from);
+            url.searchParams.append('to', to);
+            url.searchParams.append('subject', subject);
+            url.searchParams.append('body', body);
+            url.searchParams.append('since', since);
+            url.searchParams.append('unseen', read === 'UNSEEN' ? 'UNSEEN' : read === 'SEEN' ? 'SEEN' : null);
+            url.searchParams.append('receiver_star', receiverStar);
+            url.searchParams.append('sender_star', senderStar);
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.code === 1001) {
+                displayMails(result.data);
+            } else {
+                alert(result.msg);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to search mails.');
+        }
+    }
+
+    function navigateToFolder(folder) {
+        window.location.href = `/mailbox.html?folder=${folder}`;
+    }
+
+    function viewMail(mailId) {
+        window.location.href = `/view-mail.html?mailbox=${currentFolder}&mailId=${mailId}`;
+    }
+
+    function composeMail() {
+        window.location.href = `/send-mail.html`;
+    }
+
+    function editDraft(mailId) {
+        window.location.href = `/send-mail.html?draftId=${mailId}`;
+    }
+
+    initFolder();
+</script>
+</body>
+</html>

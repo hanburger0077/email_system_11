@@ -1,12 +1,12 @@
 package com.example.backend.controller;
 
 import com.example.backend.service.MailService;
+import com.example.backend.utils.ResultVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ public class MailController {
     }
 
     @PostMapping("/send")
-    public String sendMail(
+    public ResultVo sendMail(
             @RequestParam String to,
             @RequestParam String subject,
             @RequestParam String content,
@@ -45,7 +45,7 @@ public class MailController {
 
     // 获取单封邮件
     @GetMapping("/{mailbox}/mails/{mailId}")
-    public String fetchMail(
+    public ResultVo fetchMail(
             @PathVariable long mailId,
             @PathVariable String mailbox) {
         return mailService.fetchMail(mailId, mailbox);
@@ -53,7 +53,7 @@ public class MailController {
 
     // 查看邮箱内容
     @GetMapping("/{mailbox}/pages/{pageNum}")
-    public String viewMailbox(
+    public ResultVo viewMailbox(
             @PathVariable String mailbox,
             @PathVariable int pageNum) {
         return mailService.viewMail(mailbox, pageNum, pageSize);
@@ -61,7 +61,7 @@ public class MailController {
 
     // 搜索邮件
     @GetMapping("/{mailbox}/pages/{pageNum}/search")
-    public String searchMailbox(
+    public ResultVo searchMailbox(
             @PathVariable String mailbox,
             @PathVariable int pageNum,
             @RequestParam(required = false) String from,
@@ -76,54 +76,42 @@ public class MailController {
     }
 
     // 修改邮件状态（标记、移动等）
-    @GetMapping("/{mailbox}/mails/{mailId}/change/{sign}/{op}")
-    public RedirectView changeMail(
+    @PostMapping("/{mailbox}/mails/{mailId}/change/{sign}/{op}")
+    public ResultVo changeMail(
             @PathVariable String mailbox,
             @PathVariable long mailId,
             @PathVariable String sign,
             @PathVariable String op) {
-        mailService.changeMail(mailId, sign, op);
-        if (sign.equals("TRASH") || sign.equals("READ") && op.equals("-FLAG")) {
-            return new RedirectView("/api/mail/" + mailbox + "/pages/1");
-        } else {
-            return new RedirectView("/api/mail/" + mailbox + "/mails/" + mailId);
-        }
+        return mailService.changeMail(mailId, sign, op);
     }
 
 
     // 删除邮件
-    @GetMapping("/{mailbox}/mails/{mailId}/delete")
-    public RedirectView deleteMail(
+    @DeleteMapping("/{mailbox}/mails/{mailId}/delete")
+    public ResultVo deleteMail(
             @PathVariable String mailbox,
             @PathVariable long mailId) {
-        mailService.deleteMail(mailId);
-        return new RedirectView("/api/mail/" + mailbox + "/pages/1");
+        return mailService.deleteMail(mailId);
     }
 
 
     // 新建草稿
     @PostMapping("/drafts")
-    public String newDraft(
+    public ResultVo newDraft(
             @RequestParam String to,
             @RequestParam String subject,
-            @RequestParam String content,
-            @RequestParam(required = false) String attachmentName,
-            @RequestParam(required = false) byte[] attachmentContent) {
-        mailService.draft(0, to, subject, content);
-        return "Draft save successfully";
+            @RequestParam String content) {
+        return mailService.draft(0, to, subject, content);
     }
 
 
     // 修改草稿
-    @PostMapping("/drafts/{mailId}")
-    public String updateDraft(
+    @PutMapping("/drafts/{mailId}")
+    public ResultVo updateDraft(
             @PathVariable long mailId,
             @RequestParam String to,
             @RequestParam String subject,
-            @RequestParam String content,
-            @RequestParam(required = false) String attachmentName,
-            @RequestParam(required = false) byte[] attachmentContent) {
-        mailService.draft(mailId, to, subject, content);
-        return "Draft update successfully";
+            @RequestParam String content) {
+        return mailService.draft(mailId, to, subject, content);
     }
 }
