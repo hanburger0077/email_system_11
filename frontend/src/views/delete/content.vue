@@ -21,9 +21,6 @@
       @next-page="nextPage"
     />
 
-    <!-- 已删除提示信息 -->
-    <DeleteNotice />
-
     <!-- 邮件列表 -->
     <MailList
       :mails="paginatedMails"
@@ -38,7 +35,6 @@
 import { useMailManagement } from './composables/useMailManagement.js'
 import MailToolbar from './components/MailToolbar.vue'
 import MailList from './components/MailList.vue'
-import DeleteNotice from './components/DeleteNotice.vue'
 
 // 使用 composable
 const {
