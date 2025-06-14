@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Mail Folders</title>
-  <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-    }
-    .folder-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .folder-button {
-        padding: 10px;
-        background-color: #f0f0f0;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-        text-decoration: none;
-        color: #333;
-    }
-    .folder-button:hover {
-        background-color: #e0e0e0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Mail Folders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .folder-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .folder-button {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+        }
+        .folder-button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
 <h1>Mail Folders</h1>
 <div class="folder-container">
-  <a href="/mailbox.html?folder=INBOX" class="folder-button">INBOX</a>
-  <a href="/mailbox.html?folder=SENT" class="folder-button">SENT</a>
-  <a href="/mailbox.html?folder=DRAFT" class="folder-button">DRAFT</a>
-  <a href="/mailbox.html?folder=TRASH" class="folder-button">TRASH</a>
-  <a href="/mailbox.html?folder=JUNK" class="folder-button">JUNK</a>
+    <a href="/api/mail/mailbox.html?folder=INBOX" class="folder-button">INBOX</a>
+    <a href="/api/mail/mailbox.html?folder=SENT" class="folder-button">SENT</a>
+    <a href="/api/mail/mailbox.html?folder=DRAFT" class="folder-button">DRAFT</a>
+    <a href="/api/mail/mailbox.html?folder=TRASH" class="folder-button">TRASH</a>
+    <a href="/api/mail/mailbox.html?folder=JUNK" class="folder-button">JUNK</a>
 </div>
 </body>
 </html>

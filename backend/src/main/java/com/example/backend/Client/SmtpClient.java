@@ -123,7 +123,7 @@ public class SmtpClient {
             // 使用当前时间的毫秒数作为边界字符串的一部分
             long currentTimeMillis = System.currentTimeMillis();
             String boundary = "boundary" + currentTimeMillis;
-            String altBoundary = "altBoundary" + currentTimeMillis;
+            //String altBoundary = "altBoundary" + currentTimeMillis;
 
             // 构建邮件头
             StringBuilder header = new StringBuilder();
@@ -131,27 +131,29 @@ public class SmtpClient {
                     .append("To: ").append(to).append("\r\n")
                     .append("Subject: ").append(subject).append("\r\n")
                     .append("MIME-Version: 1.0\r\n")
-                    .append("Content-Type: multipart/mixed; boundary=\"").append(boundary).append("\"\r\n\r\n");
+                    .append("Content-Type: multipart/mixed; boundary=\"").append(boundary).append("\"\r\n");
 
             // 发送邮件头
             response = handler.sendMessage(channel, header.toString());
             System.out.println(response);
 
             // 构建文本和HTML部分
-            StringBuilder textHtmlPart = new StringBuilder();
-            textHtmlPart.append("--" + boundary + "\r\n")
-                    .append("Content-Type: multipart/alternative; boundary=\"").append(altBoundary).append("\"\r\n\r\n")
+            StringBuilder textHtmlHead = new StringBuilder();
+            textHtmlHead.append("\r\n--" + boundary + "\r\n")
+                    //.append("Content-Type: multipart/alternative; boundary=\"").append(boundary).append("\"\r\n\r\n")
                     // 开始 multipart/alternative 部分
-                    .append("--" + altBoundary + "\r\n")
-                    .append("Content-Type: text/plain; charset=UTF-8\r\n\r\n")
-                    .append(textBody).append("\r\n\r\n") // 纯文本部分
-                    .append("--" + altBoundary + "\r\n")
-                    .append("Content-Type: text/html; charset=UTF-8\r\n\r\n")
-                    .append(htmlBody).append("\r\n\r\n") // HTML 部分
-                    .append("--" + altBoundary + "--\r\n"); // multipart/alternative 结束标记
+                    //.append("--" + boundary + "\r\n")
+                    .append("Content-Type: text/plain; charset=UTF-8\r\n");
+            // 发送文本头部
+            response = handler.sendMessage(channel, textHtmlHead.toString());
+            // 发送文本体
+            handler.sendMessage(channel,  "\r\n" + textBody + "\r\n"); // 纯文本部分
+                    //.append("--" + boundary + "\r\n")
+                    //.append("Content-Type: text/html; charset=UTF-8\r\n\r\n")
+                    //.append(htmlBody).append("\r\n\r\n") // HTML 部分
+                    //.append("--" + boundary + "--\r\n"); // multipart/alternative 结束标记
 
-            // 发送文本和HTML部分
-            response = handler.sendMessage(channel, textHtmlPart.toString());
+
             System.out.println(response);
 
             // 发送附件数据块
@@ -159,10 +161,10 @@ public class SmtpClient {
                 String attachmentName = attachmentNames.get(i);
                 byte[] attachmentContent = attachmentContents.get(i);
                 StringBuilder attachmentHead = new StringBuilder();
-                attachmentHead.append("--" + boundary + "\r\n")
+                attachmentHead.append("\r\n--" + boundary + "\r\n")
                         .append("Content-Type: application/octet-stream; name=\"" + attachmentName + "\"\r\n")
                         .append("Content-Disposition: attachment; filename=\"" + attachmentName + "\"\r\n")
-                        .append("Content-Transfer-Encoding: base64\r\n\r\n");
+                        .append("Content-Transfer-Encoding: base64\r\n");
 
                 // 发送附件头
                 response = handler.sendMessage(channel, attachmentHead.toString());
@@ -174,6 +176,7 @@ public class SmtpClient {
                 for (int j = 0; j < attachmentData.length(); j += chunkSize) {
                     int end = Math.min(j + chunkSize, attachmentData.length());
                     String chunk = attachmentData.substring(j, end) + "\r\n";
+                    if(j == 0) chunk = "\r\n" + chunk;
                     response = handler.sendMessage(channel, chunk);
                     System.out.println(response);
                     if (!channel.isActive()) {
@@ -183,7 +186,7 @@ public class SmtpClient {
             }
 
             // 发送邮件结束标记
-            String endOfMessage = "--" + boundary + "--\r\n.\r\n";
+            String endOfMessage = "\r\n--" + boundary + "--\r\n.\r\n";
             response = handler.sendMessage(channel, endOfMessage);
             System.out.println(response);
         }

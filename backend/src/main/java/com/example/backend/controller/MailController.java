@@ -25,6 +25,15 @@ public class MailController {
         return mailService.streamEmails();
     }
 
+
+    @PostMapping("/connect")
+    public ResultVo loginIMAP(
+            @RequestParam String username,
+            @RequestParam String password) {
+        return mailService.loginIMAP(username, password);
+    }
+
+
     @PostMapping("/send")
     public ResultVo sendMail(
             @RequestParam String to,
@@ -113,5 +122,11 @@ public class MailController {
             @RequestParam String subject,
             @RequestParam String content) {
         return mailService.draft(mailId, to, subject, content);
+    }
+
+    //断开连接
+    @PostMapping("/disconnect")
+    public ResultVo updateDraft() {
+        return mailService.disconnect();
     }
 }

@@ -50,32 +50,30 @@ public class ImapClientHandler extends SimpleChannelInboundHandler<String> {
 
 
     public String sendCommand(Channel channel, String command) throws InterruptedException {
-        latch = new CountDownLatch(1);
-        channel.writeAndFlush(command + "\r\n");
-        latch.await(10, TimeUnit.SECONDS); // 设置超时，防止无限期等待响应
-        return completeResponse;
+        if(!isIdling) {
+            latch = new CountDownLatch(1);
+            channel.writeAndFlush(command + "\r\n");
+            latch.await(10, TimeUnit.SECONDS); // 设置超时，防止无限期等待响应
+            return completeResponse;
+        }
+        return "IDLE state";
     }
 
 
     public String idle(Channel channel) throws InterruptedException {
-        isIdling = true;
         latch = new CountDownLatch(1);
-        channel.writeAndFlush("IDLE\r\n");
-        if (!latch.await(IDLE_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-            // 超时未收到 DONE 命令，主动退出空闲状态
-            System.out.println("IDLE timeout, sending DONE...");
-            done(channel);
-            return "IDLE timeout";
-        }
+        completeResponse = sendCommand(channel, "IDLE\r\n");
+        isIdling = true;
         return completeResponse;
     }
 
 
-    public void done(Channel channel) throws InterruptedException {
+    public String done(Channel channel) throws InterruptedException {
         if (isIdling) {
-            channel.writeAndFlush("DONE\r\n");
             isIdling = false;
+            return sendCommand(channel, "DONE\r\n");
         }
+         return "DONE state";
     }
 
     //心跳机制，防止超时断开

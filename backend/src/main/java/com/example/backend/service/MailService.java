@@ -4,14 +4,13 @@ package com.example.backend.service;
 import com.example.backend.utils.ResultVo;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MailService {
     //
     SseEmitter streamEmails();
+    //
+    public ResultVo loginIMAP(String username, String password);
     //
     public ResultVo sendMail(String to, String subject, String content, List<MultipartFile> attachmentFiles);
     //
@@ -26,4 +25,6 @@ public interface MailService {
     public ResultVo deleteMail(long mailId);
 
     public ResultVo draft(long mailId, String to, String subject, String content);
+
+    public ResultVo disconnect();
 }

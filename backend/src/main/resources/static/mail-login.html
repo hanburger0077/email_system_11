@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #3a7bc8;
+        }
+
+        #errorMsg {
+            color: #e74c3c;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h2>Please sign in</h2>
+    <div id="errorMsg">
+        Invalid credentials
+    </div>
+    <form id="loginForm">
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="text" name="username" id="username" required placeholder="Enter your email" />
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" name="password" id="password" required placeholder="Enter your password" />
+        </div>
+        <button type="submit">Sign in</button>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("#loginForm").submit(function(e) {
+            e.preventDefault(); // 阻止表单默认提交
+
+            const username = $("#username").val();
+            const password = $("#password").val();
+
+            $.ajax({
+                url: "/api/mail/connect", // 接口地址
+                type: "POST",
+                data: {
+                    username: username,
+                    password: password
+                },
+                success: function(response) {
+                    if (response.code === 1001) { // 假设成功码为 1001
+                        window.location.href = "/mailbox.html"; // 跳转到 mailbox.html
+                    } else {
+                        // 显示后端返回的错误消息
+                        $("#errorMsg").text(response.msg || "Login failed").show();
+                    }
+                },
+                error: function(xhr) {
+                    // 显示服务器错误信息
+                    $("#errorMsg").text("Server error: " + xhr.statusText).show();
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

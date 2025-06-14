@@ -42,7 +42,6 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         System.out.println("SMTP Received: " + msg);
         String[] lines = msg.split("\r\n");
-        System.out.println(lines.length);
         for (String line : lines) {
             String command = line.trim();
 
@@ -112,7 +111,9 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
 
     //邮件解析
     private void parseMimeMessage(String mimeMessage) throws Exception {
+        System.out.println("---");
         System.out.println(mimeMessage);
+        System.out.println("---");
         Properties props = new Properties();
         props.put("mail.smtp.ssl.trust", "false");
         Session session = Session.getInstance(props, null);
@@ -150,11 +151,11 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                 if (contentType.contains("text/plain")) {
                     String textContent = (String) bodyPart.getContent();
                     contentBuilder.append(textContent);
-                    System.out.println(textContent);
-                } else if (contentType.contains("text/html")) {
+                    System.out.println(textContent.toString().replace("\r\n", ""));
+                } /* else if (contentType.contains("text/html")) {
                     String htmlContent = (String) bodyPart.getContent();
                     contentBuilder.append(htmlContent);
-                } else if (contentType.contains("application/octet-stream") ||
+                } */else if (contentType.contains("application/octet-stream") ||
                         contentType.contains("application/")) {
                     // 处理附件
                     try (InputStream is = bodyPart.getInputStream();
@@ -168,7 +169,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                         attachmentNames.add(bodyPart.getFileName());
                         attachmentContents.add(buffer.toByteArray());
                         System.out.println(bodyPart.getFileName());
-                        System.out.println(attachmentContents);
+                        System.out.println(new String(attachmentContents.get(attachmentContents.size()-1), StandardCharsets.UTF_8));
                     }
                 }
             }

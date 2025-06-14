@@ -82,6 +82,31 @@
         .compose-btn-container {
             margin-bottom: 20px;
         }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .pagination button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: #0056b3;
+        }
+        .pagination button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .page-info {
+            margin-top: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -112,11 +137,55 @@
         <button onclick="searchMails(1)">Search</button>
     </div>
     <div id="mailList"></div>
+    <div class="pagination">
+        <button onclick="loadMails(currentPage - 1)" id="prevPage">Previous</button>
+        <span id="currentPageDisplay">Page: 1</span>
+        <button onclick="loadMails(currentPage + 1)" id="nextPage">Next</button>
+    </div>
+    <div class="page-info" id="pageInfo"></div>
     <button onclick="loadMails(1)">Refresh</button>
 </div>
 
 <script>
     let currentFolder = 'INBOX';
+    let currentPage = 1;
+    let totalPages = 1;
+    let eventSource; // 用于保存SSE连接
+
+    // 初始化SSE连接
+    function initSSE() {
+        // 如果当前在INBOX文件夹，才建立SSE连接
+        if (currentFolder === 'INBOX') {
+            if (eventSource) {
+                eventSource.close(); // 关闭之前的连接
+            }
+
+            eventSource = new EventSource('/api/mail/sse/emails');
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const message = event.data; // 直接使用event.data
+                    console.log('Received message:', message);
+
+                    // 弹窗显示接收到的消息
+                    alert(message);
+
+                    // 如果当前页面是INBOX，自动刷新邮件列表
+                    if (currentFolder === 'INBOX') {
+                        loadMails(currentPage);
+                    }
+                } catch (e) {
+                    console.error('Error parsing SSE event:', e);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE连接错误:', error);
+                // 尝试重新连接
+                setTimeout(initSSE, 5000);
+            };
+        }
+    }
 
     function initFolder() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -125,6 +194,7 @@
         document.getElementById('currentFolder').textContent = folder;
         updateSearchFormVisibility();
         loadMails(1);
+        initSSE(); // 初始化SSE连接
     }
 
     function updateSearchFormVisibility() {
@@ -151,11 +221,22 @@
     }
 
     async function loadMails(pageNum) {
+        // 确保页码在有效范围内
+        pageNum = Math.max(1, Math.min(pageNum, totalPages));
+        currentPage = pageNum;
+
         try {
             const response = await fetch(`/api/mail/${currentFolder}/pages/${pageNum}`);
             const result = await response.json();
             if (result.code === 1001) {
                 displayMails(result.data);
+                // 更新分页信息
+                totalPages = parseInt(result.msg, 10) || 1;
+                document.getElementById('currentPageDisplay').textContent = `Page: ${currentPage}`;
+                document.getElementById('pageInfo').textContent = `Total Pages: ${totalPages}`;
+                // 更新分页按钮状态
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages;
             } else {
                 alert(result.msg);
             }
@@ -179,9 +260,7 @@
                 detailText = `From: ${mail.sender_email}`;
             }
 
-            // Display read status
             const readStatus = mail.read === 1 ? 'Read' : 'Unread';
-            // Display star status
             const starStatus = (currentFolder === 'SENT' && mail.sender_star === 1) ||
                               (currentFolder === 'INBOX' && mail.receiver_star === 1) ? '★' : '☆';
 
@@ -200,6 +279,10 @@
     }
 
     async function searchMails(pageNum) {
+        // 确保页码在有效范围内
+        pageNum = Math.max(1, Math.min(pageNum, totalPages));
+        currentPage = pageNum;
+
         try {
             const from = document.getElementById('from').value;
             const to = document.getElementById('to').value;
@@ -224,6 +307,13 @@
             const result = await response.json();
             if (result.code === 1001) {
                 displayMails(result.data);
+                // 更新分页信息
+                totalPages = parseInt(result.msg, 10) || 1;
+                document.getElementById('currentPageDisplay').textContent = `Page: ${currentPage}`;
+                document.getElementById('pageInfo').textContent = `Total Pages: ${totalPages}`;
+                // 更新分页按钮状态
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages;
             } else {
                 alert(result.msg);
             }
@@ -248,6 +338,17 @@
     function editDraft(mailId) {
         window.location.href = `/send-mail.html?draftId=${mailId}`;
     }
+
+    // 监听文件夹变化，当切换到INBOX时建立SSE连接
+    window.addEventListener('popstate', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const newFolder = urlParams.get('folder') || 'INBOX';
+
+        if (newFolder !== currentFolder) {
+            currentFolder = newFolder;
+            initSSE(); // 重新初始化SSE连接
+        }
+    });
 
     initFolder();
 </script>

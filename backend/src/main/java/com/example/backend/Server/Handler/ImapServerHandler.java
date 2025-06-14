@@ -106,7 +106,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         clearAndClose(ctx);
     }
 
-
+/*
     private void startHeartbeatCheck(ChannelHandlerContext ctx) {
         // 取消已有的心跳检测任务
         cancelHeartbeatCheck();
@@ -130,6 +130,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             heartbeatCheckFuture = null;
         }
     }
+    */
+
 
 
     private void processNoop(ChannelHandlerContext ctx) {
@@ -208,10 +210,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         else if (mail.getReceiver_id() == userId) {
             // 2为发送方标签的逻辑删除标签
             if (mail.getSender_sign() == 2) {
-                System.out.println(111);
                 mailMapper.deleteMail(mailId);
             } else {
-                System.out.println(233);
                 mailMapper.setDeleteSign(mailId, "receiver");
             }
         }
@@ -223,7 +223,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         // 处理DONE命令，客户端有东西要发，别推送
         if (isIdling) {
             isIdling = false;
-            ctx.writeAndFlush("1 OK IDLE finished\r\n");
+            ctx.writeAndFlush("1 OK DONE start\r\n");
         } else {
             ctx.writeAndFlush("* BAD Not in IDLE state\r\n");
         }
@@ -408,6 +408,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             String password = parts[2];
             User user = userMapper.findByEmail(userEmail);
             if (user != null && userMapper.authenticate(userEmail, password)) {
+                //登陆成功后授权和自动进入空闲
                 isAuthenticated = true;
                 isIdling = true;
                 userId = user.getId();
@@ -463,7 +464,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
     public void clearAndClose(ChannelHandlerContext ctx) {
         // 取消轮询任务
         cancelIdlePolling();
-        cancelHeartbeatCheck();
+        //cancelHeartbeatCheck();
         // 关闭连接
         ctx.close();
     }

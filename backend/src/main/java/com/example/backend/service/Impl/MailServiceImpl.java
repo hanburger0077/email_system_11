@@ -1,6 +1,7 @@
 package com.example.backend.service.Impl;
 
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.Client.ImapClient;
 import com.example.backend.Client.SmtpClient;
 import com.example.backend.DTO.MailDTO;
@@ -44,9 +45,29 @@ public class MailServiceImpl implements MailService {
     // SSE 端点实现
     @Override
     public SseEmitter streamEmails() {
-        SseEmitter emitter = new SseEmitter();
+        SseEmitter emitter = new SseEmitter(60 * 60 * 1000L); // 1小时超时
         imapClient.setSseEmitter(emitter);
+        System.out.println("build!!!");
         return emitter;
+    }
+
+
+    @Override
+    public ResultVo loginIMAP(String username, String password) {
+        try {
+            imapClient.connect();
+        } catch (InterruptedException e) {
+            return ResultVo.fail(0, "Failed connect to Server");
+        }
+        this.userEmail = username;
+        this.userPassword = password;
+        try {
+            //登录后自动进入空闲状态
+            imapClient.loginCommand(userEmail, userPassword);
+            return ResultVo.success("LOGIN and IDLE successfully");
+        } catch (InterruptedException e) {
+            return ResultVo.fail(0, "Failed to send LOGIN command");
+        }
     }
 
 
@@ -108,27 +129,29 @@ public class MailServiceImpl implements MailService {
 
     @Override
     public ResultVo fetchMail(long mailId, String mailbox) {
-        try {
-            this.imapClient.connect();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
-        }
         MailDTO mailDTO;
+        try {
+            imapClient.doneCommand();
+        } catch (InterruptedException e) {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+        }
         try {
             mailDTO = imapClient.fetchCommand("DETAIL", mailId);
             return ResultVo.success("Mail fetch successfully", mailDTO);
         } catch (InterruptedException e) {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
             return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
-        } finally {
-            imapClient.disconnect();
         }
+
     }
 
 
@@ -136,17 +159,12 @@ public class MailServiceImpl implements MailService {
     public ResultVo viewMail(String mailbox, int pageNum, int pageSize){
         List<Long> mailId = null;
         List<MailDTO> mails = null;
+        List<Long> pageMailIds = null;
+        int totalPageNum = 0;
         try {
-            this.imapClient.connect();
+            imapClient.doneCommand();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
@@ -156,25 +174,41 @@ public class MailServiceImpl implements MailService {
         }
         try {
             mailId = imapClient.searchCommand(null, null, null, null, null, null, false, false);
+            if(mailId != null) {
+                // 计算分页的起始和结束索引
+                int total = mailId.size();
+                int fromIndex = (pageNum - 1) * pageSize;
+                int toIndex = Math.min(fromIndex + pageSize, total);
+                // 检查分页参数是否有效
+                if (fromIndex >= total) {
+                    return ResultVo.fail(0, "Requested page is out of range");
+                }
+                //获取总页数
+                totalPageNum = (int)Math.ceil((double) total / pageSize);
+                // 获取当前页的邮件ID
+                pageMailIds = mailId.subList(fromIndex, toIndex);
+            }
         } catch (InterruptedException e) {
-            imapClient.disconnect();
             return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
         }
         try {
             if(mailId != null) {
                 mails = new ArrayList<>();
-                for(long id : mailId) {
-                    System.out.println(id);
+                for(long id : pageMailIds) {
                     mails.add(imapClient.fetchCommand("SIMPLE", id));
                 }
-                return ResultVo.success("Mail fetch successfully", mails);
+                imapClient.idleCommand();
+                return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
+                try {
+                    imapClient.idleCommand();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 return ResultVo.fail(0, "No mail in the mailbox");
             }
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
-        } finally {
-            imapClient.disconnect();
         }
     }
 
@@ -182,8 +216,10 @@ public class MailServiceImpl implements MailService {
     @Override
     public ResultVo searchMail(String mailbox, int pageNum, int pageSize, String from, String to, String subject, String body, int since, String unseen, boolean sender_star, boolean receiver_star) {
         List<Long> mailId = null;
+        List<Long> pageMailIds = null;
         List<MailDTO> mails = null;
         LocalDateTime dateTime;
+        int totalPageNum = 0;
         if (since > 0) {
             dateTime = LocalDateTime.now().minusDays(since).withHour(0).withMinute(0).withSecond(0);
         }
@@ -191,44 +227,52 @@ public class MailServiceImpl implements MailService {
             dateTime = null;
         }
         try {
-            this.imapClient.connect();
+            imapClient.doneCommand();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
         } catch (InterruptedException e) {
-            imapClient.disconnect();
             return ResultVo.fail(0, "Failed to send SELECT command" + e.getMessage());
         }
         try {
             mailId = imapClient.searchCommand(from, to, subject, body, dateTime, unseen, sender_star, receiver_star);
+            if(mailId != null) {
+                // 计算分页的起始和结束索引
+                int total = mailId.size();
+                int fromIndex = (pageNum - 1) * pageSize;
+                int toIndex = Math.min(fromIndex + pageSize, total);
+                // 检查分页参数是否有效
+                if (fromIndex >= total) {
+                    return ResultVo.fail(0, "Requested page is out of range");
+                }
+                //获取总页数
+                totalPageNum = (int)Math.ceil((double) total / pageSize);
+                // 获取当前页的邮件ID
+                pageMailIds = mailId.subList(fromIndex, toIndex);
+            }
         } catch (InterruptedException e) {
-            imapClient.disconnect();
             return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
         }
         try {
             if(mailId != null) {
                 mails = new ArrayList<>();
-                for(long id : mailId) {
-                    System.out.println(id);
+                for(long id : pageMailIds) {
                     mails.add(imapClient.fetchCommand("SIMPLE", id));
                 }
-                return ResultVo.success("Mail search successfully", mails);
+                return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
                 return ResultVo.fail(0, "No mail searched in this mailbox");
             }
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
         } finally {
-            imapClient.disconnect();
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -236,24 +280,15 @@ public class MailServiceImpl implements MailService {
     @Override
     public ResultVo changeMail(long mailId, String sign, String op) {
         try {
-            this.imapClient.connect();
+            imapClient.doneCommand();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.storeCommand(mailId, sign, op);
             return ResultVo.success("Mail stored successfully");
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send STORE command" + e.getMessage());
-        } finally {
-            imapClient.disconnect();
         }
     }
 
@@ -261,24 +296,15 @@ public class MailServiceImpl implements MailService {
     @Override
     public ResultVo deleteMail(long mailId) {
         try {
-            this.imapClient.connect();
+            imapClient.doneCommand();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.deleteCommand(mailId);
             return ResultVo.success("Mail deleted successfully");
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send DELETE command" + e.getMessage());
-        } finally {
-            imapClient.disconnect();
         }
     }
 
@@ -286,16 +312,9 @@ public class MailServiceImpl implements MailService {
     @Override
     public ResultVo draft(long mailId, String to, String subject, String content) {
         try {
-            this.imapClient.connect();
+            imapClient.doneCommand();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to IMAP server" + e.getMessage());
-        }
-        try {
-            imapClient.loginCommand(userEmail, userPassword);
-        } catch (InterruptedException e) {
-            imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send LOGIN command" + e.getMessage());
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.draftCommand(mailId, userEmail, to, subject, content);
@@ -303,7 +322,20 @@ public class MailServiceImpl implements MailService {
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send DRAFT command" + e.getMessage());
         } finally {
-            imapClient.disconnect();
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
+
+
+    @Override
+    public ResultVo disconnect() {
+        imapClient.disconnect();
+        System.out.println("IMAP client disconnect");
+        return ResultVo.success("IMAP client disconnect successfully");
+    }
+
 }

@@ -307,10 +307,7 @@
           document.getElementById('mailForm').reset();
           files = [];
           updateFileList();
-          // 3秒后返回收件箱
-          setTimeout(() => {
-            window.location.href = `/mailbox.html?folder=SENT`;
-          }, 3000);
+          // 不进行页面跳转
       })
       .catch(error => {
           document.getElementById('error').textContent = '邮件发送失败: ' + error.message;

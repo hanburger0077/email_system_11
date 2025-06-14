@@ -32,8 +32,6 @@ public class ImapClient {
     private final int port;
     private Channel channel;
     private EventLoopGroup group;
-    private ScheduledExecutorService scheduler;
-    int HEARTBEAT_period = 30;
 
     @Setter
     private SseEmitter sseEmitter;
@@ -93,6 +91,7 @@ public class ImapClient {
             try {
                 String message = "New mail arrived: " + event;
                 sseEmitter.send(message, MediaType.TEXT_EVENT_STREAM);
+                System.out.println("send!!!");
             } catch (IOException e) {
                 sseEmitter.completeWithError(e);
             }
@@ -101,6 +100,7 @@ public class ImapClient {
 
 
     public void loginCommand(String userEmail, String password) throws InterruptedException {
+
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
             // 发送 Login 命令并等待响应
@@ -301,11 +301,21 @@ public class ImapClient {
         }
     }
 
+    //表示要开始工作了
+    public void doneCommand() throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String response = handler.done(channel);
+            System.out.println("IMAP return：" + response);
+        }
+    }
 
+
+    //表示要结束工作了
     public void idleCommand() throws InterruptedException {
         if (channel != null && channel.isActive()) {
             ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
-            String response = handler.sendCommand(channel, "IDLE");
+            String response = handler.idle(channel);
             System.out.println("IMAP return：" + response);
         }
     }
@@ -334,7 +344,7 @@ public class ImapClient {
         }
     }
 
-
+/*
     public void sendEvent(String event) {
         if (sseEmitter != null) {
             try {
@@ -373,4 +383,6 @@ public class ImapClient {
             System.out.println("NOOP response: " + response);
         }
     }
+    */
+
 }
