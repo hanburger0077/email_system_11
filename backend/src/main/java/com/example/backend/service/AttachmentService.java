@@ -1,49 +1,28 @@
 package com.example.backend.service;
 
 import com.example.backend.entity.Attachment;
-import com.example.backend.mapper.AttachmentMapper;
-import com.example.backend.utils.FileStorageUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+public interface AttachmentService {
+    /**
+     * 保存附件到磁盘并记录到数据库
+     * @param emailId    关联的邮件ID
+     * @param fileBytes 文件字节流（由协议模块解析后传入）
+     * @param fileName  原始文件名
+     * @param fileType  文件类型
+     */
+    Attachment saveAttachment(Long emailId, byte[] fileBytes, String fileName, String fileType);
 
-@Service
-public class AttachmentService {
+    /**
+     * 根据附件ID生成下载链接
+     * @param attachmentId 附件ID
+     * @return 如 "/attachments/download/1"
+     */
+    String generateDownloadUrl(Long attachmentId);
 
-    @Autowired
-    private AttachmentMapper attachmentMapper;
-
-    @Autowired
-    private FileStorageUtil fileStorageUtil;
-
-    // 上传附件
-    public Attachment upload(MultipartFile file, Long mailId) throws IOException {
-        String fileKey = fileStorageUtil.store(file);
-
-        Attachment attachment = new Attachment();
-        attachment.setMailId(mailId);
-        attachment.setFileName(file.getOriginalFilename());
-        attachment.setFileKey(fileKey);
-        attachment.setFileSize(file.getSize());
-        attachment.setFileType(file.getContentType());
-
-        attachmentMapper.insert(attachment);
-        return attachment;
-    }
-
-    // 下载附件
-    public Resource download(Long id) throws IOException {
-        Attachment attachment = attachmentMapper.selectById(id);
-        return fileStorageUtil.load(attachment.getFileKey());
-    }
-
-    // 删除附件
-    public void delete(Long id) throws IOException {
-        Attachment attachment = attachmentMapper.selectById(id);
-        fileStorageUtil.delete(attachment.getFileKey());
-        attachmentMapper.deleteById(id);
-    }
+    /**
+     * 根据附件ID获取附件信息
+     * @param attachmentId 附件ID
+     * @return 附件实体（含文件路径）
+     */
+    Attachment getAttachmentById(Long attachmentId);
 }

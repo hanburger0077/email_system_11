@@ -5,14 +5,17 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface AttachmentMapper {
-    @Insert("INSERT INTO attachment (mail_id, file_name, file_key, file_size, file_type) " +
-            "VALUES (#{mailId}, #{fileName}, #{fileKey}, #{fileSize}, #{fileType})")
+    // 插入附件记录
+    @Insert("INSERT INTO email_attachment (email_id, file_name, file_path, file_type, file_size) " +
+            "VALUES (#{emailId}, #{fileName}, #{filePath}, #{fileType}, #{fileSize})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Attachment attachment);
 
-    @Select("SELECT * FROM attachment WHERE id = #{id}")
-    Attachment selectById(Long id);
+    // 根据ID查询附件
+    @Select("SELECT * FROM email_attachment WHERE id = #{id}")
+    Attachment selectById(@Param("id") Long id);
 
-    @Delete("DELETE FROM attachment WHERE id = #{id}")
-    void deleteById(Long id);
+    // 根据邮件ID查询附件列表（可选）
+    @Select("SELECT * FROM email_attachment WHERE email_id = #{emailId}")
+    List<Attachment> selectByEmailId(@Param("emailId") Long emailId);
 }
