@@ -59,6 +59,23 @@
     .star-indicator span, .read-indicator span {
         cursor: pointer;
     }
+    .attachments-section {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f0f8ff;
+        border-radius: 5px;
+    }
+    .attachment-link {
+        color: #0066cc;
+        text-decoration: none;
+        cursor: pointer;
+        margin-right: 15px;
+        display: block;
+        margin-bottom: 5px;
+    }
+    .attachment-link:hover {
+        text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -96,7 +113,23 @@
       }
   }
 
-  function displayMailDetails(mail, mailbox) {
+  async function getAttachmentInfo(attachmentId) {
+      try {
+          const response = await fetch(`/attachments/${attachmentId}`);
+          const result = await response.json();
+          if (result.code === 1001) {
+              return result.data;
+          } else {
+              console.error('Failed to get attachment info:', result.msg);
+              return null;
+          }
+      } catch (error) {
+          console.error('Error fetching attachment info:', error);
+          return null;
+      }
+  }
+
+  async function displayMailDetails(mail, mailbox) {
       const mailDetails = document.getElementById('mailDetails');
       mailDetails.innerHTML = `
           <div class="mail-header">
@@ -111,6 +144,32 @@
               ${mail.content}
           </div>
       `;
+
+      // 显示附件部分
+      if (mail.attachmentIds && mail.attachmentIds.length > 0) {
+          const attachmentsSection = document.createElement('div');
+          attachmentsSection.className = 'attachments-section';
+          attachmentsSection.innerHTML = '<h4>Attachments:</h4>';
+
+          // 并行获取所有附件信息
+          const attachmentPromises = mail.attachmentIds.map(async attachmentId => {
+              const attachmentInfo = await getAttachmentInfo(attachmentId);
+              return { id: attachmentId, name: attachmentInfo ? attachmentInfo.fileName : `Attachment-${attachmentId}` };
+          });
+
+          const attachments = await Promise.all(attachmentPromises);
+
+          attachments.forEach(attachment => {
+              const link = document.createElement('a');
+              link.href = `/attachments/download/${attachment.id}`;
+              link.className = 'attachment-link';
+              link.textContent = attachment.name;
+              link.target = '_blank';
+              attachmentsSection.appendChild(link);
+          });
+
+          mailDetails.appendChild(attachmentsSection);
+      }
 
       if (mailbox === 'SENT') {
           mailDetails.innerHTML += `

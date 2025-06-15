@@ -4,17 +4,17 @@ import com.example.backend.entity.Mail;
 import com.example.backend.entity.User;
 import com.example.backend.mapper.MailMapper;
 import com.example.backend.mapper.UserMapper;
+import com.example.backend.service.AttachmentService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import jakarta.activation.MimetypesFileTypeMap;
 import jakarta.mail.*;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,6 +28,8 @@ import java.util.regex.Pattern;
 public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
 
     private boolean dataMode = false;
+    private boolean attachmentMode = false;
+    private boolean chunkMode = false;
     private StringBuilder mailContent = new StringBuilder();
     private List<String> recipients = new ArrayList<>();
     private String sender;
@@ -37,6 +39,9 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
 
     @Autowired
     private MailMapper mailMapper;
+
+    @Autowired
+    private AttachmentService attachmentService;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
@@ -53,14 +58,33 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                     } catch (Exception e) {
                         System.err.println("Error parsing MIME message: " + e.getMessage());
                     }
-
                     mailContent.setLength(0);
                     recipients.clear();
                     sender = null;
                     ctx.writeAndFlush("250 OK: queued as 12345\r\n");
                 } else {
+                    //收到的报文块处理：附件模式和块模式，防止附件数据块添加空行
                     System.out.println(command);
-                    mailContent.append(command).append("\r\n");
+                    if (command.contains("attachment")) {
+                        //进入附件
+                        attachmentMode = true;
+                    } else if(command.contains("--boundary")) {
+                        //离开附件
+                        attachmentMode = false;
+                    } else if (command.isEmpty() && attachmentMode && !chunkMode) {
+                        //块开始的空行
+                        chunkMode = true;
+                        mailContent.append("\r\n");
+                    } else if (command.isEmpty() && attachmentMode) {
+                        //块结束的空行
+                        chunkMode = false;
+                        mailContent.append("\r\n");
+                    }
+                    if (attachmentMode && chunkMode) {
+                        mailContent.append(command);
+                    } else {
+                        mailContent.append(command).append("\r\n");
+                    }
                 }
                 ctx.writeAndFlush("250 OK: successfully getting content");
             } else {
@@ -138,20 +162,20 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         System.out.println(subject);
 
         Object content = message.getContent();
+        List<String> attachmentNames = new ArrayList<>();
+        List<byte[]> attachmentContents = new ArrayList<>();
 
         if (content instanceof Multipart) {
             Multipart multipart = (Multipart) content;
             StringBuilder contentBuilder = new StringBuilder();
-            List<String> attachmentNames = new ArrayList<>();
-            List<byte[]> attachmentContents = new ArrayList<>();
             for (int i = 0; i < multipart.getCount(); i++) {
                 BodyPart bodyPart = multipart.getBodyPart(i);
                 String contentType = bodyPart.getContentType();
 
                 if (contentType.contains("text/plain")) {
-                    String textContent = (String) bodyPart.getContent();
+                    String textContent = ((String) bodyPart.getContent()).replace("\r\n", "");
                     contentBuilder.append(textContent);
-                    System.out.println(textContent.toString().replace("\r\n", ""));
+                    System.out.println(textContent);
                 } /* else if (contentType.contains("text/html")) {
                     String htmlContent = (String) bodyPart.getContent();
                     contentBuilder.append(htmlContent);
@@ -166,9 +190,9 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                             buffer.write(data, 0, nRead);
                         }
                         buffer.flush();
-                        attachmentNames.add(bodyPart.getFileName());
+                        attachmentNames.add(new String(bodyPart.getFileName().getBytes("ISO8859_1"), StandardCharsets.UTF_8));
                         attachmentContents.add(buffer.toByteArray());
-                        System.out.println(bodyPart.getFileName());
+                        System.out.println(attachmentNames.get(attachmentNames.size()-1));
                         System.out.println(new String(attachmentContents.get(attachmentContents.size()-1), StandardCharsets.UTF_8));
                     }
                 }
@@ -180,14 +204,32 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
             // 去除末尾的 \r\n
             mail.setContent(content.toString().replace("\r\n", ""));
         }
-
+        //邮件信息设置
         mail.setCreate_at(LocalDateTime.now());
         mail.setSender_sign((short) 0);
         mail.setReceiver_sign((short) 0);
         mail.setRead((short) 0);
         mail.setSender_star((short) 0);
         mail.setReceiver_star((short) 0);
+        if (!attachmentNames.isEmpty() && attachmentNames.size() == attachmentContents.size()) {
+            mail.setWithAttachment((short) 1);
+        } else {
+            mail.setWithAttachment((short) 0);
+        }
         mailMapper.insertMail(mail);
+        if(!attachmentNames.isEmpty() && attachmentNames.size() == attachmentContents.size()) {
+            long mail_id = mail.getMail_id();
+            String fileName;
+            String mimeType;
+            File file;
+            MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+            for (int i = 0; i < attachmentNames.size(); i++) {
+                fileName = attachmentNames.get(i);
+                file = new File(fileName);
+                mimeType = mimeTypesMap.getContentType(file);
+                attachmentService.saveAttachment(mail_id, attachmentContents.get(i), fileName, mimeType);
+            }
+        }
         System.out.println("pass");
         // 如果需要保存附件信息，可以在这里调用相应的方法
     }

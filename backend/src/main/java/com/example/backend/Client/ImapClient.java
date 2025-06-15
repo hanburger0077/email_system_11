@@ -2,6 +2,7 @@ package com.example.backend.Client;
 
 import com.example.backend.Client.Handler.ImapClientHandler;
 import com.example.backend.DTO.MailDTO;
+import com.example.backend.entity.Attachment;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -20,9 +21,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -91,7 +89,6 @@ public class ImapClient {
             try {
                 String message = "New mail arrived: " + event;
                 sseEmitter.send(message, MediaType.TEXT_EVENT_STREAM);
-                System.out.println("send!!!");
             } catch (IOException e) {
                 sseEmitter.completeWithError(e);
             }
@@ -168,6 +165,15 @@ public class ImapClient {
                 buffer = line.substring(7);
                 getCount += buffer.length();
                 mailDTO.setReceiver_star(Short.parseShort(buffer));
+            } else if (line.startsWith("ATTACHMENT ")) {
+                buffer = line.substring(11);
+                getCount += buffer.length();
+                String[] attachmentIdsString = buffer.split(" ");
+                List<Long> attachmentIds = new ArrayList<>();
+                for (String attachmentId : attachmentIdsString) {
+                    attachmentIds.add(Long.parseLong(attachmentId));
+                }
+                mailDTO.setAttachmentIds(attachmentIds);
             } else if (!line.startsWith("*") && !line.startsWith("1 OK") && getCount < contentLength) {
                 // Assume this is part of the email content
                 if (content == null) {
@@ -342,6 +348,53 @@ public class ImapClient {
             String response = handler.sendCommand(channel, command);
             System.out.println("IMAP return：" + response);
         }
+    }
+
+
+    public Attachment attachmentCommand(long id) throws InterruptedException {
+        if (channel != null && channel.isActive()) {
+            ImapClientHandler handler = channel.pipeline().get(ImapClientHandler.class);
+            String response = handler.sendCommand(channel, "ATTACHMENT " + id);
+            System.out.println("IMAP return：" + response);
+            return parseAttachmentResponse(response);
+        } else {
+            return null;
+        }
+    }
+
+
+    public Attachment parseAttachmentResponse(String response) {
+        String[] lines = response.split("\r\n");
+        String buffer;
+        Attachment attachment = new Attachment();
+        for (String line : lines) {
+            if (line.startsWith("ID ")) {
+                buffer = line.substring(3);
+                attachment.setId(Long.parseLong(buffer));
+            } else if (line.startsWith("MAILID ")) {
+                buffer = line.substring(7);
+                attachment.setEmailId(Long.parseLong(buffer));
+            } else if (line.startsWith("NAME ")) {
+                buffer = line.substring(5);
+                attachment.setFileName(buffer);
+            } else if (line.startsWith("TYPE ")) {
+                buffer = line.substring(5);
+                attachment.setFileType(buffer);
+            } else if (line.startsWith("SIZE ")) {
+                buffer = line.substring(5);
+                attachment.setFileSize(Long.parseLong(buffer));
+            } else if (line.startsWith("PATH ")) {
+                buffer = line.substring(5);
+                attachment.setFilePath(buffer);
+            }
+        }
+        System.out.println(attachment.getId());
+        System.out.println(attachment.getEmailId());
+        System.out.println(attachment.getFileName());
+        System.out.println(attachment.getFileType());
+        System.out.println(attachment.getFileSize());
+        System.out.println(attachment.getFilePath());
+        return attachment;
     }
 
 /*

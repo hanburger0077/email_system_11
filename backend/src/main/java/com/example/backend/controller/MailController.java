@@ -124,6 +124,7 @@ public class MailController {
         return mailService.draft(mailId, to, subject, content);
     }
 
+
     //断开连接
     @PostMapping("/disconnect")
     public ResultVo updateDraft() {

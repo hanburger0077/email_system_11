@@ -1,8 +1,10 @@
 package com.example.backend.Server.Handler;
 
 import com.example.backend.DTO.MailDTO;
+import com.example.backend.entity.Attachment;
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.User;
+import com.example.backend.mapper.AttachmentMapper;
 import com.example.backend.mapper.MailMapper;
 import com.example.backend.mapper.UserMapper;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,6 +24,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
 
     private final MailMapper mailMapper;
     private final UserMapper userMapper; // 假设有一个用户服务用于验证
+    private final AttachmentMapper attachmentMapper;
     private boolean isAuthenticated = false;
 
     private long userId;
@@ -40,9 +43,10 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
 
 
 
-    public ImapServerHandler(MailMapper mailMapper, UserMapper userMapper) {
+    public ImapServerHandler(MailMapper mailMapper, UserMapper userMapper, AttachmentMapper attachmentMapper) {
         this.mailMapper = mailMapper;
         this.userMapper = userMapper;
+        this.attachmentMapper = attachmentMapper;
     }
 
 
@@ -74,8 +78,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             } else if (command.startsWith("DRAFT")) {
                 processDraft(ctx, msg);
             } else if (command.startsWith("ATTACHMENT")) {
-                //保留
-                return;
+                processAttachment(ctx, command);
             } else if (command.startsWith("QUIT")) {
                 processQuit(ctx);
             } else if (command.startsWith("NOOP")) {
@@ -87,8 +90,6 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             lastHeartbeatTime = LocalDateTime.now();
         }
     }
-
-
 
 
     @Override
@@ -133,7 +134,6 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
     */
 
 
-
     private void processNoop(ChannelHandlerContext ctx) {
         System.out.println("Hearing the heartbeat");
         // NOOP命令可以作为隐式心跳
@@ -147,6 +147,13 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.writeAndFlush("* BYE IMAP server closing connection\r\n");
         ctx.writeAndFlush("1 OK QUIT completed\r\n");
         clearAndClose(ctx);
+    }
+
+
+    private void processAttachment(ChannelHandlerContext ctx, String command) {
+        String[] items = command.split(" ");
+        Attachment attachment = attachmentMapper.selectById(Long.parseLong(items[1]));
+        sendAttachmentResponse(ctx, attachment);
     }
 
 
@@ -335,7 +342,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
                 mailMapper.changeState(mailId, "READ", "+FLAG");
                 Mail mail = mailMapper.selectByMailId(mailId);
                 if (mail != null) {
-                    sendMailDetailResponse(ctx, mail);
+                    List<Long> attachmentIds = attachmentMapper.selectByEmailId(mailId);
+                    sendMailDetailResponse(ctx, mail, attachmentIds);
                     ctx.writeAndFlush("1 OK FETCH completed\r\n");
                 } else {
                     ctx.writeAndFlush("* BAD Mail not found\r\n");
@@ -471,8 +479,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
 
     
     // 辅助方法：发送完整的邮件响应
-    private void sendMailDetailResponse(ChannelHandlerContext ctx, Mail mail) {
-        MailDTO mailDTO = new MailDTO(mail, userMapper);
+    private void sendMailDetailResponse(ChannelHandlerContext ctx, Mail mail, List<Long> attachmentIds) {
+        MailDTO mailDTO = new MailDTO(mail, userMapper, attachmentIds);
         String response = String.format("* " + mail.getMail_id() + " FETCH (DATA[] {%d}\r\n%s\r\n)",
                 mailDTO.getMailDetailLength(),
                 mailDTO.getMailDetail());
@@ -480,11 +488,23 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
     }
 
     private void sendMailSimpleResponse(ChannelHandlerContext ctx, Mail mail) {
-        MailDTO mailDTO = new MailDTO(mail, userMapper);
+        MailDTO mailDTO = new MailDTO(mail, userMapper, null);
         String response = String.format("* " + mail.getMail_id() + " FETCH (DATA[] {%d}\r\n%s\r\n)\r\n",
                 mailDTO.getMailSimpleLength(),
                 mailDTO.getMailSimple());
         ctx.writeAndFlush(response);
+    }
+
+    private void sendAttachmentResponse(ChannelHandlerContext ctx, Attachment attachment) {
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append("ID ").append(attachment.getId()).append("\r\n");
+        stringBuffer.append("MAILID ").append(attachment.getEmailId()).append("\r\n");
+        stringBuffer.append("NAME ").append(attachment.getFileName()).append("\r\n");
+        stringBuffer.append("TYPE ").append(attachment.getFileType()).append("\r\n");
+        stringBuffer.append("SIZE ").append(attachment.getFileSize()).append("\r\n");
+        stringBuffer.append("PATH ").append(attachment.getFilePath()).append("\r\n");
+        ctx.writeAndFlush(stringBuffer.toString());
+        ctx.writeAndFlush("1 OK Attachment information fetch successfully\r\n");
     }
 
     @Override

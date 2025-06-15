@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.backend.mapper.AttachmentMapper">
+
+    <!-- 插入附件记录 -->
+    <insert id="insert" parameterType="com.example.backend.entity.Attachment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attachment (mail_id, file_name, file_path, file_type, file_size)
+        VALUES (#{emailId}, #{fileName}, #{filePath}, #{fileType}, #{fileSize})
+    </insert>
+
+    <!-- 根据ID查询附件 -->
+    <select id="selectById" parameterType="Long" resultMap="mailResultMap">
+        SELECT * FROM attachment WHERE id = #{id}
+    </select>
+
+    <!-- 根据邮件ID查询附件列表（可选） -->
+    <select id="selectByEmailId" parameterType="Long" resultType="Long">
+        SELECT id FROM attachment WHERE mail_id = #{emailId}
+    </select>
+
+    <resultMap id="mailResultMap" type="com.example.backend.entity.Attachment">
+        <id property="id" column="id" javaType="long" jdbcType="BIGINT"/>
+        <result property="emailId" column="mail_id" javaType="long" jdbcType="BIGINT"/>
+        <result property="fileSize" column="file_size" javaType="long" jdbcType="BIGINT"/>
+        <result property="fileName" column="file_name" javaType="String" jdbcType="VARCHAR"/>
+        <result property="fileType" column="file_type" javaType="String" jdbcType="VARCHAR"/>
+        <result property="filePath" column="file_path" javaType="String" jdbcType="VARCHAR"/>
+    </resultMap>
+</mapper>

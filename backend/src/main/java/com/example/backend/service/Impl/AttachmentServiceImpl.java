@@ -1,8 +1,11 @@
 package com.example.backend.service.Impl;
 
+import com.example.backend.Client.ImapClient;
 import com.example.backend.entity.Attachment;
 import com.example.backend.mapper.AttachmentMapper;
 import com.example.backend.service.AttachmentService;
+import com.example.backend.utils.ResultVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
@@ -15,6 +18,9 @@ public class AttachmentServiceImpl implements AttachmentService {
 
     @Value("${attachment.storage.dir}") // 从配置文件中读取存储路径
     private String storageDir;
+
+    @Autowired
+    private ImapClient imapClient;
 
     public AttachmentServiceImpl(AttachmentMapper attachmentMapper) {
         this.attachmentMapper = attachmentMapper;
@@ -46,13 +52,26 @@ public class AttachmentServiceImpl implements AttachmentService {
         return attachment;
     }
 
-    @Override
-    public String generateDownloadUrl(Long attachmentId) {
-        return "/attachments/download/" + attachmentId;
-    }
 
     @Override
-    public Attachment getAttachmentById(Long attachmentId) {
-        return attachmentMapper.selectById(attachmentId);
+    public ResultVo getAttachmentById(Long attachmentId) {
+        try {
+            imapClient.doneCommand();
+        } catch (InterruptedException e) {
+            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+        }
+        Attachment attachment = null;
+        try {
+            attachment = imapClient.attachmentCommand(attachmentId);
+            return ResultVo.success("Attachment information gotten successfully", attachment);
+        } catch (InterruptedException e) {
+            return ResultVo.fail(0, "Failed to send ATTACHMENT command" + e.getMessage());
+        } finally {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

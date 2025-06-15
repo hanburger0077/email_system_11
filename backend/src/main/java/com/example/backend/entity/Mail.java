@@ -22,4 +22,5 @@ public class Mail implements Serializable {
     private short read;
     private short sender_star;
     private short receiver_star;
+    private short withAttachment;
 }
