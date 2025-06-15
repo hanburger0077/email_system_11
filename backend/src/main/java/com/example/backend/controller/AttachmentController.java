@@ -4,6 +4,9 @@ import com.example.backend.entity.Attachment;
 import com.example.backend.service.AttachmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/attachments")

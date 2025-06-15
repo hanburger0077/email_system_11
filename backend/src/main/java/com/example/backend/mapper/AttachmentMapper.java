@@ -2,6 +2,7 @@ package com.example.backend.mapper;
 
 import com.example.backend.entity.Attachment;
 import org.apache.ibatis.annotations.*;
+import java.util.List;
 
 @Mapper
 public interface AttachmentMapper {
