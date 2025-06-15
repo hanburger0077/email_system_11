@@ -111,10 +111,45 @@ HTTP 方法：
 
 **联调流程**：
 
- 启动数据库->数据库初始化->启动spring-boot服务器->启动前端
+0 开始联调启动流程： 
+1.git拉取新代码， 
+2.配置后端运行环境、
+3.前端运行环境、
+4.后端开启数据库
+5.后端启动服务
+6.前端开启服务，浏览器就可以访问； 
+7. 前端的接口通过http请求访问后端已经开启的服务，后端返回相应的数据或处理。
 
 具体指令：
 后端部分：
+1.配置数据库：
+下载MySQL
+打开MySQL configuration进行数据库基本信息配置
+下载MySQL workbench
+新建数据库
+将三个给定表项导入数据库
+
+2.在后端写入数据库配置：application.properties
+spring.datasource.url=jdbc:mysql://localhost:3306/mail?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+在3306/后面的数据库名改为自己建立的数据库名
+
+spring.datasource.username=
+数据库用户名，可以是root
+
+spring.datasource.password=
+数据库用户密码，自己定的
+
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+基本不用改
+
+一般数据库在第一次开启后自己开机的时候会打开，如果没打开就打开MySQL configuration开启
+
+3.服务器开启
+打开test.java就能动了
+
+4.为了不影响每个人的application.properties配置，请修改后不要上传这个文件
+
+
 
 前端部分： 
 1. cd ./frontend 
