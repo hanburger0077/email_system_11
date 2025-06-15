@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>View Mail</title>
   <style>
+    /* 保持原有的样式不变 */
     body {
         font-family: Arial, sans-serif;
         margin: 20px;
@@ -251,7 +252,12 @@
               });
               const result = await response.json();
               if (result.code === 1001) {
-                  goBackToMailbox(); // 删除成功后返回邮箱页面
+                  // 通知父窗口邮件已删除
+                  if (window.opener && !window.opener.closed) {
+                      window.opener.postMessage('mailDeleted', window.opener.location.origin);
+                  }
+                  // 关闭当前窗口
+                  window.close();
               } else {
                   alert(result.msg);
               }
@@ -270,6 +276,5 @@
 
   initMailDetails();
 </script>
-
 </body>
 </html>

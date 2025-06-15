@@ -19,6 +19,11 @@
         SELECT id FROM attachment WHERE mail_id = #{emailId}
     </select>
 
+    <!-- 根据邮件ID删除附件记录 -->
+    <delete id="deleteByEmailId" parameterType="Long">
+        DELETE FROM attachment WHERE mail_id = #{emailId}
+    </delete>
+
     <resultMap id="mailResultMap" type="com.example.backend.entity.Attachment">
         <id property="id" column="id" javaType="long" jdbcType="BIGINT"/>
         <result property="emailId" column="mail_id" javaType="long" jdbcType="BIGINT"/>

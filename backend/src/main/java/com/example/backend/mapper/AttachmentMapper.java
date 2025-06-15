@@ -15,4 +15,6 @@ public interface AttachmentMapper {
 
     // 根据邮件ID查询附件列表（可选）
     List<Long> selectByEmailId(Long emailId);
+
+    int deleteByEmailId(Long emailId);
 }

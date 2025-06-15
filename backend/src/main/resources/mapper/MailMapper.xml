@@ -105,7 +105,8 @@
             receiver_sign,
             `read`,
             sender_star,
-            receiver_star
+            receiver_star,
+            withAttachment
         FROM
             mail
         WHERE

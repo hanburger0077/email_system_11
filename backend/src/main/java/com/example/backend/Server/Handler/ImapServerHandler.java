@@ -12,6 +12,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -209,6 +213,13 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         if (mail.getSender_id() == userId) {
             // 3为接收方标签的逻辑删除标签
             if (mail.getReceiver_sign() == 3) {
+                if (mail.getWithAttachment() == 1) {
+                    List<Long> attachmentIds = attachmentMapper.selectByEmailId(mailId);
+                    for(Long attachmentId : attachmentIds) {
+                        deleteAttachment(attachmentId);
+                    }
+                    attachmentMapper.deleteByEmailId(mailId);
+                }
                 mailMapper.deleteMail(mailId);
             } else {
                 mailMapper.setDeleteSign(mailId, "sender");
@@ -217,6 +228,14 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         else if (mail.getReceiver_id() == userId) {
             // 2为发送方标签的逻辑删除标签
             if (mail.getSender_sign() == 2) {
+                System.out.println(mail.getWithAttachment());
+                if (mail.getWithAttachment() == 1) {
+                    List<Long> attachmentIds = attachmentMapper.selectByEmailId(mailId);
+                    for(Long attachmentId : attachmentIds) {
+                        deleteAttachment(attachmentId);
+                    }
+                    attachmentMapper.deleteByEmailId(mailId);
+                }
                 mailMapper.deleteMail(mailId);
             } else {
                 mailMapper.setDeleteSign(mailId, "receiver");
@@ -495,6 +514,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.writeAndFlush(response);
     }
 
+
     private void sendAttachmentResponse(ChannelHandlerContext ctx, Attachment attachment) {
         StringBuffer stringBuffer = new StringBuffer();
         stringBuffer.append("ID ").append(attachment.getId()).append("\r\n");
@@ -506,6 +526,23 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         ctx.writeAndFlush(stringBuffer.toString());
         ctx.writeAndFlush("1 OK Attachment information fetch successfully\r\n");
     }
+
+
+    private void deleteAttachment(Long attachmentId) {
+        // 1. 从数据库查询附件信息
+        Attachment attachment = attachmentMapper.selectById(attachmentId);
+        if (attachment == null) {
+            return; // 附件不存在
+        }
+        // 2. 删除文件系统中的文件
+        Path filePath = Paths.get(attachment.getFilePath());
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

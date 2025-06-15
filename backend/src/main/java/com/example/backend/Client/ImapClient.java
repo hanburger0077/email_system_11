@@ -183,7 +183,7 @@ public class ImapClient {
                     getCount += 1;
                 }
                 getCount += line.length();
-            } else {
+            } else if (line.startsWith("*") || line.startsWith("1 OK")) {
                 System.out.println("IMAP return：" + response);
             }
         }
