@@ -2,9 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.backend.mapper.MailMapper">
 
-    <insert id="insertMail" parameterType="com.example.backend.entity.Mail">
-        INSERT INTO mail (sender_id, receiver_id, subject, content, create_at, sender_sign, receiver_sign, `read`, sender_star, receiver_star)
-        VALUES (#{sender_id}, #{receiver_id}, #{subject}, #{content}, #{create_at}, #{sender_sign}, #{receiver_sign}, #{read}, #{sender_star}, #{receiver_star})
+    <insert id="insertMail" parameterType="com.example.backend.entity.Mail" useGeneratedKeys="true" keyProperty="mail_id">
+        INSERT INTO mail (sender_id, receiver_id, subject, content, create_at, sender_sign, receiver_sign, `read`, sender_star, receiver_star, withAttachment)
+        VALUES (#{sender_id}, #{receiver_id}, #{subject}, #{content}, #{create_at}, #{sender_sign}, #{receiver_sign}, #{read}, #{sender_star}, #{receiver_star}, #{withAttachment})
     </insert>
 
 
@@ -105,7 +105,8 @@
             receiver_sign,
             `read`,
             sender_star,
-            receiver_star
+            receiver_star,
+            withAttachment
         FROM
             mail
         WHERE
@@ -213,7 +214,6 @@
             AND sender_sign = 1
     </update>
 
-
     <!-- 定义结果映射 -->
     <resultMap id="mailResultMap" type="com.example.backend.entity.Mail">
         <id property="mail_id" column="mail_id" javaType="long" jdbcType="BIGINT"/>
@@ -227,5 +227,6 @@
         <result property="read" column="read" javaType="short" jdbcType="TINYINT"/>
         <result property="sender_star" column="sender_star" javaType="short" jdbcType="TINYINT"/>
         <result property="receiver_star" column="receiver_star" javaType="short" jdbcType="TINYINT"/>
+        <result property="withAttachment" column="withAttachment" javaType="short" jdbcType="TINYINT"/>
     </resultMap>
 </mapper>

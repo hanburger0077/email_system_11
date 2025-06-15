@@ -153,7 +153,6 @@ public class SmtpClient {
                     //.append(htmlBody).append("\r\n\r\n") // HTML 部分
                     //.append("--" + boundary + "--\r\n"); // multipart/alternative 结束标记
 
-
             System.out.println(response);
 
             // 发送附件数据块
@@ -172,7 +171,7 @@ public class SmtpClient {
 
                 // 发送附件数据
                 String attachmentData = Base64.getEncoder().encodeToString(attachmentContent);
-                int chunkSize = 76;
+                int chunkSize = 760;
                 for (int j = 0; j < attachmentData.length(); j += chunkSize) {
                     int end = Math.min(j + chunkSize, attachmentData.length());
                     String chunk = attachmentData.substring(j, end) + "\r\n";

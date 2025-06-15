@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mailbox</title>
     <style>
+        /* 保持原有的样式不变 */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -187,6 +188,11 @@
         }
     }
 
+    // 添加事件监听器来处理来自详情页面的刷新请求
+    window.addEventListener('mailDeleted', function() {
+        loadMails(currentPage); // 重新加载当前页邮件
+    });
+
     function initFolder() {
         const urlParams = new URLSearchParams(window.location.search);
         const folder = urlParams.get('folder') || 'INBOX';
@@ -328,7 +334,15 @@
     }
 
     function viewMail(mailId) {
-        window.location.href = `/view-mail.html?mailbox=${currentFolder}&mailId=${mailId}`;
+        // 打开详情页面时，传递当前文件夹信息
+        const detailWindow = window.open(`/view-mail.html?mailbox=${currentFolder}&mailId=${mailId}`, '_blank');
+
+        // 监听来自详情页面的消息
+        window.addEventListener('message', function(event) {
+            if (event.data === 'mailDeleted' && detailWindow.closed) {
+                loadMails(currentPage);
+            }
+        });
     }
 
     function composeMail() {

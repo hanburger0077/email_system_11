@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.Client.ImapClient;
 import com.example.backend.Client.SmtpClient;
 import com.example.backend.DTO.MailDTO;
+import com.example.backend.entity.Attachment;
 import com.example.backend.service.MailService;
 import com.example.backend.utils.ResultVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,25 +134,20 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            try {
-                imapClient.idleCommand();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
             return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
         }
         try {
             mailDTO = imapClient.fetchCommand("DETAIL", mailId);
             return ResultVo.success("Mail fetch successfully", mailDTO);
         } catch (InterruptedException e) {
+            return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
+        } finally {
             try {
                 imapClient.idleCommand();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
         }
-
     }
 
 
@@ -197,18 +193,18 @@ public class MailServiceImpl implements MailService {
                 for(long id : pageMailIds) {
                     mails.add(imapClient.fetchCommand("SIMPLE", id));
                 }
-                imapClient.idleCommand();
                 return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
-                try {
-                    imapClient.idleCommand();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
                 return ResultVo.fail(0, "No mail in the mailbox");
             }
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
+        } finally {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -289,6 +285,12 @@ public class MailServiceImpl implements MailService {
             return ResultVo.success("Mail stored successfully");
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send STORE command" + e.getMessage());
+        } finally {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -305,6 +307,12 @@ public class MailServiceImpl implements MailService {
             return ResultVo.success("Mail deleted successfully");
         } catch (InterruptedException e) {
             return ResultVo.fail(0, "Failed to send DELETE command" + e.getMessage());
+        } finally {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

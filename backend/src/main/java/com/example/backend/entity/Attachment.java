@@ -1,6 +1,8 @@
 package com.example.backend.entity;
 
-public class Attachment {
+import java.io.Serializable;
+
+public class Attachment implements Serializable {
     private Long id;          // 附件ID（数据库自增）
     private Long emailId;     // 关联的邮件ID
     private String fileName;  // 原始文件名（如 "report.pdf"）

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -26,9 +27,10 @@ public class MailDTO {
     private short read;
     private short sender_star;
     private short receiver_star;
+    private List<Long> attachmentIds;
 
 
-    public MailDTO (Mail mail, UserMapper userMapper) {
+    public MailDTO (Mail mail, UserMapper userMapper, List<Long> attachmentIds) {
         mail_id = mail.getMail_id();
         User sender = userMapper.findById(mail.getSender_id());
         sender_email = sender.getEmail();
@@ -42,6 +44,11 @@ public class MailDTO {
         read = mail.getRead();
         sender_star = mail.getSender_star();
         receiver_star = mail.getReceiver_star();
+        if (attachmentIds != null && !attachmentIds.isEmpty()) {
+           this.attachmentIds = attachmentIds;
+        } else {
+            attachmentIds = null;
+        }
     }
 
     public String getMailDetail() {
@@ -54,7 +61,13 @@ public class MailDTO {
         s.append("DATE ").append(create_at.toString()).append("\r\n");
         s.append("READ ").append(read).append("\r\n");
         s.append("S_STAR ").append(sender_star).append("\r\n");
-        s.append("R_STAR ").append(receiver_star);
+        s.append("R_STAR ").append(receiver_star).append("\r\n");
+        if (attachmentIds != null && !attachmentIds.isEmpty()) {
+            s.append("ATTACHMENT");
+            for (long attachmentId : attachmentIds) {
+                s.append(" ").append(attachmentId);
+            }
+        }
         return s.toString();
     }
 
@@ -69,6 +82,12 @@ public class MailDTO {
         length += String.valueOf(read).length();
         length += String.valueOf(sender_star).length();
         length += String.valueOf(receiver_star).length();
+        if (attachmentIds != null && !attachmentIds.isEmpty()) {
+            for (long attachmentId : attachmentIds) {
+                length += String.valueOf(attachmentId).length() + 1;
+            }
+            length -= 1;
+        }
         return length;
     }
 
