@@ -1,11 +1,9 @@
 package com.example.backend.service.Impl;
 
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.Client.ImapClient;
 import com.example.backend.Client.SmtpClient;
 import com.example.backend.DTO.MailDTO;
-import com.example.backend.entity.Attachment;
 import com.example.backend.service.MailService;
 import com.example.backend.utils.ResultVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +56,7 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.connect();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed connect to Server");
+            return ResultVo.fail("操作失败", "Failed connect to Server");
         }
         this.userEmail = username;
         this.userPassword = password;
@@ -67,7 +65,7 @@ public class MailServiceImpl implements MailService {
             imapClient.loginCommand(userEmail, userPassword);
             return ResultVo.success("LOGIN and IDLE successfully");
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send LOGIN command");
+            return ResultVo.fail("操作失败", "Failed to send LOGIN command");
         }
     }
 
@@ -78,7 +76,7 @@ public class MailServiceImpl implements MailService {
             this.smtpClient.connect();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to connect to SMTP server" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to connect to SMTP server" + e.getMessage());
         }
         List<String> attachmentNames = null;
         List<byte[]> attachmentContents = null;
@@ -90,7 +88,7 @@ public class MailServiceImpl implements MailService {
                 try {
                     attachmentContents.add(file.getBytes());
                 } catch (IOException e) {
-                    return ResultVo.fail(0, "File byte stream error" + e.getMessage());
+                    return ResultVo.fail("操作失败", "File byte stream error" + e.getMessage());
                 }
             }
         }
@@ -118,7 +116,7 @@ public class MailServiceImpl implements MailService {
             return ResultVo.success("Email sent successfully!");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return ResultVo.fail(0, "Failed to send email: " + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send email: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -134,13 +132,13 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             mailDTO = imapClient.fetchCommand("DETAIL", mailId);
             return ResultVo.success("Mail fetch successfully", mailDTO);
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send FETCH command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();
@@ -160,13 +158,13 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
         } catch (InterruptedException e) {
             imapClient.disconnect();
-            return ResultVo.fail(0, "Failed to send SELECT command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send SELECT command" + e.getMessage());
         }
         try {
             mailId = imapClient.searchCommand(null, null, null, null, null, null, false, false);
@@ -177,7 +175,7 @@ public class MailServiceImpl implements MailService {
                 int toIndex = Math.min(fromIndex + pageSize, total);
                 // 检查分页参数是否有效
                 if (fromIndex >= total) {
-                    return ResultVo.fail(0, "Requested page is out of range");
+                    return ResultVo.fail("操作失败", "Requested page is out of range");
                 }
                 //获取总页数
                 totalPageNum = (int)Math.ceil((double) total / pageSize);
@@ -185,7 +183,7 @@ public class MailServiceImpl implements MailService {
                 pageMailIds = mailId.subList(fromIndex, toIndex);
             }
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
         }
         try {
             if(mailId != null) {
@@ -195,10 +193,10 @@ public class MailServiceImpl implements MailService {
                 }
                 return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
-                return ResultVo.fail(0, "No mail in the mailbox");
+                return ResultVo.fail("操作失败", "No mail in the mailbox");
             }
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send FETCH command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send FETCH command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();
@@ -225,12 +223,12 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send SELECT command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send SELECT command" + e.getMessage());
         }
         try {
             mailId = imapClient.searchCommand(from, to, subject, body, dateTime, unseen, sender_star, receiver_star);
@@ -241,7 +239,7 @@ public class MailServiceImpl implements MailService {
                 int toIndex = Math.min(fromIndex + pageSize, total);
                 // 检查分页参数是否有效
                 if (fromIndex >= total) {
-                    return ResultVo.fail(0, "Requested page is out of range");
+                    return ResultVo.fail("操作失败", "Requested page is out of range");
                 }
                 //获取总页数
                 totalPageNum = (int)Math.ceil((double) total / pageSize);
@@ -249,7 +247,7 @@ public class MailServiceImpl implements MailService {
                 pageMailIds = mailId.subList(fromIndex, toIndex);
             }
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
         }
         try {
             if(mailId != null) {
@@ -259,10 +257,10 @@ public class MailServiceImpl implements MailService {
                 }
                 return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
-                return ResultVo.fail(0, "No mail searched in this mailbox");
+                return ResultVo.fail("操作失败", "No mail searched in this mailbox");
             }
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send SEARCH command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();
@@ -278,13 +276,13 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.storeCommand(mailId, sign, op);
             return ResultVo.success("Mail stored successfully");
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send STORE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send STORE command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();
@@ -300,13 +298,13 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.deleteCommand(mailId);
             return ResultVo.success("Mail deleted successfully");
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DELETE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DELETE command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();
@@ -322,13 +320,13 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DONE command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.draftCommand(mailId, userEmail, to, subject, content);
             return ResultVo.success("Draft saved successfully");
         } catch (InterruptedException e) {
-            return ResultVo.fail(0, "Failed to send DRAFT command" + e.getMessage());
+            return ResultVo.fail("操作失败", "Failed to send DRAFT command" + e.getMessage());
         } finally {
             try {
                 imapClient.idleCommand();

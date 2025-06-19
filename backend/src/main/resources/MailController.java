@@ -42,13 +42,7 @@ public class MailController {
             @RequestParam(required = false) List<MultipartFile> attachmentFiles) {
         if (attachmentFiles == null || attachmentFiles.isEmpty()) {
             attachmentFiles = null;
-        } else {
-            System.out.println("Attachments: " + (attachmentFiles != null ? attachmentFiles.size() : 0));
-            System.out.println(attachmentFiles.get(0).getOriginalFilename());
         }
-        System.out.println("To: " + to);
-        System.out.println("Subject: " + subject);
-        System.out.println("Content: " + content);
         return mailService.sendMail(to, subject, content, attachmentFiles);
     }
 
@@ -127,7 +121,7 @@ public class MailController {
 
     //断开连接
     @PostMapping("/disconnect")
-    public ResultVo updateDraft() {
+    public ResultVo disconnect() {
         return mailService.disconnect();
     }
 }

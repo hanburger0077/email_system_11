@@ -344,7 +344,7 @@ public class ImapClient {
                             + to + "\r\n"
                             + subject + "\r\n"
                             + content + "\r\n"
-                            + mailId;
+                            + mailId + "\r\n";
             String response = handler.sendCommand(channel, command);
             System.out.println("IMAP return：" + response);
         }

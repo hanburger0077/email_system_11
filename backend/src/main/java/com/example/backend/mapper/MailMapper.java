@@ -38,7 +38,7 @@ public interface MailMapper {
     int checkNewMail(long userId, LocalDateTime lastCheckTime);
 
     //删除邮件
-    int deleteMail(long mailId);
+    void deleteMail(long mailId);
 
     //设置删除标签
     void setDeleteSign(long mailId, String SorR);
