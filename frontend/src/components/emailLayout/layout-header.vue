@@ -1,6 +1,12 @@
 <template>
   <div class="header-container">
-    <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
+    <div class="brand-section">
+      <img src="@/assets/logo.jpg" alt="华南理工大学" class="logo" />
+      <div class="brand-name">
+        <span class="brand-flow">Flow</span>
+        <span class="brand-mail">mail</span>
+      </div>
+    </div>
     <div class="header-content">
       <el-input placeholder="邮箱搜索" class="search-input" />
       <div class="header-right" @mouseleave="handleAccountMouseLeave">
@@ -50,10 +56,37 @@ const handleAccountMouseLeave = () => {
   align-items: center;
   z-index: 100;
   padding: 0 24px;
+}
 
+.brand-section {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  
   .logo {
-    height: 50px;
-    margin-right: 16px;
+    height: 40px;
+    margin-right: 12px;
+  }
+  
+  .brand-name {
+    display: flex;
+    align-items: baseline;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    
+    .brand-flow {
+      font-size: 24px;
+      font-weight: 300;
+      color: #2c3e50;
+      letter-spacing: -0.5px;
+    }
+    
+    .brand-mail {
+      font-size: 24px;
+      font-weight: 600;
+      color: #409eff;
+      letter-spacing: -0.5px;
+      margin-left: 2px;
+    }
   }
 }
 
@@ -74,7 +107,7 @@ const handleAccountMouseLeave = () => {
 
 .header-right {
   margin-left: auto;
-  margin-right: 40px; /* 与右边保持24px距离 */
+  margin-right: 50px; /* 与右边保持24px距离 */
 }
 
 .account-circle {
@@ -112,6 +145,22 @@ const handleAccountMouseLeave = () => {
     top: 36px;
     right: 0px;
     cursor: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .brand-section {
+    .logo {
+      height: 36px;
+      margin-right: 8px;
+    }
+    
+    .brand-name {
+      .brand-flow,
+      .brand-mail {
+        font-size: 20px;
+      }
+    }
   }
 }
 </style>

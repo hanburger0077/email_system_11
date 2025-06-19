@@ -33,7 +33,7 @@
                 </el-button>
                 <el-button 
                   type="primary" 
-                  size="small"
+                  size="medium"
                   @click="saveUsername"
                   :loading="loading.username"
                   class="action-btn primary"
@@ -62,7 +62,7 @@
                 </el-button>
                 <el-button 
                   type="primary" 
-                  size="small"
+                  size="medium"
                   @click="savePhone"
                   :loading="loading.phone"
                   class="action-btn primary"
@@ -425,7 +425,7 @@ const validatePasswordFromAPI = async () => {
   .info-header-back {
     display: flex;
     align-items: center;
-    font-size: 14px;
+    font-size: 16px;
     color: #409eff;
     cursor: pointer;
     
@@ -442,7 +442,7 @@ const validatePasswordFromAPI = async () => {
 .info-content {
   .info-content-left {
     .info-content-left-title {
-      font-size: 24px;
+      font-size: 28px;
       font-weight: bold;
       color: #303133;
       margin-bottom: 32px;
@@ -479,7 +479,7 @@ const validatePasswordFromAPI = async () => {
 
 .form-label {
   min-width: 80px;
-  font-size: 14px;
+  font-size: 15.5px;
   color: #606266;
   font-weight: 500;
   margin-right: 16px;
@@ -511,6 +511,8 @@ const validatePasswordFromAPI = async () => {
     color: #606266;
     cursor: pointer;
     transition: all 0.3s;
+    width: 56px;
+    text-align: center;
     
     &:hover:not(:disabled) {
       color: #409eff;
@@ -547,14 +549,18 @@ const validatePasswordFromAPI = async () => {
 
 .edit-actions {
   display: flex;
-  gap: 12px;
+  gap: 0px;
+  justify-content: flex-start;
+  width: 120px;
 }
 
 .password-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 0px;
   margin-top: 32px;
+  margin-left: 96px;
+  width: 120px;
   
   .action-btn {
     padding: 8px 16px;
@@ -565,6 +571,8 @@ const validatePasswordFromAPI = async () => {
     color: #606266;
     cursor: pointer;
     transition: all 0.3s;
+    width: 56px;
+    text-align: center;
     
     &:hover:not(:disabled) {
       color: #409eff;
