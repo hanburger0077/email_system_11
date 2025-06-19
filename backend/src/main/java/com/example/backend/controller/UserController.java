@@ -6,10 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Map; // 导入 Map 用于处理请求体
+import java.util.Map;
+
 
 @RestController
-@RequestMapping("/api/user") // 更新了基础路径以匹配 API URL 格式
+@RequestMapping("/api/user")
 public class UserController {
 
     @Autowired
@@ -32,41 +33,34 @@ public class UserController {
         return userService.register(username, password, confirmPassword, email, phone);
     }
 
-    @PostMapping("/logout")
-    public ResultVo logout(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        String password = payload.get("password");
-        return userService.logout(email, password);
+    @PostMapping("/logout") // 注销（逻辑删除）- 现在需要密码验证
+    public ResultVo logout(HttpServletRequest request, @RequestBody Map<String, String> payload) { // 接收 HttpServletRequest 和请求体
+        String password = payload.get("password"); // 从请求体中获取密码
+        return userService.logout(request, password);
     }
 
-    @PostMapping("/exit")
+    @PostMapping("/exit") // 退出（清除登录状态）
     public ResultVo exit(HttpServletRequest request, HttpServletResponse response) {
         return userService.exit(request, response);
     }
 
     @PostMapping("/updateUsername")
-    public ResultVo updateUsername(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        String password = payload.get("password");
-        String oldUsername = payload.get("oldUsername");
+    public ResultVo updateUsername(HttpServletRequest request, @RequestBody Map<String, String> payload) {
         String newUsername = payload.get("newUsername");
-        return userService.updateUsername(email, password, oldUsername, newUsername);
+        return userService.updateUsername(request, newUsername);
     }
 
     @PostMapping("/updatePhone")
-    public ResultVo updatePhone(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        String password = payload.get("password");
-        String oldPhone = payload.get("oldPhone");
+    public ResultVo updatePhone(HttpServletRequest request, @RequestBody Map<String, String> payload) {
         String newPhone = payload.get("newPhone");
-        return userService.updatePhone(email, password, oldPhone, newPhone);
+        return userService.updatePhone(request, newPhone);
     }
 
     @PostMapping("/updatePassword")
-    public ResultVo updatePassword(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
+    public ResultVo updatePassword(HttpServletRequest request, @RequestBody Map<String, String> payload) {
         String oldPassword = payload.get("oldPassword");
         String newPassword = payload.get("newPassword");
-        return userService.updatePassword(email, oldPassword, newPassword);
+        String confirmNewPassword = payload.get("confirmNewPassword");
+        return userService.updatePassword(request, oldPassword, newPassword, confirmNewPassword);
     }
 }
