@@ -22,7 +22,7 @@ public class AttachmentController {
     }
 
     /**
-     * 生成附件下载链接（供协议模块调用）
+     * 获取附件基本信息（不包含数据块）
      */
     @GetMapping("/{attachmentId}")
     public ResultVo getAttachmentInfo(@PathVariable Long attachmentId) {

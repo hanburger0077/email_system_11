@@ -1,7 +1,9 @@
 package com.example.backend.Server.Handler;
 
+import com.example.backend.entity.Attachment;
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.User;
+import com.example.backend.mapper.AttachmentMapper;
 import com.example.backend.mapper.MailMapper;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.service.AttachmentService;
@@ -11,15 +13,20 @@ import jakarta.activation.MimetypesFileTypeMap;
 import jakarta.mail.*;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,11 +41,17 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
     private List<String> recipients = new ArrayList<>();
     private String sender;
 
+    @Value("${attachment.storage.dir}")
+    private String storageDir;
+
     @Autowired
     private UserMapper userMapper;
 
     @Autowired
     private MailMapper mailMapper;
+
+    @Autowired
+    private AttachmentMapper attachmentMapper;
 
     @Autowired
     private AttachmentService attachmentService;
@@ -64,7 +77,6 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                     ctx.writeAndFlush("250 OK: queued as 12345\r\n");
                 } else {
                     //收到的报文块处理：附件模式和块模式，防止附件数据块添加空行
-                    System.out.println(command);
                     if (command.contains("attachment")) {
                         //进入附件
                         attachmentMode = true;
@@ -227,10 +239,44 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                 fileName = attachmentNames.get(i);
                 file = new File(fileName);
                 mimeType = mimeTypesMap.getContentType(file);
-                attachmentService.saveAttachment(mail_id, attachmentContents.get(i), fileName, mimeType);
+                saveAttachment(mail_id, attachmentContents.get(i), fileName, mimeType);
             }
         }
         System.out.println("pass");
         // 如果需要保存附件信息，可以在这里调用相应的方法
     }
+
+
+    /**
+     * 保存附件到磁盘并记录到数据库
+     * @param emailId    关联的邮件ID
+     * @param fileBytes 文件字节流（由协议模块解析后传入）
+     * @param fileName  原始文件名
+     * @param fileType  文件类型
+     */
+    public Attachment saveAttachment(Long emailId, byte[] fileBytes, String fileName, String fileType) {
+        //  生成唯一文件名和存储路径
+        String uniqueFileName = UUID.randomUUID() + "_" + fileName;
+        Path filePath = Paths.get(storageDir, uniqueFileName);
+
+        // 2. 确保目录存在并写入文件
+        try {
+            Files.createDirectories(filePath.getParent());
+            Files.write(filePath, fileBytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save attachment", e);
+        }
+
+        // 3. 保存记录到数据库
+        Attachment attachment = new Attachment();
+        attachment.setEmailId(emailId);
+        attachment.setFileName(fileName);
+        attachment.setFilePath(filePath.toString());
+        attachment.setFileType(fileType);
+        attachment.setFileSize((long) fileBytes.length);
+        attachmentMapper.insert(attachment);
+
+        return attachment;
+    }
+
 }
