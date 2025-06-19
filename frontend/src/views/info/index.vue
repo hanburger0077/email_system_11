@@ -14,166 +14,148 @@
         <!-- 基本信息区块 -->
         <div class="info-section">
           <div class="section-title">基本信息</div>
-          <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="80px">
-            <el-form-item label="用户名" prop="username">
-              <div class="form-item-content">
-                <el-input 
-                  v-model="userForm.username" 
-                  :disabled="!editMode.username"
-                  placeholder="请输入用户名"
-                />
+          
+          <div class="form-item-row">
+            <span class="form-label required">用户名</span>
+            <div class="form-item-content">
+              <el-input 
+                v-model="userForm.username" 
+                placeholder="当前用户名"
+                class="form-input"
+              />
+              <div class="edit-actions">
                 <el-button 
-                  v-if="!editMode.username"
                   type="text" 
-                  @click="toggleEdit('username')"
-                  class="edit-btn"
+                  @click="cancelUsername"
+                  class="action-btn"
                 >
-                  修改
+                  取消
                 </el-button>
-                <div v-else class="edit-actions">
-                  <el-button 
-                    type="text" 
-                    @click="toggleEdit('username')"
-                    class="cancel-btn"
-                  >
-                    取消
-                  </el-button>
-                  <el-button 
-                    type="primary" 
-                    size="small"
-                    @click="saveUsername"
-                    :loading="loading.username"
-                  >
-                    保存
-                  </el-button>
-                </div>
-              </div>
-            </el-form-item>
-            
-            <el-form-item label="手机号" prop="phone">
-              <div class="form-item-content">
-                <el-input 
-                  v-model="userForm.phone" 
-                  :disabled="!editMode.phone"
-                  placeholder="请输入手机号"
-                />
                 <el-button 
-                  v-if="!editMode.phone"
-                  type="text" 
-                  @click="toggleEdit('phone')"
-                  class="edit-btn"
+                  type="primary" 
+                  size="small"
+                  @click="saveUsername"
+                  :loading="loading.username"
+                  class="action-btn primary"
                 >
-                  {{ editMode.phone ? '取消' : '修改' }}
+                  保存
                 </el-button>
-                <div v-else class="edit-actions">
-                  <el-button 
-                    type="text" 
-                    @click="toggleEdit('phone')"
-                    class="cancel-btn"
-                  >
-                    取消
-                  </el-button>
-                  <el-button 
-                    type="primary" 
-                    size="small"
-                    @click="savePhone"
-                    :loading="loading.phone"
-                  >
-                    保存
-                  </el-button>
-                </div>
               </div>
-            </el-form-item>
-          </el-form>
+            </div>
+          </div>
+          
+          <div class="form-item-row">
+            <span class="form-label required">手机号</span>
+            <div class="form-item-content">
+              <el-input 
+                v-model="userForm.phone" 
+                placeholder="138****8888"
+                class="form-input"
+              />
+              <div class="edit-actions">
+                <el-button 
+                  type="text" 
+                  @click="cancelPhone"
+                  class="action-btn"
+                >
+                  取消
+                </el-button>
+                <el-button 
+                  type="primary" 
+                  size="small"
+                  @click="savePhone"
+                  :loading="loading.phone"
+                  class="action-btn primary"
+                >
+                  保存
+                </el-button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 安全设置区块 -->
         <div class="info-section">
           <div class="section-title">安全设置</div>
-          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="80px">
-            <el-form-item label="旧密码" prop="oldPassword" v-if="editMode.password">
+          
+          <div class="form-item-row">
+            <span class="form-label required">旧密码</span>
+            <div class="form-item-content">
               <el-input 
                 type="password" 
                 v-model="passwordForm.oldPassword" 
                 placeholder="请输入当前密码"
                 show-password
+                class="form-input"
               />
-            </el-form-item>
-            
-            <el-form-item label="新密码" prop="newPassword" v-if="editMode.password">
+            </div>
+          </div>
+          
+          <div class="form-item-row">
+            <span class="form-label required">新密码</span>
+            <div class="form-item-content">
               <el-input 
                 type="password" 
                 v-model="passwordForm.newPassword" 
                 placeholder="请输入新密码"
                 show-password
+                class="form-input"
                 @blur="validatePasswordFromAPI"
               />
-            </el-form-item>
-            
-            <el-form-item label="确认密码" prop="confirmPassword" v-if="editMode.password">
+            </div>
+          </div>
+          
+          <div class="form-item-row">
+            <span class="form-label required">确认密码</span>
+            <div class="form-item-content">
               <el-input 
                 type="password" 
                 v-model="passwordForm.confirmPassword" 
                 placeholder="请再次输入新密码"
                 show-password
+                class="form-input"
               />
-            </el-form-item>
-            
-            <el-form-item label="登录密码">
-              <div class="form-item-content">
-                <el-input 
-                  type="password" 
-                  value="********" 
-                  disabled
-                  v-if="!editMode.password"
-                />
-                <el-button 
-                  v-if="!editMode.password"
-                  type="text" 
-                  @click="toggleEdit('password')"
-                  class="edit-btn"
-                >
-                  修改密码
-                </el-button>
-                <div v-else class="edit-actions">
-                  <el-button 
-                    type="text" 
-                    @click="toggleEdit('password')"
-                    class="cancel-btn"
-                  >
-                    取消
-                  </el-button>
-                  <el-button 
-                    type="primary" 
-                    size="small"
-                    @click="savePassword"
-                    :loading="loading.password"
-                  >
-                    保存
-                  </el-button>
-                </div>
-              </div>
-            </el-form-item>
-          </el-form>
+            </div>
+          </div>
+          
+          <div class="password-actions">
+            <el-button 
+              type="text" 
+              @click="resetPasswordForm"
+              class="action-btn"
+            >
+              取消
+            </el-button>
+            <el-button 
+              type="primary" 
+              @click="savePassword"
+              :loading="loading.password"
+              class="action-btn primary"
+            >
+              保存
+            </el-button>
+          </div>
         </div>
-
-        
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { updateUsername, updatePhone, updatePassword, handleApiError } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 表单数据
 const userForm = reactive({
-  username: '当前用户名', // 这里后续从API获取
-  phone: '138****8888'    // 这里后续从API获取
+  username: '', 
+  phone: ''
 })
 
 const passwordForm = reactive({
@@ -182,12 +164,7 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-// 编辑模式控制
-const editMode = reactive({
-  username: false,
-  phone: false,
-  password: false
-})
+// 移除编辑模式控制，所有输入框都是可编辑的
 
 // 加载状态
 const loading = reactive({
@@ -196,147 +173,208 @@ const loading = reactive({
   password: false
 })
 
-// 表单引用
-const userFormRef = ref()
-const passwordFormRef = ref()
+// 移除表单引用，使用简单验证
 
-// 表单验证规则
-const userRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 20, message: '用户名长度在2到20个字符', trigger: 'blur' }
-  ],
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ]
-}
-
-const passwordRules = {
-  oldPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
-  ],
-  newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在6到20个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
-  ]
-}
+// 移除表单验证规则，使用简单验证
 
 // 原始数据备份（用于取消编辑时恢复）
-const originalData = {
-  username: userForm.username,
-  phone: userForm.phone
-}
+const originalData = reactive({
+  username: '',
+  phone: ''
+})
+
+// 初始化用户数据
+onMounted(() => {
+  if (userStore.userInfo.username) {
+    userForm.username = userStore.userInfo.username
+    userForm.phone = userStore.userInfo.phone
+    originalData.username = userStore.userInfo.username
+    originalData.phone = userStore.userInfo.phone
+  }
+})
 
 const handleBack = () => {
   router.go(-1)
 }
 
-// 切换编辑模式
-const toggleEdit = (field) => {
-  if (editMode[field]) {
-    // 取消编辑，恢复原始数据
-    if (field === 'username') {
-      userForm.username = originalData.username
-    } else if (field === 'phone') {
-      userForm.phone = originalData.phone
-    } else if (field === 'password') {
-      // 清空密码表单
-      passwordForm.oldPassword = ''
-      passwordForm.newPassword = ''
-      passwordForm.confirmPassword = ''
-    }
-  } else {
-    // 开始编辑，备份当前数据
-    if (field === 'username') {
-      originalData.username = userForm.username
-    } else if (field === 'phone') {
-      originalData.phone = userForm.phone
-    }
-  }
-  editMode[field] = !editMode[field]
-}
+// 移除切换编辑模式的方法
 
 // 保存用户名
 const saveUsername = async () => {
   try {
-    await userFormRef.value.validateField('username')
+    // 简单验证
+    if (!userForm.username || userForm.username.trim() === '') {
+      ElMessage.error('用户名不能为空')
+      return
+    }
+    
+    if (userForm.username.length < 2 || userForm.username.length > 20) {
+      ElMessage.error('用户名长度在2到20个字符')
+      return
+    }
+    
+    // 弹窗要求输入密码
+    const { value: password } = await ElMessageBox.prompt('请输入当前密码以确认修改', '身份验证', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputType: 'password',
+      inputValidator: (value) => {
+        if (!value) {
+          return '密码不能为空'
+        }
+        return true
+      }
+    })
+    
     loading.username = true
     
-    // TODO: 调用API接口保存用户名
-    // await updateUsername({ username: userForm.username })
+    // 调用API接口保存用户名
+    const response = await updateUsername({
+      email: userStore.userInfo.email,
+      password: password,
+      oldUsername: originalData.username,
+      newUsername: userForm.username
+    })
     
-    // 模拟API调用
-    setTimeout(() => {
-      loading.username = false
-      editMode.username = false
-      originalData.username = userForm.username
-      ElMessage.success('用户名修改成功')
-    }, 1000)
+    // 处理API响应
+    handleApiError(response)
+    
+    // 更新本地状态
+    userStore.updateUserName(userForm.username)
+    originalData.username = userForm.username
+    ElMessage.success('用户名修改成功')
+    
   } catch (error) {
-    console.error('用户名验证失败:', error)
+    if (error !== 'cancel') {
+      console.error('用户名修改失败:', error)
+      ElMessage.error(error.message || '用户名修改失败')
+    }
+  } finally {
+    loading.username = false
   }
 }
 
 // 保存手机号
 const savePhone = async () => {
   try {
-    await userFormRef.value.validateField('phone')
+    // 简单验证
+    if (!userForm.phone || userForm.phone.trim() === '') {
+      ElMessage.error('手机号不能为空')
+      return
+    }
+    
+    const phoneRegex = /^1[3-9]\d{9}$/
+    if (!phoneRegex.test(userForm.phone)) {
+      ElMessage.error('请输入正确的手机号')
+      return
+    }
+    
+    // 弹窗要求输入密码
+    const { value: password } = await ElMessageBox.prompt('请输入当前密码以确认修改', '身份验证', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputType: 'password',
+      inputValidator: (value) => {
+        if (!value) {
+          return '密码不能为空'
+        }
+        return true
+      }
+    })
+    
     loading.phone = true
     
-    // TODO: 调用API接口保存手机号
-    // await updatePhone({ phone: userForm.phone })
+    // 调用API接口保存手机号
+    const response = await updatePhone({
+      email: userStore.userInfo.email,
+      password: password,
+      oldPhone: originalData.phone,
+      newPhone: userForm.phone
+    })
     
-    // 模拟API调用
-    setTimeout(() => {
-      loading.phone = false
-      editMode.phone = false
-      originalData.phone = userForm.phone
-      ElMessage.success('手机号修改成功')
-    }, 1000)
+    // 处理API响应
+    handleApiError(response)
+    
+    // 更新本地状态
+    userStore.updateUserPhone(userForm.phone)
+    originalData.phone = userForm.phone
+    ElMessage.success('手机号修改成功')
+    
   } catch (error) {
-    console.error('手机号验证失败:', error)
+    if (error !== 'cancel') {
+      console.error('手机号修改失败:', error)
+      ElMessage.error(error.message || '手机号修改失败')
+    }
+  } finally {
+    loading.phone = false
   }
 }
 
 // 保存密码
 const savePassword = async () => {
   try {
-    await passwordFormRef.value.validate()
+    // 简单验证
+    if (!passwordForm.oldPassword || passwordForm.oldPassword.trim() === '') {
+      ElMessage.error('请输入当前密码')
+      return
+    }
+    
+    if (!passwordForm.newPassword || passwordForm.newPassword.trim() === '') {
+      ElMessage.error('请输入新密码')
+      return
+    }
+    
+    if (passwordForm.newPassword.length < 6 || passwordForm.newPassword.length > 20) {
+      ElMessage.error('密码长度在6到20个字符')
+      return
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      ElMessage.error('两次输入的密码不一致')
+      return
+    }
+    
     loading.password = true
     
-    // TODO: 调用API接口修改密码
-    // await updatePassword({
-    //   oldPassword: passwordForm.oldPassword,
-    //   newPassword: passwordForm.newPassword
-    // })
+    // 调用API接口修改密码
+    const response = await updatePassword({
+      email: userStore.userInfo.email,
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword
+    })
     
-    // 模拟API调用
-    setTimeout(() => {
-      loading.password = false
-      editMode.password = false
-      // 清空表单
-      passwordForm.oldPassword = ''
-      passwordForm.newPassword = ''
-      passwordForm.confirmPassword = ''
-      ElMessage.success('密码修改成功')
-    }, 1000)
+    // 处理API响应
+    handleApiError(response)
+    
+    // 清空表单
+    passwordForm.oldPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    ElMessage.success('密码修改成功')
+    
   } catch (error) {
-    console.error('密码验证失败:', error)
+    console.error('密码修改失败:', error)
+    ElMessage.error(error.message || '密码修改失败')
+  } finally {
+    loading.password = false
   }
+}
+
+// 重置密码表单
+const resetPasswordForm = () => {
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+}
+
+// 取消用户名修改
+const cancelUsername = () => {
+  userForm.username = originalData.username
+}
+
+// 取消手机号修改
+const cancelPhone = () => {
+  userForm.phone = originalData.phone
 }
 
 // 验证密码合法性（调用后端API）
@@ -377,6 +415,8 @@ const validatePasswordFromAPI = async () => {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  background: #fff;
+  min-height: 100vh;
 }
 
 .info-header {
@@ -406,6 +446,7 @@ const validatePasswordFromAPI = async () => {
       font-weight: bold;
       color: #303133;
       margin-bottom: 32px;
+      text-align: center;
     }
   }
 }
@@ -413,17 +454,40 @@ const validatePasswordFromAPI = async () => {
 .info-section {
   background: #fff;
   border-radius: 8px;
-  padding: 24px;
+  padding: 32px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
   
   .section-title {
     font-size: 18px;
     font-weight: 600;
     color: #303133;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+}
+
+.form-item-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-label {
+  min-width: 80px;
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+  margin-right: 16px;
+  
+  &.required::before {
+    content: '*';
+    color: #f56c6c;
+    margin-right: 4px;
   }
 }
 
@@ -431,54 +495,150 @@ const validatePasswordFromAPI = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
   
-  .el-input {
+  .form-input {
     flex: 1;
+    max-width: 300px;
   }
   
-  .edit-btn {
-    color: #409eff;
-    padding: 0;
-    min-width: auto;
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #dcdfe6;
+    background: #fff;
+    color: #606266;
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    &:hover:not(:disabled) {
+      color: #409eff;
+      border-color: #c6e2ff;
+      background-color: #ecf5ff;
+    }
+    
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      background: #f5f7fa;
+      border-color: #e4e7ed;
+      color: #c0c4cc;
+    }
+    
+    &.primary {
+      background: #409eff;
+      border-color: #409eff;
+      color: #fff;
+      
+      &:hover:not(:disabled) {
+        background: #66b1ff;
+        border-color: #66b1ff;
+      }
+      
+      &:disabled {
+        background: #a0cfff;
+        border-color: #a0cfff;
+        color: #fff;
+      }
+    }
+  }
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #dcdfe6;
+    background: #fff;
+    color: #606266;
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    &:hover:not(:disabled) {
+      color: #409eff;
+      border-color: #c6e2ff;
+      background-color: #ecf5ff;
+    }
+    
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      background: #f5f7fa;
+      border-color: #e4e7ed;
+      color: #c0c4cc;
+    }
+    
+    &.primary {
+      background: #409eff;
+      border-color: #409eff;
+      color: #fff;
+      
+      &:hover:not(:disabled) {
+        background: #66b1ff;
+        border-color: #66b1ff;
+      }
+      
+      &:disabled {
+        background: #a0cfff;
+        border-color: #a0cfff;
+        color: #fff;
+      }
+    }
+  }
+}
+
+:deep(.el-input) {
+  .el-input__wrapper {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px #dcdfe6 inset;
     
     &:hover {
-      color: #66b1ff;
+      box-shadow: 0 0 0 1px #c0c4cc inset;
+    }
+    
+    &.is-focus {
+      box-shadow: 0 0 0 1px #409eff inset;
     }
   }
 }
 
-.contact-info {
-  .contact-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-    
-    .contact-label {
-      color: #606266;
-      min-width: 80px;
-    }
-    
-    .contact-value {
-      color: #303133;
-      font-weight: 500;
-    }
-  }
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 24px;
+:deep(.el-button) {
+  border-radius: 4px;
+  font-weight: 500;
   
-  .el-form-item__label {
+  &.el-button--text {
+    border: 1px solid #dcdfe6;
+    background: #fff;
     color: #606266;
-    font-weight: 500;
+    padding: 8px 16px;
+    
+    &:hover {
+      color: #409eff;
+      border-color: #c6e2ff;
+      background-color: #ecf5ff;
+    }
   }
-}
-
-:deep(.el-button--small) {
-  padding: 5px 15px;
+  
+  &.el-button--primary {
+    background: #409eff;
+    border-color: #409eff;
+    
+    &:hover {
+      background: #66b1ff;
+      border-color: #66b1ff;
+    }
+  }
 }
 </style>

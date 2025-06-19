@@ -42,25 +42,14 @@ export default defineConfig({
   },
   // 添加代理配置
   server: {
-    // port: 3000, // 前端端口
+    port: 5175, // 前端端口
     proxy: {
       // 代理所有以 /api 开头的请求到后端
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false
-      },
-      // 代理用户相关请求
-      '/user': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false
-      },
-      // 代理附件相关请求
-      '/attachments': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false
+        secure: false,
+        rewrite: (path) => path // 保持原路径
       }
     }
   }

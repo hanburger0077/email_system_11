@@ -78,6 +78,8 @@
 
 <script setup>
 import LoginForm from '../components/loginForm.vue'
+import { registerUser, handleApiError } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const form = ref({
   email: '',
@@ -99,7 +101,11 @@ const validatePassword = (rule, value, callback) => {
 const rules = ref({
   email: [
     { required: true, message: '请输入邮箱账号', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { 
+      pattern: /^\d{6,8}@hh\.com$/, 
+      message: '邮箱格式错误，前6-8位数字，后缀为@hh.com', 
+      trigger: 'blur' 
+    }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -131,6 +137,8 @@ const rules = ref({
 
 const formRef = ref(null)
 const loading = ref(false)
+const router = useRouter()
+const userStore = useUserStore()
 
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
@@ -144,16 +152,25 @@ const handleLogin = async () => {
     await formRef.value.validate()
     
     loading.value = true
-    console.log('register', form.value)
     
-    // 这里添加登录逻辑
-    // await loginApi(form.value)
+    // 调用注册API
+    const response = await registerUser(form.value)
     
-    // 登录成功后的处理
+    // 处理API响应
+    handleApiError(response)
+    
+    // 注册成功后的处理
     ElMessage.success('注册成功！')
+    
+    // 存储用户信息
+    userStore.setUserInfo(response.data)
+    
+    // 跳转到邮箱主页
+    router.push('/main')
     
   } catch (error) {
     console.error('注册失败:', error)
+    ElMessage.error(error.message || '注册失败，请重试')
   } finally {
     loading.value = false
   }

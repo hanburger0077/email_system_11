@@ -2,9 +2,9 @@
   <LoginForm type="login">
     <template #default>
       <el-form :model="form" :rules="rules" ref="formRef" label-position="top">
-        <el-form-item prop="username">
+        <el-form-item prop="email">
           <el-input 
-            v-model="form.username"
+            v-model="form.email"
             type="email" 
             placeholder="请输入邮箱账号" 
             size="large"
@@ -45,17 +45,23 @@
 
 <script setup>
 import LoginForm from '../components/loginForm.vue'
+import { loginUser, handleApiError } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const form = ref({
-  username: '',
+  email: '',
   password: '',
   protocol: false,
 })
 
 const rules = ref({
-  username: [
+  email: [
     { required: true, message: '请输入邮箱账号', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { 
+      pattern: /^\d{6,8}@hh\.com$/, 
+      message: '邮箱格式错误，前6-8位数字，后缀为@hh.com', 
+      trigger: 'blur' 
+    }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -75,6 +81,8 @@ const rules = ref({
 
 const formRef = ref(null)
 const loading = ref(false)
+const router = useRouter()
+const userStore = useUserStore()
 
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
@@ -87,16 +95,25 @@ const handleLogin = async () => {
     await formRef.value.validate()
     
     loading.value = true
-    console.log('login', form.value)
     
-    // 这里添加登录逻辑
-    // await loginApi(form.value)
+    // 调用登录API
+    const response = await loginUser(form.value)
+    
+    // 处理API响应
+    handleApiError(response)
     
     // 登录成功后的处理
     ElMessage.success('登录成功！')
     
+    // 存储用户信息
+    userStore.setUserInfo(response.data)
+    
+    // 跳转到邮箱主页
+    router.push('/main')
+    
   } catch (error) {
     console.error('登录失败:', error)
+    ElMessage.error(error.message || '登录失败，请重试')
   } finally {
     loading.value = false
   }
