@@ -207,14 +207,14 @@
       const response = await fetch(`/api/mail/DRAFT/mails/${draftId}`);
       const result = await response.json();
 
-      if (result.code === 1001) {
+      if (result.code === 'code.ok') {
         const draft = result.data;
         document.getElementById('to').value = draft.receiver_email;
         document.getElementById('subject').value = draft.subject;
         document.getElementById('content').value = draft.content;
         // 这里可以添加附件的加载逻辑
-      } else {
-        alert(result.msg); // 显示错误信息
+      } else if (result.code === 'code.error') {
+        alert(result.message + ': ' +result.reason); // 显示错误信息
       }
     } catch (error) {
       console.error('Error loading draft:', error);
@@ -256,13 +256,13 @@
 
       const result = await response.json();
 
-      if (result.code === 1001) {
+      if (result.code === 'code.ok') {
         document.getElementById('success').textContent = '草稿保存成功';
         setTimeout(() => {
           document.getElementById('success').textContent = '';
         }, 3000);
-      } else {
-        document.getElementById('error').textContent = '草稿保存失败: ' + result.msg; // 显示错误信息
+      } else if (result.code === 'code.error') {
+        document.getElementById('error').textContent = '草稿保存失败: ' + result.message + ': ' +result.reason; // 显示错误信息
       }
     } catch (error) {
       console.error('Error saving draft:', error);

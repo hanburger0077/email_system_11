@@ -103,10 +103,10 @@
       try {
           const response = await fetch(`/api/mail/${mailbox}/mails/${mailId}`);
           const result = await response.json();
-          if (result.code === 1001) {
+          if (result.code === 'code.ok') {
               displayMailDetails(result.data, mailbox);
-          } else {
-              alert(result.msg);
+          } else if (result.code === 'code.error') {
+              alert(result.message + ': ' +result.reason);
           }
       } catch (error) {
           console.error('Error:', error);
@@ -118,10 +118,14 @@
       try {
           const response = await fetch(`/attachments/${attachmentId}`);
           const result = await response.json();
-          if (result.code === 1001) {
+          if (result.code === 'code.ok') {
               return result.data;
-          } else {
-              console.error('Failed to get attachment info:', result.msg);
+          }
+          else if (result.code === 'code.error') {
+              alert(result.message + ': ' +result.reason);
+          }
+          else {
+              console.error('Failed to get attachment info:', result.message);
               return null;
           }
       } catch (error) {
@@ -235,8 +239,11 @@
               method: 'POST'
           });
           const result = await response.json();
-          if (result.code !== 1001) {
-              alert(result.msg);
+          if (result.code === 'code.ok') {
+              alert(result.message);
+          }
+          else if (result.code === 'code.error'){
+              alert(result.message + ': ' +result.reason);
           }
       } catch (error) {
           console.error('Error:', error);
@@ -251,15 +258,15 @@
                   method: 'DELETE'
               });
               const result = await response.json();
-              if (result.code === 1001) {
+              if (result.code === 'code.ok') {
                   // 通知父窗口邮件已删除
                   if (window.opener && !window.opener.closed) {
                       window.opener.postMessage('mailDeleted', window.opener.location.origin);
                   }
                   // 关闭当前窗口
                   window.close();
-              } else {
-                  alert(result.msg);
+              } else if (result.code === 'code.error') {
+                  alert(result.message + ': ' +result.reason);
               }
           } catch (error) {
               console.error('Error:', error);

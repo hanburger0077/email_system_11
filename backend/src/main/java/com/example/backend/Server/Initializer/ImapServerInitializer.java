@@ -8,8 +8,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -20,7 +18,7 @@ public class ImapServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private final ApplicationContext applicationContext;
 
-    private final int READER_IDLE_TIMEOUT = 5 * 60;
+    private final int READER_IDLE_TIMEOUT = 30 * 60;
 
     @Autowired
     public ImapServerInitializer(ApplicationContext applicationContext) {

@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor // Lombok annotation: Automatically generates a constructor with all fields as arguments.
 @JsonInclude(JsonInclude.Include.NON_NULL) //适配前端的注解
 public class ResultVo<T> { // 添加了泛型 <T>**
-    private String code; // 状态码，例如 1001 表示成功，1002 表示密码错误等
+    private String code; // 状态码，有字符串 code.ok 表示成功，字符串 code.error 表示错误等
     private String message;   // 响应消息，例如 "登录成功", "密码错误"
     private T data;       // <data字段的类型改为泛型 T
-    private String reason;
+    private String reason;  //
 
     public static <T> ResultVo<T> success(String msg, T data) {
         return new ResultVo<>("code.ok", msg, data, null); // 假设 1001 是成功的通用码

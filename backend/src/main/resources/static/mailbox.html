@@ -234,17 +234,17 @@
         try {
             const response = await fetch(`/api/mail/${currentFolder}/pages/${pageNum}`);
             const result = await response.json();
-            if (result.code === 1001) {
+            if (result.code === 'code.ok') {
                 displayMails(result.data);
                 // 更新分页信息
-                totalPages = parseInt(result.msg, 10) || 1;
+                totalPages = parseInt(result.message, 10) || 1;
                 document.getElementById('currentPageDisplay').textContent = `Page: ${currentPage}`;
                 document.getElementById('pageInfo').textContent = `Total Pages: ${totalPages}`;
                 // 更新分页按钮状态
                 document.getElementById('prevPage').disabled = currentPage === 1;
                 document.getElementById('nextPage').disabled = currentPage === totalPages;
-            } else {
-                alert(result.msg);
+            } else if (result.code === 'code.error'){
+                alert(result.message + ': ' +result.reason);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -311,17 +311,17 @@
 
             const response = await fetch(url);
             const result = await response.json();
-            if (result.code === 1001) {
+            if (result.code === 'code.ok') {
                 displayMails(result.data);
                 // 更新分页信息
-                totalPages = parseInt(result.msg, 10) || 1;
+                totalPages = parseInt(result.message, 10) || 1;
                 document.getElementById('currentPageDisplay').textContent = `Page: ${currentPage}`;
                 document.getElementById('pageInfo').textContent = `Total Pages: ${totalPages}`;
                 // 更新分页按钮状态
                 document.getElementById('prevPage').disabled = currentPage === 1;
                 document.getElementById('nextPage').disabled = currentPage === totalPages;
-            } else {
-                alert(result.msg);
+            } else if (result.code === 'code.error') {
+                alert(result.message + ': ' +result.reason);
             }
         } catch (error) {
             console.error('Error:', error);

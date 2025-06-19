@@ -132,6 +132,12 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
@@ -158,12 +164,23 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
         } catch (InterruptedException e) {
-            imapClient.disconnect();
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send SELECT command" + e.getMessage());
         }
         try {
@@ -183,6 +200,12 @@ public class MailServiceImpl implements MailService {
                 pageMailIds = mailId.subList(fromIndex, toIndex);
             }
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
         }
         try {
@@ -223,11 +246,23 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
             imapClient.selectCommand(mailbox);
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send SELECT command" + e.getMessage());
         }
         try {
@@ -247,6 +282,12 @@ public class MailServiceImpl implements MailService {
                 pageMailIds = mailId.subList(fromIndex, toIndex);
             }
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
         }
         try {
@@ -276,6 +317,12 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {
@@ -298,6 +345,12 @@ public class MailServiceImpl implements MailService {
         try {
             imapClient.doneCommand();
         } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
             return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
         }
         try {

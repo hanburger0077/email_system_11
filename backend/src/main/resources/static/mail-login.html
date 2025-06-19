@@ -113,11 +113,11 @@
                     password: password
                 },
                 success: function(response) {
-                    if (response.code === 1001) { // 假设成功码为 1001
+                    if (response.code === 'code.ok') {
                         window.location.href = "/mailbox.html"; // 跳转到 mailbox.html
-                    } else {
+                    } else if (response.code === 'code.error') {
                         // 显示后端返回的错误消息
-                        $("#errorMsg").text(response.msg || "Login failed").show();
+                        $("#errorMsg").text(response.message + ': ' +response.reason || "Login failed").show();
                     }
                 },
                 error: function(xhr) {
