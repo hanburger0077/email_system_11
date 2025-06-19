@@ -9,7 +9,8 @@
         <result property="username" column="username"/>
         <result property="password" column="password"/>
         <result property="email" column="email"/>
-        <result property="phone" column="phone"/>  </resultMap>
+        <result property="phone" column="phone"/>
+    </resultMap>
 
     <select id="findByEmail" parameterType="String" resultMap="UserResultMap">
         SELECT id, username, password, email, phone FROM users WHERE email = #{email}

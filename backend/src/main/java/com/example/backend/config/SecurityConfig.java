@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@Deprecated
 public class SecurityConfig {
     
     @Bean
