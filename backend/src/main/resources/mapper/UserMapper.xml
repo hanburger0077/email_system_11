@@ -11,22 +11,30 @@
         <result property="email" column="email"/>
         <result property="phone" column="phone"/>
         <result property="status" column="status"/>
+        <result property="hashedRecoveryCode" column="hashed_recovery_code"/>
     </resultMap>
 
     <select id="findByEmail" parameterType="String" resultMap="UserResultMap">
-        SELECT id, username, password, email, phone, status FROM user WHERE email = #{email} AND status = 1
+        SELECT id, username, password, email, phone, status, hashed_recovery_code FROM user WHERE email = #{email} AND status = 1
     </select>
 
     <select id="findAnyByEmail" parameterType="String" resultMap="UserResultMap">
-        SELECT id, username, password, email, phone, status FROM user WHERE email = #{email}
+        SELECT
+        id,
+        username,
+        password,
+        email,
+        phone,
+        status,
+        hashed_recovery_code
+        FROM user
+        WHERE email = #{email}
     </select>
-
     <insert id="insertUser" parameterType="com.example.backend.entity.User"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user (username, password, email, phone, status)
-        VALUES(#{username}, #{password}, #{email}, #{phone}, #{status})
+        INSERT INTO user (username, password, email, phone, status, hashed_recovery_code)
+        VALUES(#{username}, #{password}, #{email}, #{phone}, #{status}, #{hashedRecoveryCode})
     </insert>
-
     <update id="updateUserStatus" parameterType="Map">
         UPDATE user SET status = #{status} WHERE email = #{email}
     </update>
@@ -43,8 +51,10 @@
         UPDATE user SET phone = #{phone} WHERE email = #{email} AND status = 1
     </update>
 
+    <update id="updateRecoveryCode" parameterType="com.example.backend.entity.User">
+        UPDATE user SET hashed_recovery_code = #{hashedRecoveryCode} WHERE email = #{email}
+    </update>
     <select id="findById" resultMap="UserResultMap">
         SELECT * FROM user WHERE id = #{id}
     </select>
-
 </mapper>

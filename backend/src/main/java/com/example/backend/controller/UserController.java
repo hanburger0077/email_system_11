@@ -8,10 +8,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-
 @RestController
-@RequestMapping("/api/user")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5175", "http://localhost:5178"}, allowCredentials = "true")
+@RequestMapping("/api/user")
 public class UserController {
 
     @Autowired
@@ -34,9 +33,9 @@ public class UserController {
         return userService.register(username, password, confirmPassword, email, phone);
     }
 
-    @PostMapping("/logout") // 注销（逻辑删除）- 现在需要密码验证
-    public ResultVo logout(HttpServletRequest request, @RequestBody Map<String, String> payload) { // 接收 HttpServletRequest 和请求体
-        String password = payload.get("password"); // 从请求体中获取密码
+    @PostMapping("/logout") // 注销（逻辑删除）- **现在需要提供密码**
+    public ResultVo logout(HttpServletRequest request, @RequestBody Map<String, String> payload) { // **新增请求体**
+        String password = payload.get("password"); // **从请求体获取密码**
         return userService.logout(request, password);
     }
 
@@ -63,5 +62,14 @@ public class UserController {
         String newPassword = payload.get("newPassword");
         String confirmNewPassword = payload.get("confirmNewPassword");
         return userService.updatePassword(request, oldPassword, newPassword, confirmNewPassword);
+    }
+
+    @PostMapping("/recoverPassword")
+    public ResultVo recoverPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String recoveryCode = payload.get("recoveryCode");
+        String newPassword = payload.get("newPassword");
+        String confirmNewPassword = payload.get("confirmNewPassword");
+        return userService.recoverPassword(email, recoveryCode, newPassword, confirmNewPassword);
     }
 }
