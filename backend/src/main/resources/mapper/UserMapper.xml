@@ -13,37 +13,37 @@
     </resultMap>
 
     <select id="findByEmail" parameterType="String" resultMap="UserResultMap">
-        SELECT id, username, password, email, phone FROM users WHERE email = #{email}
+        SELECT id, username, password, email, phone FROM user WHERE email = #{email}
     </select>
 
     <insert id="insertUser" parameterType="com.example.backend.entity.User"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (username, password, email, phone)
+        INSERT INTO user (username, password, email, phone)
         VALUES(#{username}, #{password}, #{email}, #{phone})
     </insert>
 
     <delete id="deleteByEmail" parameterType="String">
-        DELETE FROM users WHERE email = #{email}
+        DELETE FROM user WHERE email = #{email}
     </delete>
 
     <update id="updatePassword" parameterType="com.example.backend.entity.User">
-        UPDATE users SET password = #{password} WHERE email = #{email}
+        UPDATE user SET password = #{password} WHERE email = #{email}
     </update>
 
     <update id="updateUsername" parameterType="com.example.backend.entity.User">
-        UPDATE users SET username = #{username} WHERE email = #{email}
+        UPDATE user SET username = #{username} WHERE email = #{email}
     </update>
 
     <update id="updatePhone" parameterType="com.example.backend.entity.User">
-        UPDATE users SET phone = #{phone} WHERE email = #{email}
+        UPDATE user SET phone = #{phone} WHERE email = #{email}
     </update>
 
     <select id="findById" resultMap="UserResultMap">
-        SELECT * FROM users WHERE id = #{id}
+        SELECT * FROM user WHERE id = #{id}
     </select>
 
     <select id="authenticate" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM users WHERE email = #{email} AND password = #{password}
+        SELECT COUNT(*) > 0 FROM user WHERE email = #{email} AND password = #{password}
     </select>
 
 </mapper>
