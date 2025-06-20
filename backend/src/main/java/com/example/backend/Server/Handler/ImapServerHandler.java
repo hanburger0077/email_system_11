@@ -63,7 +63,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         System.out.println("IMAP Received: " + msg);
 
         // Trim and split the message to handle commands
-        String command = msg.trim().toUpperCase();
+        //String command = msg.trim().toUpperCase();
+        String command = msg.trim();
         
         if (command.startsWith("LOGIN")) {
             //处理登录命令
