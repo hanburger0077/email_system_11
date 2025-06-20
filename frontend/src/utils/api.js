@@ -78,9 +78,6 @@ export const updateUsername = (userData) => {
   return request('/user/updateUsername', {
     method: 'POST',
     body: {
-      email: userData.email,
-      password: userData.password,
-      oldUsername: userData.oldUsername,
       newUsername: userData.newUsername
     }
   })
@@ -91,9 +88,6 @@ export const updatePhone = (userData) => {
   return request('/user/updatePhone', {
     method: 'POST',
     body: {
-      email: userData.email,
-      password: userData.password,
-      oldPhone: userData.oldPhone,
       newPhone: userData.newPhone
     }
   })

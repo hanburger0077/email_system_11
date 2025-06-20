@@ -102,8 +102,8 @@ const rules = ref({
   email: [
     { required: true, message: '请输入邮箱账号', trigger: 'blur' },
     { 
-      pattern: /^\d{6,8}@hh\.com$/, 
-      message: '邮箱格式错误，前6-8位数字，后缀为@hh.com', 
+      pattern: /^\d{6,8}@flowmail\.com$/, 
+      message: '邮箱格式错误，前6-8位数字，后缀为@flowmail.com', 
       trigger: 'blur' 
     }
   ],

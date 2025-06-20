@@ -9,7 +9,9 @@ import com.example.backend.mapper.MailMapper;
 import com.example.backend.mapper.UserMapper;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -45,6 +47,8 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
     private static final long HEARTBEAT_TIMEOUT = 60000;        // 心跳超时时间（毫秒）
     private static final long HEARTBEAT_CHECK_INTERVAL = 30000; // 心跳检测间隔（毫秒）
 
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
 
     public ImapServerHandler(MailMapper mailMapper, UserMapper userMapper, AttachmentMapper attachmentMapper) {
@@ -434,7 +438,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             String userEmail = parts[1];
             String password = parts[2];
             User user = userMapper.findByEmail(userEmail);
-            if (user != null && userMapper.authenticate(userEmail, password)) {
+            if (user != null && bCryptPasswordEncoder.matches(password, user.getPassword())) {
                 //登陆成功后授权和自动进入空闲
                 isAuthenticated = true;
                 isIdling = true;

@@ -213,26 +213,10 @@ const saveUsername = async () => {
       return
     }
     
-    // 弹窗要求输入密码
-    const { value: password } = await ElMessageBox.prompt('请输入当前密码以确认修改', '身份验证', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      inputType: 'password',
-      inputValidator: (value) => {
-        if (!value) {
-          return '密码不能为空'
-        }
-        return true
-      }
-    })
-    
     loading.username = true
     
-    // 调用API接口保存用户名
+    // 调用API接口保存用户名（不需要密码验证）
     const response = await updateUsername({
-      email: userStore.userInfo.email,
-      password: password,
-      oldUsername: originalData.username,
       newUsername: userForm.username
     })
     
@@ -245,10 +229,8 @@ const saveUsername = async () => {
     ElMessage.success('用户名修改成功')
     
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('用户名修改失败:', error)
-      ElMessage.error(error.message || '用户名修改失败')
-    }
+    console.error('用户名修改失败:', error)
+    ElMessage.error(error.message || '用户名修改失败')
   } finally {
     loading.username = false
   }
@@ -269,26 +251,10 @@ const savePhone = async () => {
       return
     }
     
-    // 弹窗要求输入密码
-    const { value: password } = await ElMessageBox.prompt('请输入当前密码以确认修改', '身份验证', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      inputType: 'password',
-      inputValidator: (value) => {
-        if (!value) {
-          return '密码不能为空'
-        }
-        return true
-      }
-    })
-    
     loading.phone = true
     
-    // 调用API接口保存手机号
+    // 调用API接口保存手机号（不需要密码验证）
     const response = await updatePhone({
-      email: userStore.userInfo.email,
-      password: password,
-      oldPhone: originalData.phone,
       newPhone: userForm.phone
     })
     
@@ -301,10 +267,8 @@ const savePhone = async () => {
     ElMessage.success('手机号修改成功')
     
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('手机号修改失败:', error)
-      ElMessage.error(error.message || '手机号修改失败')
-    }
+    console.error('手机号修改失败:', error)
+    ElMessage.error(error.message || '手机号修改失败')
   } finally {
     loading.phone = false
   }

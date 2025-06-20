@@ -10,40 +10,41 @@
         <result property="password" column="password"/>
         <result property="email" column="email"/>
         <result property="phone" column="phone"/>
+        <result property="status" column="status"/>
     </resultMap>
 
     <select id="findByEmail" parameterType="String" resultMap="UserResultMap">
-        SELECT id, username, password, email, phone FROM user WHERE email = #{email}
+        SELECT id, username, password, email, phone, status FROM user WHERE email = #{email} AND status = 1
+    </select>
+
+    <select id="findAnyByEmail" parameterType="String" resultMap="UserResultMap">
+        SELECT id, username, password, email, phone, status FROM user WHERE email = #{email}
     </select>
 
     <insert id="insertUser" parameterType="com.example.backend.entity.User"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user (username, password, email, phone)
-        VALUES(#{username}, #{password}, #{email}, #{phone})
+        INSERT INTO user (username, password, email, phone, status)
+        VALUES(#{username}, #{password}, #{email}, #{phone}, #{status})
     </insert>
 
-    <delete id="deleteByEmail" parameterType="String">
-        DELETE FROM user WHERE email = #{email}
-    </delete>
+    <update id="updateUserStatus" parameterType="Map">
+        UPDATE user SET status = #{status} WHERE email = #{email}
+    </update>
 
     <update id="updatePassword" parameterType="com.example.backend.entity.User">
-        UPDATE user SET password = #{password} WHERE email = #{email}
+        UPDATE user SET password = #{password} WHERE email = #{email} AND status = 1
     </update>
 
     <update id="updateUsername" parameterType="com.example.backend.entity.User">
-        UPDATE user SET username = #{username} WHERE email = #{email}
+        UPDATE user SET username = #{username} WHERE email = #{email} AND status = 1
     </update>
 
     <update id="updatePhone" parameterType="com.example.backend.entity.User">
-        UPDATE user SET phone = #{phone} WHERE email = #{email}
+        UPDATE user SET phone = #{phone} WHERE email = #{email} AND status = 1
     </update>
 
     <select id="findById" resultMap="UserResultMap">
         SELECT * FROM user WHERE id = #{id}
-    </select>
-
-    <select id="authenticate" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM user WHERE email = #{email} AND password = #{password}
     </select>
 
 </mapper>
