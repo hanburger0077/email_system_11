@@ -48,8 +48,8 @@
     
     &-right {
       min-width: 400px;
-      min-height: 480px;
-      height: 480px;
+      min-height: 565px;
+      height: 565px;
       border-radius: 20px;
       background: #fff;
       box-shadow: 0px 5px 15px 1px rgba(0, 0, 0, 0.05);

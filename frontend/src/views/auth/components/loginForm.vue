@@ -12,9 +12,13 @@
         没有账号？
         <span class="email-link" @click="clickHandle('register')">免费注册</span>
       </div>
-      <div v-else>
+      <div v-else-if="type === 'register'">
         已有账号？
         <span class="email-link" @click="clickHandle('login')">立即登录</span>
+      </div>
+      <div v-else-if="type === 'forgotpassword'">
+        想起密码了？
+        <span class="email-link" @click="clickHandle('login')">返回登录</span>
       </div>
     </div>
   </div>
@@ -30,7 +34,10 @@ const props = defineProps({
 })
 
 const title = computed(() => {
-  return props.type === 'login' ? '账号登录' : '账号注册'
+  if (props.type === 'login') return '账号登录'
+  if (props.type === 'register') return '账号注册'
+  if (props.type === 'forgotpassword') return '忘记密码'
+  return '账号登录'
 })
 
 const router = useRouter()
@@ -62,9 +69,10 @@ const clickHandle = (type) => {
   .login-form-footer {
     width: 100%;
     text-align: center;
-    font-size: 14px;
+    font-size: 12px;
     color: #666;
     
   }
+  
 }
 </style>

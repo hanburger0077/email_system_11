@@ -23,6 +23,7 @@ $color-primary-active: #005691;
   color: $color-primary;
   cursor: pointer;
   transition: 0.2s;
+  font-size: 12px;
   &:hover {
     color: $color-primary-hover;
   }

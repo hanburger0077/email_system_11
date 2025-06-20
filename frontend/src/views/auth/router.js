@@ -19,6 +19,11 @@ export default [
     component: () => import('./register/index.vue') 
   },
   {
+    path: '/auth/forgotpassword',
+    name: 'auth.forgotpassword',
+    component: () => import('./forgotpassword/index.vue')
+  },
+  {
     path: '/protocol/serviceterm',
     name: 'protocol.serviceterm',
     component: () => import('./protocol/serviceterm.vue')

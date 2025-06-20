@@ -54,6 +54,27 @@
           </el-input>
         </el-form-item> 
         
+        <!-- 恢复码显示 -->
+        <el-form-item label="恢复码（请务必保存）">
+          <div class="recovery-code-container">
+            <el-input 
+              v-model="form.recoveryCode"
+              placeholder="系统自动生成恢复码" 
+              size="large"
+              readonly
+              class="recovery-code-input"
+            >
+              <template #append>
+                <el-button @click="copyRecoveryCode" type="primary">复制</el-button>
+              </template>
+            </el-input>
+            <div class="recovery-code-tip">
+              <el-icon><InfoFilled /></el-icon>
+              恢复码用于找回密码，请妥善保管，不要泄露给他人
+            </div>
+          </div>
+        </el-form-item>
+
         <el-form-item prop="protocol">
           <div class="protocol">
             <el-checkbox v-model="form.protocol">我已阅读并同意
@@ -80,6 +101,7 @@
 import LoginForm from '../components/loginForm.vue'
 import { registerUser, handleApiError } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
+import { InfoFilled } from '@element-plus/icons-vue'
 
 const form = ref({
   email: '',
@@ -87,8 +109,29 @@ const form = ref({
   passwordConfirm: '',
   username: '',
   phone: '',
+  recoveryCode: '',
   protocol: false,
 })
+
+// 生成8位恢复码（字母+数字）
+const generateRecoveryCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+// 复制恢复码
+const copyRecoveryCode = async () => {
+  try {
+    await navigator.clipboard.writeText(form.value.recoveryCode)
+    ElMessage.success('恢复码已复制到剪贴板')
+  } catch (error) {
+    ElMessage.error('复制失败，请手动复制')
+  }
+}
 
 const validatePassword = (rule, value, callback) => {
   if (value !== form.value.password) {
@@ -140,6 +183,11 @@ const loading = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 
+// 页面加载时生成恢复码
+onMounted(() => {
+  form.value.recoveryCode = generateRecoveryCode()
+})
+
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
 }
@@ -153,7 +201,7 @@ const handleLogin = async () => {
     
     loading.value = true
     
-    // 调用注册API
+    // 调用注册API（包含恢复码）
     const response = await registerUser(form.value)
     
     // 处理API响应
@@ -181,5 +229,33 @@ const handleLogin = async () => {
 .protocol{
   font-size: 10px;
   height: 20px;
+}
+
+.recovery-code-container {
+  width: 100%;
+}
+
+.recovery-code-input {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+
+/* 恢复码提示样式 */
+.recovery-code-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  margin-bottom: 0px;
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.recovery-code-tip .el-icon {
+  color: #dc3545;
+  font-size: 14px;
 }
 </style>

@@ -57,7 +57,8 @@ export const registerUser = (userData) => {
       password: userData.password,
       confirmPassword: userData.passwordConfirm,
       email: userData.email,
-      phone: userData.phone
+      phone: userData.phone,
+      recoveryCode: userData.recoveryCode
     }
   })
 }
@@ -120,6 +121,19 @@ export const logoutUser = (userData) => {
     body: {
       email: userData.email,
       password: userData.password
+    }
+  })
+}
+
+// 重置密码
+export const resetPassword = (userData) => {
+  return request('/user/resetPassword', {
+    method: 'POST',
+    body: {
+      email: userData.email,
+      recoveryCode: userData.recoveryCode,
+      newPassword: userData.newPassword,
+      confirmPassword: userData.confirmPassword
     }
   })
 }

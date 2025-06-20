@@ -19,7 +19,11 @@
             size="large"
             show-password
             clearable
-          />
+          >
+            <template #suffix>
+              <span class="email-link forgot-password-suffix" @click="handleForgotPassword">忘记密码？</span>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="protocol">
           <div class="protocol">
@@ -87,6 +91,10 @@ const userStore = useUserStore()
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
 }
+
+const handleForgotPassword = () => {
+  router.push('/auth/forgotpassword')
+}
 const handleLogin = async () => {
   if (!formRef.value) return
   
@@ -126,4 +134,8 @@ const handleLogin = async () => {
   height: 20px;
 }
 
+.forgot-password-suffix {
+  padding-right: 8px;
+  font-size: 12px;
+}
 </style>
