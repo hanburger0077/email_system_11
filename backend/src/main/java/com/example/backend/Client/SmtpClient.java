@@ -56,7 +56,7 @@ public class SmtpClient {
     }
 
 
-    //发送纯文本文件
+    // 发送纯文本文件
     public void sendSimpleMail(String from, String to, String subject, String body) throws InterruptedException {
         if (channel != null && channel.isActive()) {
             SmtpClientHandler handler = channel.pipeline().get(SmtpClientHandler.class);
