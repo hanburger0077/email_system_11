@@ -43,6 +43,7 @@ export default defineConfig({
   // 添加代理配置
   server: {
     port: 5175, // 前端端口
+    host: '0.0.0.0', // 监听所有网络接口
     proxy: {
       // 代理所有以 /api 开头的请求到后端
       '/api': {

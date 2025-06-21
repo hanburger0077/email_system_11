@@ -119,7 +119,7 @@ public class MailController {
     }
 
 
-    //断开连接
+    // 断开连接
     @PostMapping("/disconnect")
     public ResultVo disconnect() {
         return mailService.disconnect();

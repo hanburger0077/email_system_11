@@ -21,7 +21,9 @@ public interface UserMapper {
     int updatePassword(User user);
 
     int updateUsername(User user);
+
     User findById(long id);
+
     int updatePhone(User user);
 
     // 用于更新用户恢复码的方法
