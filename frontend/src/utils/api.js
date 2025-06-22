@@ -141,7 +141,7 @@ export const resetPassword = (userData) => {
 
 // 统一错误处理
 export const handleApiError = (response) => {
-  if (response.code === 'code.ok') {
+ if (response.code === 'code.ok') {
     return response
   }
   
