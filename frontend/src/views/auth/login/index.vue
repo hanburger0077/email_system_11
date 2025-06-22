@@ -95,6 +95,38 @@ const handleProtocol = (type) => {
 const handleForgotPassword = () => {
   router.push('/auth/forgotpassword')
 }
+
+// 调用 IMAP 登录接口连接邮箱服务器
+const connectToIMAPServer = async (username, password) => {
+  try {
+    // 创建请求数据
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
+    
+    // 发送 IMAP 连接请求
+    const response = await fetch('/api/mail/connect', {
+      method: 'POST',
+      body: formData
+    })
+    
+    // 解析响应
+    const result = await response.json()
+    
+    // 检查连接是否成功
+    if (result.code === 'code.ok') {
+      console.log('IMAP 连接成功:', result)
+      return { success: true, data: result.data }
+    } else {
+      console.error('IMAP 连接失败:', result)
+      return { success: false, message: result.message || '邮箱连接失败' }
+    }
+  } catch (error) {
+    console.error('IMAP 连接错误:', error)
+    return { success: false, message: '邮箱服务器连接错误' }
+  }
+}
+
 const handleLogin = async () => {
   if (!formRef.value) return
   
@@ -104,17 +136,28 @@ const handleLogin = async () => {
     
     loading.value = true
     
-    // 调用登录API
-    const response = await loginUser(form.value)
+    // 1. 首先调用系统登录API
+    const loginResponse = await loginUser(form.value)
     
     // 处理API响应
-    handleApiError(response)
+    handleApiError(loginResponse)
     
-    // 登录成功后的处理
+    // 2. 系统登录成功后，调用 IMAP 连接接口
+    const imapResult = await connectToIMAPServer(form.value.email, form.value.password)
+    
+    if (!imapResult.success) {
+      // IMAP 连接失败，抛出错误
+      throw new Error(imapResult.message || 'IMAP 服务器连接失败')
+    }
+    
+    // 3. 登录和IMAP连接都成功后的处理
     ElMessage.success('登录成功！')
     
-    // 存储用户信息
-    userStore.setUserInfo(response.data)
+    // 存储用户信息，包括从 IMAP 连接中获取的邮箱相关数据
+    userStore.setUserInfo({
+      ...loginResponse.data,
+      emailInfo: imapResult.data
+    })
     
     // 跳转到邮箱主页
     router.push('/main')
