@@ -157,13 +157,13 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         Mail mail = new Mail();
 
         Address[] from = message.getFrom();
-        String senderEmail = from.length > 0 ? from[0].toString() : "unknown@hh.com";
+        String senderEmail = from.length > 0 ? from[0].toString() : "unknown@flowmail.com";
         User sender = userMapper.findByEmail(senderEmail);
         mail.setSender_id(sender != null ? sender.getId() : null);
         System.out.println(senderEmail);
 
         Address[] to = message.getRecipients(Message.RecipientType.TO);
-        String receiverEmail = to != null && to.length > 0 ? to[0].toString() : "unknown@hh.com";
+        String receiverEmail = to != null && to.length > 0 ? to[0].toString() : "unknown@flowmail.com";
         User receiver = userMapper.findByEmail(receiverEmail);
         mail.setReceiver_id(receiver != null ? receiver.getId() : null);
         System.out.println(receiverEmail);

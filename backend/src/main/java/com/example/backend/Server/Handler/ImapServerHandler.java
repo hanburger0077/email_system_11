@@ -192,11 +192,11 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
         mail.setSender_id(sender.getId());
         mail.setReceiver_id(receiver.getId());
         mail.setSubject(items[3]);
-        mail.setContent(items[4]);
+        mail.setContent(items[4].replace("\n", "\r\n"));
         if (mailId == 0) {
             mail.setCreate_at(LocalDateTime.now());
             mail.setSender_sign((short) 1);
-            mail.setReceiver_sign((short) 0);
+            mail.setReceiver_sign((short) 3);
             mail.setRead((short) 0);
             mail.setSender_star((short) 0);
             mail.setReceiver_star((short) 0);
