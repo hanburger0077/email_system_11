@@ -99,7 +99,7 @@
 
 <script setup>
 import LoginForm from '../components/loginForm.vue'
-import { registerUser, handleApiError } from '@/utils/api'
+import { registerUser, handleApiError, loginUser } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { InfoFilled } from '@element-plus/icons-vue'
 
@@ -112,16 +112,6 @@ const form = ref({
   recoveryCode: '',
   protocol: false,
 })
-
-// 生成8位恢复码（字母+数字）
-const generateRecoveryCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
 
 // 复制恢复码
 const copyRecoveryCode = async () => {
@@ -183,44 +173,36 @@ const loading = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 
-// 页面加载时生成恢复码
-onMounted(() => {
-  form.value.recoveryCode = generateRecoveryCode()
-})
-
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
 }
 
 const handleLogin = async () => {
-  if (!formRef.value) return
-  
   try {
-    // 验证表单
-    await formRef.value.validate()
+    // 1. 先注册
+    const registerResponse = await registerUser(form.value)
+    handleApiError(registerResponse)
     
-    loading.value = true
+    // 2. 从后端响应中提取恢复码
+    const recoveryCodeMatch = registerResponse.message.match(/恢复码： (\w+)/);
+    if (recoveryCodeMatch) {
+      form.value.recoveryCode = recoveryCodeMatch[1];
+      ElMessage.success('注册成功！请务必保存您的恢复码');
+    }
     
-    // 调用注册API（包含恢复码）
-    const response = await registerUser(form.value)
+    // 3. 自动登录
+    const loginResponse = await loginUser({
+      email: form.value.email,
+      password: form.value.password
+    })
+    handleApiError(loginResponse)
     
-    // 处理API响应
-    handleApiError(response)
-    
-    // 注册成功后的处理
-    ElMessage.success('注册成功！')
-    
-    // 存储用户信息
-    userStore.setUserInfo(response.data)
-    
-    // 跳转到邮箱主页
+    userStore.setUserInfo(loginResponse.data)
     router.push('/main')
     
   } catch (error) {
     console.error('注册失败:', error)
     ElMessage.error(error.message || '注册失败，请重试')
-  } finally {
-    loading.value = false
   }
 }
 </script>
