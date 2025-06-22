@@ -260,10 +260,10 @@ export default {
           let successCount = 0;
           let failCount = 0;
           
-          // 逐个删除选中的草稿
+          // 逐个删除选中的草稿，调用回收站相关接口
           for (const mailId of this.selectedMails) {
             try {
-              const response = await fetch(`/api/mail/DRAFT/mails/${mailId}/delete`, {
+              const response = await fetch(`/api/mail/TRASH/mails/${mailId}/delete`, {
                 method: 'DELETE'
               });
               
@@ -327,10 +327,10 @@ export default {
           let successCount = 0;
           let failCount = 0;
           
-          // 逐个删除所有草稿
+          // 逐个删除所有草稿，调用回收站相关接口
           for (const mailId of mailIds) {
             try {
-              const response = await fetch(`/api/mail/DRAFT/mails/${mailId}/delete`, {
+              const response = await fetch(`/api/mail/TRASH/mails/${mailId}/delete`, {
                 method: 'DELETE'
               });
               
@@ -579,63 +579,21 @@ export default {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.mail-items {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-  padding: 16px;
-  margin-bottom: 24px;
-}
-
-.mail-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.mail-item:last-child {
-  border-bottom: none;
-}
-
-.mail-item:hover {
-  background-color: #f5f7fa;
-}
-
-.checkbox-container {
-  min-width: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mail-content {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-}
-
 .column {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  font-size: 14px;
+  color: #333;
+}
+
+.checkbox-col {
+  width: 40px;
 }
 
 .sender {
-  min-width: 180px;
-  color: #666;
-  font-size: 0.9em;
-  text-align: left;
+  flex: 1;
 }
 
 .subject {
-  flex-grow: 1;
+  flex: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -643,19 +601,11 @@ export default {
 }
 
 .time {
-  min-width: 120px;
+  flex: 1;
+  white-space: nowrap;
   text-align: right;
   color: #999;
   font-size: 0.85em;
-}
-
-.empty-message {
-  text-align: center;
-  padding: 30px;
-  color: #999;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
 }
 
 .header-checkbox,
@@ -670,6 +620,38 @@ export default {
   overflow-y: auto;
 }
 
+.mail-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6f2fb;
+  transition: background-color 0.2s;
+}
+
+.mail-item:hover {
+  background-color: #f5f7fa;
+}
+
+.checkbox-container {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mail-content {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 30px;
+  color: #999;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -679,32 +661,5 @@ export default {
   color: #1f74c0;
   gap: 10px;
   font-size: 16px;
-}
-
-@media (max-width: 768px) {
-  .mail-toolbar {
-    padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .toolbar-left {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  
-  .toolbar-right {
-    width: 100%;
-    justify-content: space-between;
-    margin-top: 8px;
-  }
-
-  .sender {
-    min-width: 140px;
-  }
-
-  .time {
-    min-width: 100px;
-  }
 }
 </style>

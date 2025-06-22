@@ -529,88 +529,81 @@ export default {
       }
     },
     
-    // 删除选中邮件
-    async deleteSelected() {
-      if (this.selectedMails.length === 0) return;
-      
-      try {
-        this.$confirm('确认删除选中的邮件吗？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(async () => {
-          this.isLoading = true;
-          
-          for (const mailId of this.selectedMails) {
-            try {
-              await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/delete`, {
-                method: 'DELETE'
-              });
-            } catch (error) {
-              console.error(`删除邮件 ${mailId} 失败:`, error);
-            }
-          }
-          
-          this.$message.success('删除成功');
-          this.selectedMails = [];
-          this.allSelected = false;
-          // 重新加载当前页面
-          this.loadMails(this.currentPage);
-        }).catch(() => {
-          // 取消删除操作
-          this.$message.info('已取消删除操作');
-        });
-      } catch (error) {
-        console.error('删除邮件出错:', error);
-        this.$message.error('删除邮件失败');
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
-    // 删除所有邮件
-    async deleteAll() {
-      this.$confirm('确认删除所有邮件吗？', '警告', {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-        confirmButtonClass: 'el-button--danger'
-      }).then(async () => {
-        this.isLoading = true;
-        
+     // 删除选中的邮件（放入回收站）
+      async deleteSelected() {
+        if (this.selectedMails.length === 0) return;
         try {
-          // 获取当前文件夹所有邮件，然后逐个删除
-          const response = await fetch(`/api/mail/${this.currentFolder}/pages/1`);
-          const result = await response.json();
-          
-          if (result.code === 'code.ok' && result.data) {
-            for (const mail of result.data) {
-              await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/delete`, {
-                method: 'DELETE'
-              });
+          this.$confirm('确认删除选中的邮件吗？', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(async () => {
+            this.isLoading = true;
+            for (const mailId of this.selectedMails) {
+              try {
+                // 使用当前文件夹（如INBOX）作为发起源，然后将邮件移入回收站
+                await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/change/TRASH/+FLAG`, {
+                  method: 'POST'
+                });
+              } catch (error) {
+                console.error(`删除邮件 ${mailId} 失败:`, error);
+              }
             }
-            
-            this.mailList = [];
+            this.$message.success('删除成功，邮件已移入回收站');
             this.selectedMails = [];
             this.allSelected = false;
-            this.currentPage = 1;
-            this.totalPages = 0;
-            this.groupAndIndexMails();
-            this.$message.success('已删除所有邮件');
-          } else {
-            this.$message.error('获取邮件列表失败，无法删除');
-          }
+            this.loadMails(this.currentPage);
+          }).catch(() => {
+            this.$message.info('已取消删除操作');
+          });
         } catch (error) {
-          console.error('删除所有邮件出错:', error);
+          console.error('删除邮件出错:', error);
           this.$message.error('删除邮件失败');
         } finally {
           this.isLoading = false;
         }
-      }).catch(() => {
-        // 取消删除操作
-      });
-    },
-    
+      },
+
+      // 删除所有邮件（放入回收站）
+      async deleteAll() {
+        this.$confirm('确认删除所有邮件吗？', '警告', {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+          confirmButtonClass: 'el-button--danger'
+        }).then(async () => {
+          this.isLoading = true;
+          try {
+            const response = await fetch(`/api/mail/${this.currentFolder}/pages/1`);
+            const result = await response.json();
+            if (result.code === 'code.ok' && result.data) {
+              for (const mail of result.data) {
+                // 使用当前文件夹作为发起源，将邮件移入回收站
+                await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/TRASH/+FLAG`, {
+                  method: 'POST'
+                });
+              }
+              this.mailList = [];
+              this.selectedMails = [];
+              this.allSelected = false;
+              this.currentPage = 1;
+              this.totalPages = 0;
+              this.groupAndIndexMails();
+              this.$message.success('已删除所有邮件，邮件已移入回收站');
+            } else {
+              this.$message.error('获取邮件列表失败，无法删除');
+            }
+          } catch (error) {
+            console.error('删除所有邮件出错:', error);
+            this.$message.error('删除邮件失败');
+          } finally {
+            this.isLoading = false;
+          }
+        }).catch(() => {
+          // 取消删除操作
+        });
+      },
+      
     // 打开邮件详情
     async openMail(mail) {
       const mailId = mail.mail_id || mail.globalIndex;
@@ -685,65 +678,25 @@ export default {
       }
     },
 
-    // 切换星标状态
+    // 修改 toggleStar 方法，确保对“收件人星标”操作使用 R_STAR 与+FLAG/-FLAG
     async toggleStar(mail) {
-      const mailId = mail.mail_id || mail.globalIndex;
-      
-      // 确保只处理有效的邮件ID
-      if (!mail.mail_id) {
-        this.$message.warning('无法为临时邮件添加星标');
-        return;
-      }
-      
-      try {
-        // 确定当前邮件的星标状态
-        const isCurrentlyStarred = this.isStarred(mail);
-        
-        // 构建API请求
-        let starSign;
-        if (this.currentFolder === 'INBOX') {
-          starSign = 'R_STAR'; // 收件人星标
-        } else if (this.currentFolder === 'SENT') {
-          starSign = 'S_STAR'; // 发件人星标
-        } else {
-          this.$message.info('当前文件夹不支持星标操作');
-          return; 
+        if (!mail.mail_id) return;
+        try {
+            const operation = mail.receiver_star === 1 ? '-FLAG' : '+FLAG';
+            const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/R_STAR/${operation}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (result.code === 'code.ok') {
+                mail.receiver_star = mail.receiver_star === 1 ? 0 : 1;
+                this.$message.success(`已成功${mail.receiver_star === 1 ? '添加' : '取消'}星标`);
+            } else {
+                this.$message.error(`修改星标状态失败: ${result.reason || result.message}`);
+            }
+        } catch (error) {
+            console.error('修改星标状态出错:', error);
+            this.$message.error('修改星标状态失败');
         }
-        
-        // 确定要设置的星标状态 - 添加或移除星标
-        const operation = isCurrentlyStarred ? '-FLAG' : '+FLAG';
-        
-        // 使用新的API格式修改星标状态
-        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/change/${starSign}/${operation}`, {
-          method: 'POST'
-        });
-        
-        const result = await response.json();
-        
-        if (result.code === 'code.ok') {
-          // 更新本地邮件的星标状态
-          if (this.currentFolder === 'INBOX') {
-            mail.receiver_star = !isCurrentlyStarred ? 1 : 0;
-          } else {
-            mail.sender_star = !isCurrentlyStarred ? 1 : 0;
-          }
-          
-          // 显示成功提示
-          this.$message({
-            message: !isCurrentlyStarred ? '已成功添加星标' : '已成功取消星标',
-            type: 'success',
-            duration: 2000
-          });
-        } else {
-          this.$message({
-            message: '修改星标状态失败: ' + (result.reason || result.message),
-            type: 'error'
-          });
-        }
-      } catch (error) {
-        console.error('修改星标状态出错:', error);
-        this.$message.error('修改星标状态失败，请检查网络连接');
-      }
     },
 
     // 标记/取消标记星标

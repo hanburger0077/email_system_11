@@ -1,7 +1,7 @@
 export default [
   {
     path: '/star',
-    name: 'satr',
+    name: 'star',
     component: () => import('./index.vue')
   },
 ];    

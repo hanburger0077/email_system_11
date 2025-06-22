@@ -18,13 +18,13 @@
         </button>
         
         <!-- 根据文件夹类型显示不同操作按钮 -->
-        <template v-if="currentFolder === 'INBOX' || currentFolder === 'JUNK'">
+        <template v-if="mailbox === 'INBOX' || mailbox === 'JUNK'">
           <button class="action-btn" @click="moveToTrash">
             <span class="action-icon">🗑</span> 移至回收站
           </button>
         </template>
         
-        <template v-if="currentFolder === 'TRASH'">
+        <template v-if="mailbox === 'TRASH'">
           <button class="action-btn" @click="restoreMail">
             <span class="action-icon">↩</span> 还原邮件
           </button>
@@ -48,7 +48,7 @@
         </button>
         
         <!-- 收件箱才显示已读/未读切换 -->
-        <template v-if="currentFolder === 'INBOX'">
+        <template v-if="mailbox === 'INBOX'">
           <button 
             class="action-btn" 
             @click="toggleReadStatus"
@@ -82,7 +82,7 @@
       <!-- 邮件内容 -->
       <div class="mail-content" v-html="mail.content"></div>
       
-      <!-- 邮件附件 - 参考view-mail.html的方式 -->
+      <!-- 邮件附件 -->
       <div class="attachments-section" v-if="attachments && attachments.length > 0">
         <h3 class="attachments-title">附件 ({{ attachments.length }})</h3>
         <div class="attachments-list">
@@ -91,8 +91,15 @@
               :href="`/attachments/download/${attachment.id}`" 
               target="_blank"
               class="attachment-link"
+              @click.prevent="downloadAttachment(attachment)"
             >
               {{ attachment.name || `附件-${attachment.id}` }}
+              <span v-if="attachment.downloading" class="downloading-indicator">
+                <span class="downloading-spinner"></span> 下载中...
+              </span>
+              <span v-else>
+                ({{ formatFileSize(attachment.size) }})
+              </span>
             </a>
           </div>
         </div>
@@ -150,18 +157,67 @@ export default {
   },
   computed: {
     isStarred() {
-      if (this.currentFolder === 'INBOX') {
+      if (this.mailbox === 'INBOX') {
         return this.mail.receiver_star === 1;
-      } else if (this.currentFolder === 'SENT') {
+      } else if (this.mailbox === 'SENT') {
         return this.mail.sender_star === 1;
       }
       return false;
+    },
+    mailId() {
+      return this.$route.query.id;
+    },
+    mailbox() {
+      return this.$route.query.mailbox || 'INBOX';
     }
   },
   created() {
-    this.fetchMailData();
+    this.initMailData();
   },
   methods: {
+    // 初始化邮件数据
+    initMailData() {
+      this.currentFolder = this.mailbox;
+      this.fetchMailData(this.mailbox, this.mailId);
+    },
+    
+    // 获取邮件数据
+    async fetchMailData(mailbox, mailId) {
+      if (!mailId) {
+        this.showToastMessage('邮件ID无效', 'error');
+        this.isLoading = false;
+        return;
+      }
+      
+      this.isLoading = true;
+      
+      try {
+        const response = await fetch(`/api/mail/${mailbox}/mails/${mailId}`);
+        const result = await response.json();
+        
+        if (result.code === 'code.ok') {
+          this.mail = result.data;
+          
+          // 更新sessionStorage缓存
+          sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
+          
+          // 获取附件信息
+          if (this.mail.attachmentIds && this.mail.attachmentIds.length > 0) {
+            await this.fetchAttachmentsInfo();
+          }
+        } else if (result.code === 'code.error') {
+          this.showToastMessage(`获取邮件失败: ${result.message}${result.reason ? ': ' + result.reason : ''}`, 'error');
+        } else {
+          this.showToastMessage(`获取邮件失败: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        console.error('获取邮件数据出错:', error);
+        this.showToastMessage('获取邮件数据失败，请检查网络连接', 'error');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
     // 回复邮件
     replyMail() {
       if (!this.mail.mail_id) {
@@ -170,47 +226,35 @@ export default {
       }
 
       try {
-        // 确保发件人信息正确
         const originalSender = this.mail.sender_email || '';
-        
-        // 确保时间格式正确
         const formattedTime = this.formatTime(this.mail.create_at);
-        
-        // 确保主题正确
         const originalSubject = this.mail.subject || '';
-        
-        // 确保邮件内容正确
         const originalContent = this.mail.content || '';
         
-        // 生成回复邮件的主题，如果原邮件主题不以"回复:"开头，则添加
         let replySubject = originalSubject;
         if (!replySubject.startsWith('回复:')) {
           replySubject = '回复: ' + replySubject;
         }
         
-        // 生成引用的原始邮件内容
-        const quotedContent = `
-
-
-
------------------- 原始邮件 ------------------
-  发件人: ${originalSender}
-  发送时间: ${formattedTime}
-  主题: ${originalSubject}
-  内容: ${originalContent}
-`;
+        const quotedContent = `<br><br><hr>
+          <div style="color: #666; font-size: 0.9em; padding: 10px; background-color: #f9f9f9; border-left: 3px solid #ccc;">
+            <p><strong>原始邮件</strong></p>
+            <p><strong>发件人:</strong> ${originalSender}</p>
+            <p><strong>时间:</strong> ${formattedTime}</p>
+            <p><strong>主题:</strong> ${originalSubject}</p>
+            <div style="margin-top: 10px;">${originalContent}</div>
+          </div>
+        `;
         
-        // 将回复数据存储到sessionStorage
         const replyData = {
           to: originalSender,
           subject: replySubject,
-          content: "",  // 初始内容为空
+          content: "",
           quotedContent: quotedContent
         };
         
         sessionStorage.setItem('replyMailData', JSON.stringify(replyData));
         
-        // 导航到写信页面
         this.$router.push({
           path: '/edit',
           query: { reply: 'true' }
@@ -221,21 +265,18 @@ export default {
       }
     },
     
-    // 格式化时间显示，始终显示完整的年月日和时间
+    // 格式化时间显示
     formatTime(dateStr) {
       if (!dateStr) return '未知时间';
       
       try {
-        // 解析日期
         const date = new Date(dateStr);
         
-        // 检查日期是否有效
         if (isNaN(date.getTime())) {
           console.warn('无法解析的时间:', dateStr);
           return '未知时间';
         }
         
-        // 获取年月日时分
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -243,7 +284,6 @@ export default {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         const seconds = String(date.getSeconds()).padStart(2, '0');
         
-        // 返回完整格式的日期时间
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
       } catch (error) {
         console.error('格式化时间错误:', error);
@@ -266,61 +306,14 @@ export default {
       }, 3000);
     },
     
-    // 获取邮件数据
-    async fetchMailData() {
-      this.isLoading = true;
-      
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mailId = this.$route.query.id;
-        const mailbox = this.$route.query.mailbox || 'INBOX';
-        this.currentFolder = mailbox;
-        
-        // 尝试从sessionStorage获取邮件数据
-        const storedMail = sessionStorage.getItem('currentMail');
-        
-        if (storedMail) {
-          this.mail = JSON.parse(storedMail);
-          console.log('Using stored mail data:', this.mail);
-        }
-        
-        if (mailId && (!this.mail.mail_id || parseInt(mailId) !== this.mail.mail_id)) {
-          // 从API获取邮件数据
-          const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}`);
-          const result = await response.json();
-          
-          if (result.code === 'code.ok') {
-            this.mail = result.data;
-            console.log('Fetched mail data:', this.mail);
-            // 更新sessionStorage
-            sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
-          } else {
-            this.showToastMessage(`获取邮件失败: ${result.message}`, 'error');
-          }
-        }
-        
-        // 获取附件信息
-        if (this.mail.attachmentIds && this.mail.attachmentIds.length > 0) {
-          await this.fetchAttachmentsInfo();
-        }
-      } catch (error) {
-        console.error('获取邮件数据出错:', error);
-        this.showToastMessage('获取邮件数据失败，请检查网络连接', 'error');
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
-    // 参考view-mail.html处理附件的方式
+    // 获取附件信息
     async fetchAttachmentsInfo() {
       try {
-        // 如果没有附件ID，则直接返回
         if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
           this.attachments = [];
           return;
         }
         
-        // 使用Promise.all并行获取所有附件信息
         const attachmentPromises = this.mail.attachmentIds.map(async attachmentId => {
           try {
             const response = await fetch(`/attachments/${attachmentId}`);
@@ -329,49 +322,77 @@ export default {
             if (result.code === 'code.ok' && result.data) {
               return { 
                 id: attachmentId,
-                name: result.data.fileName || `附件-${attachmentId}`
+                name: result.data.fileName || `附件-${attachmentId}`,
+                size: result.data.size || 0
               };
             } else {
               console.warn(`获取附件 ${attachmentId} 信息失败:`, result.message);
-              return { id: attachmentId, name: `附件-${attachmentId}` };
+              return { id: attachmentId, name: `附件-${attachmentId}`, size: 0 };
             }
           } catch (error) {
             console.error(`获取附件 ${attachmentId} 信息出错:`, error);
-            return { id: attachmentId, name: `附件-${attachmentId}` };
+            return { id: attachmentId, name: `附件-${attachmentId}`, size: 0 };
           }
         });
         
         this.attachments = await Promise.all(attachmentPromises);
-        console.log('附件信息:', this.attachments);
       } catch (error) {
         console.error('获取附件信息失败:', error);
         this.showToastMessage('获取附件信息失败', 'error');
       }
     },
     
+    // 格式化文件大小
+    formatFileSize(bytes) {
+      if (bytes === 0 || bytes === undefined) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]);
+    },
+    
+    // 下载附件
+    async downloadAttachment(attachment) {
+      // 标记为下载中
+      this.$set(attachment, 'downloading', true);
+      
+      try {
+        const link = document.createElement('a');
+        link.href = `/attachments/download/${attachment.id}`;
+        link.setAttribute('download', attachment.name);
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          this.$set(attachment, 'downloading', false);
+        }, 100);
+        console.log(`开始下载附件: ${attachment.name}`);
+      } catch (error) {
+        console.error('下载附件出错:', error);
+        this.showToastMessage('下载附件失败', 'error');
+        this.$set(attachment, 'downloading', false);
+      }
+    },
+    
     // 返回上一页
     goBack() {
       const from = this.$route.query.from;
-
-      // 如果有来源信息，并且浏览器历史记录存在，最简单的就是直接返回上一页
       if (from && window.history.length > 1) {
         this.$router.back();
         return;
       }
-
-      // 如果无法使用 history.back()，则根据 from 参数进行硬跳转
       if (from === 'star') {
         this.$router.push('/star');
       } else {
-        // 默认的回退逻辑，返回到主邮箱页面
         this.$router.push({
           path: '/main',
-          query: { folder: this.currentFolder || 'INBOX' }
+          query: { folder: this.mailbox }
         });
       }
     },
     
-    // 切换星标状态 - 修改后与主页面保持一致
+    // 切换星标状态
     async toggleStar() {
       if (!this.mail.mail_id) {
         this.showToastMessage('无法操作，邮件ID无效', 'error');
@@ -379,42 +400,32 @@ export default {
       }
       
       try {
-        // 构建API请求参数
         let starSign;
-        if (this.currentFolder === 'INBOX') {
-          starSign = 'R_STAR'; // 收件人星标
-        } else if (this.currentFolder === 'SENT') {
-          starSign = 'S_STAR'; // 发件人星标
+        if (this.mailbox === 'INBOX') {
+          starSign = 'R_STAR';
+        } else if (this.mailbox === 'SENT') {
+          starSign = 'S_STAR';
         } else {
           this.showToastMessage('当前文件夹不支持星标操作', 'error');
           return;
         }
         
-        // 确定操作类型：添加或移除星标
         const operation = this.isStarred ? '-FLAG' : '+FLAG';
-        
-        // 存储当前操作（添加或移除星标）
         const isAdding = !this.isStarred;
         
-        // 使用新的API格式修改星标状态
-        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/${starSign}/${operation}`, {
+        const response = await fetch(`/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/${starSign}/${operation}`, {
           method: 'POST'
         });
         
         const result = await response.json();
         
         if (result.code === 'code.ok') {
-          // 更新本地邮件的星标状态
-          if (this.currentFolder === 'INBOX') {
+          if (this.mailbox === 'INBOX') {
             this.mail.receiver_star = isAdding ? 1 : 0;
           } else {
             this.mail.sender_star = isAdding ? 1 : 0;
           }
-          
-          // 更新sessionStorage中的邮件数据
           sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
-          
-          // 显示成功提示 - 使用存储的操作类型而非计算属性
           this.showToastMessage(isAdding ? '已添加星标' : '已取消星标');
         } else {
           this.showToastMessage('修改星标状态失败: ' + (result.reason || result.message), 'error');
@@ -427,29 +438,19 @@ export default {
     
     // 切换已读/未读状态
     async toggleReadStatus() {
-      if (!this.mail.mail_id || this.currentFolder !== 'INBOX') {
+      if (!this.mail.mail_id || this.mailbox !== 'INBOX') {
         this.showToastMessage('无法操作，邮件ID无效或不在收件箱', 'error');
         return;
       }
       
       try {
-        // 确定操作类型：标记已读或未读
         const operation = this.mail.read === 1 ? '-FLAG' : '+FLAG';
-        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/READ/${operation}`;
-        
-        const response = await fetch(endpoint, {
-          method: 'POST'
-        });
-        
+        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/READ/${operation}`;
+        const response = await fetch(endpoint, { method: 'POST' });
         const result = await response.json();
-        
         if (result.code === 'code.ok') {
-          // 更新本地邮件的已读状态
           this.mail.read = this.mail.read === 1 ? 0 : 1;
-          
-          // 更新sessionStorage中的邮件数据
           sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
-          
           this.showToastMessage(this.mail.read === 1 ? '已标为已读' : '已标为未读');
         } else {
           this.showToastMessage('修改已读状态失败', 'error');
@@ -468,17 +469,12 @@ export default {
       }
       
       try {
-        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/TRASH/+FLAG`;
-        
-        const response = await fetch(endpoint, {
-          method: 'POST'
-        });
-        
+        // 修改为使用 URL query 中的 mailbox
+        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/TRASH/+FLAG`;
+        const response = await fetch(endpoint, { method: 'POST' });
         const result = await response.json();
-        
         if (result.code === 'code.ok') {
           this.showToastMessage('邮件已移至回收站');
-          // 延迟返回，让用户看到提示
           setTimeout(() => this.goBack(), 1500);
         } else {
           this.showToastMessage('移动邮件失败', 'error');
@@ -489,25 +485,19 @@ export default {
       }
     },
     
-    // 从回收站还原
+    // 从回收站还原邮件
     async restoreMail() {
-      if (!this.mail.mail_id || this.currentFolder !== 'TRASH') {
+      if (!this.mail.mail_id || this.mailbox !== 'TRASH') {
         this.showToastMessage('无法操作，邮件ID无效或不在回收站', 'error');
         return;
       }
       
       try {
-        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/TRASH/-FLAG`;
-        
-        const response = await fetch(endpoint, {
-          method: 'POST'
-        });
-        
+        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/TRASH/-FLAG`;
+        const response = await fetch(endpoint, { method: 'POST' });
         const result = await response.json();
-        
         if (result.code === 'code.ok') {
           this.showToastMessage('邮件已还原');
-          // 延迟返回，让用户看到提示
           setTimeout(() => this.goBack(), 1500);
         } else {
           this.showToastMessage('还原邮件失败', 'error');
@@ -518,7 +508,7 @@ export default {
       }
     },
     
-    // 显示删除确认
+    // 显示删除确认模态框
     confirmDelete() {
       this.showDeleteModal = true;
     },
@@ -532,16 +522,14 @@ export default {
       }
       
       try {
-        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/delete`, {
+        // 修改为使用URL query中的 mailbox
+        const response = await fetch(`/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/delete`, {
           method: 'DELETE'
         });
-        
         const result = await response.json();
-        
         if (result.code === 'code.ok') {
           this.showDeleteModal = false;
           this.showToastMessage('邮件已永久删除');
-          // 延迟返回，让用户看到提示
           setTimeout(() => this.goBack(), 1500);
         } else {
           this.showToastMessage('删除邮件失败', 'error');
@@ -599,7 +587,6 @@ export default {
   border-color: #c6e2ff;
 }
 
-/* 回复按钮样式 */
 .reply-btn {
   background-color: #ecf5ff;
   color: #409EFF;
@@ -693,7 +680,7 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-/* 附件样式 - 参考view-mail.html */
+/* 附件样式 */
 .attachments-section {
   margin-top: 30px;
   padding: 15px;
@@ -732,6 +719,25 @@ export default {
   text-decoration: underline;
 }
 
+.downloading-indicator {
+  color: #666;
+  font-size: 0.9em;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+}
+
+.downloading-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-radius: 50%;
+  border-top-color: #409EFF;
+  animation: spin 1s linear infinite;
+  margin-right: 5px;
+}
+
 /* 模态框样式 */
 .modal-overlay {
   position: fixed;
@@ -739,7 +745,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0,0,0,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -752,7 +758,7 @@ export default {
   border-radius: 8px;
   width: 400px;
   max-width: 90%;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
 
 .modal-title {
