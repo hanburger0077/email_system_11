@@ -13,6 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.regex.Pattern;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.security.SecureRandom;
+import java.util.HashMap; // 引入 HashMap
+import java.util.Map;    // 引入 Map
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -29,7 +31,7 @@ public class UserServiceImpl implements UserService {
     // 密码格式正则：至少包含大小写字母和数字，长度6-20位
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{6,20}$");
 
-    // **新增：手机号码格式正则：精确11位数字**
+    // 新增：手机号码格式正则：精确11位数字
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{11}$");
 
     private boolean isValidEmail(String email) {
@@ -40,7 +42,7 @@ public class UserServiceImpl implements UserService {
         return PASSWORD_PATTERN.matcher(password).matches();
     }
 
-    // **新增：手机号码格式校验方法**
+    // 新增：手机号码格式校验方法
     private boolean isValidPhone(String phone) {
         return PHONE_PATTERN.matcher(phone).matches();
     }
@@ -93,7 +95,7 @@ public class UserServiceImpl implements UserService {
 
         Cookie cookie = new Cookie("loginUserEmail", email);
         cookie.setPath("/");
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(false);  // 允许JavaScript访问
         cookie.setMaxAge(60 * 60 * 24); // 1天有效
         response.addCookie(cookie);
 
@@ -122,7 +124,7 @@ public class UserServiceImpl implements UserService {
         if (!isValidPassword(password)) {
             return ResultVo.fail("操作错误", "密码格式不符合要求", "密码必须包含大小写字母和数字，长度6-20位");
         }
-        // **新增：注册时手机号码格式校验**
+        // 新增：注册时手机号码格式校验
         if (!isValidPhone(phone)) {
             return ResultVo.fail("操作错误", "手机号码格式错误", "手机号码必须是11位数字");
         }
@@ -154,7 +156,13 @@ public class UserServiceImpl implements UserService {
         registeredUser.setEmail(newUser.getEmail());
         registeredUser.setPhone(newUser.getPhone());
         registeredUser.setStatus(newUser.getStatus());
-        return ResultVo.success("注册成功！请妥善保管您的恢复码： " + plainRecoveryCode + "。此码仅显示一次。", registeredUser);
+
+        // 创建一个 Map 来包含用户数据和恢复码，将其放入 ResultVo 的 data 字段
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("user", registeredUser);
+        responseData.put("recoveryCode", plainRecoveryCode);
+
+        return ResultVo.success("注册成功！请妥善保管您的恢复码。此码仅显示一次。", responseData);
     }
 
     @Override
@@ -246,7 +254,7 @@ public class UserServiceImpl implements UserService {
         if (!StringUtils.hasText(newPhone)) {
             return ResultVo.fail("操作错误", "新手机号不能为空", "请输入新的手机号码");
         }
-        // **新增：修改手机号时格式校验**
+        // 新增：修改手机号时格式校验
         if (!isValidPhone(newPhone)) {
             return ResultVo.fail("操作错误", "新手机号码格式错误", "新手机号码必须是11位数字");
         }
@@ -361,6 +369,10 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "密码重置失败，请重试", "数据库更新操作失败");
         }
 
-        return ResultVo.success("密码重置成功！请妥善保管您的新恢复码：" + newPlainRecoveryCode + "。此码仅显示一次。", null);
+        // 将新的恢复码放入 data payload
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("newRecoveryCode", newPlainRecoveryCode);
+
+        return ResultVo.success("密码重置成功！请妥善保管您的新恢复码。此码仅显示一次。", responseData);
     }
 }

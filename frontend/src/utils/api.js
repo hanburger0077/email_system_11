@@ -128,20 +128,20 @@ export const logoutUser = (userData) => {
 
 // 重置密码
 export const resetPassword = (userData) => {
-  return request('/user/resetPassword', {
+  return request('/user/recoverPassword', {
     method: 'POST',
     body: {
       email: userData.email,
       recoveryCode: userData.recoveryCode,
       newPassword: userData.newPassword,
-      confirmPassword: userData.confirmPassword
+      confirmNewPassword: userData.confirmPassword
     }
   })
 }
 
 // 统一错误处理
 export const handleApiError = (response) => {
-  if (response.code === 'code.ok') {
+ if (response.code === 'code.ok') {
     return response
   }
   

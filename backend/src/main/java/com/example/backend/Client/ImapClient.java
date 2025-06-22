@@ -179,8 +179,8 @@ public class ImapClient {
                 if (content == null) {
                     content = line;
                 } else {
-                    content += "\n" + line;
-                    getCount += 1;
+                    content += "\r\n" + line;
+                    getCount += 2;
                 }
                 getCount += line.length();
             } else if (line.startsWith("*") || line.startsWith("1 OK")) {
@@ -343,7 +343,7 @@ public class ImapClient {
                             + from + "\r\n"
                             + to + "\r\n"
                             + subject + "\r\n"
-                            + content + "\r\n"
+                            + content.replace("\r\n","\n") + "\r\n"
                             + mailId + "\r\n";
             String response = handler.sendCommand(channel, command);
             System.out.println("IMAP return：" + response);

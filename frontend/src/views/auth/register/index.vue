@@ -53,28 +53,6 @@
 
           </el-input>
         </el-form-item> 
-        
-        <!-- 恢复码显示 -->
-        <el-form-item label="恢复码（请务必保存）">
-          <div class="recovery-code-container">
-            <el-input 
-              v-model="form.recoveryCode"
-              placeholder="系统自动生成恢复码" 
-              size="large"
-              readonly
-              class="recovery-code-input"
-            >
-              <template #append>
-                <el-button @click="copyRecoveryCode" type="primary">复制</el-button>
-              </template>
-            </el-input>
-            <div class="recovery-code-tip">
-              <el-icon><InfoFilled /></el-icon>
-              恢复码用于找回密码，请妥善保管，不要泄露给他人
-            </div>
-          </div>
-        </el-form-item>
-
         <el-form-item prop="protocol">
           <div class="protocol">
             <el-checkbox v-model="form.protocol">我已阅读并同意
@@ -88,21 +66,22 @@
           class="email-button"
           size="large"
           :loading="loading"
-          @click="handleLogin"
+          @click="handleRegister"
         >
-          登录
+          注册
         </el-button>
       </el-form>
     </template>
   </LoginForm>
-</template>
+  <RecoveryCode ref="recoveryCodeDialog" :recovery-code="form.recoveryCode" /></template>
 
 <script setup>
 import LoginForm from '../components/loginForm.vue'
-import { registerUser, handleApiError } from '@/utils/api'
+import { registerUser, handleApiError, loginUser } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { InfoFilled } from '@element-plus/icons-vue'
-
+import { ElMessage, ElMessageBox } from 'element-plus'
+import RecoveryCode from '../components/recoveryCode.vue'
 const form = ref({
   email: '',
   password: '',
@@ -113,16 +92,7 @@ const form = ref({
   protocol: false,
 })
 
-// 生成8位恢复码（字母+数字）
-const generateRecoveryCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
-
+const recoveryCodeDialog = ref(null)
 // 复制恢复码
 const copyRecoveryCode = async () => {
   try {
@@ -183,44 +153,45 @@ const loading = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 
-// 页面加载时生成恢复码
-onMounted(() => {
-  form.value.recoveryCode = generateRecoveryCode()
-})
-
 const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
 }
 
-const handleLogin = async () => {
-  if (!formRef.value) return
-  
+const handleRegister = async () => {
   try {
-    // 验证表单
-    await formRef.value.validate()
+    // 1. 先注册
+    const registerResponse = await registerUser(form.value)
+    handleApiError(registerResponse)
     
-    loading.value = true
+    // 2. 从后端响应的 data 中获取恢复码（修复：从 data.recoveryCode 获取）
+    if (registerResponse.data && registerResponse.data.recoveryCode) {
+      form.value.recoveryCode = registerResponse.data.recoveryCode;
+      ElMessage.success('注册成功！请保存您的恢复码');
+    } else {
+      console.warn('注册成功但未获取到恢复码:', registerResponse);
+      ElMessage.warning('注册成功，但未获取到恢复码');
+    }
     
-    // 调用注册API（包含恢复码）
-    const response = await registerUser(form.value)
+    // 3. 自动登录
+    const loginResponse = await loginUser({
+      email: form.value.email,
+      password: form.value.password
+    })
+    handleApiError(loginResponse)
     
-    // 处理API响应
-    handleApiError(response)
-    
-    // 注册成功后的处理
-    ElMessage.success('注册成功！')
-    
-    // 存储用户信息
-    userStore.setUserInfo(response.data)
-    
-    // 跳转到邮箱主页
+    userStore.setUserInfo(loginResponse.data)
+
+    // 4. 显示恢复码对话框（只有在有恢复码时才显示）
+    if (form.value.recoveryCode) {
+      await recoveryCodeDialog.value.open()
+      ElMessage.success('登录成功')  // 添加这一行
+    }
+
     router.push('/main')
     
   } catch (error) {
     console.error('注册失败:', error)
     ElMessage.error(error.message || '注册失败，请重试')
-  } finally {
-    loading.value = false
   }
 }
 </script>
