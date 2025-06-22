@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
 
         Cookie cookie = new Cookie("loginUserEmail", email);
         cookie.setPath("/");
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(false);  // 允许JavaScript访问
         cookie.setMaxAge(60 * 60 * 24); // 1天有效
         response.addCookie(cookie);
 
