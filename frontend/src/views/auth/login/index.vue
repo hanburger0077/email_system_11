@@ -78,6 +78,7 @@ const rules = ref({
           return callback(new Error('请阅读并同意协议'));
         }
         return callback();
+        
       },
     },
   ]
