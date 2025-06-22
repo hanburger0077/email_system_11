@@ -29,12 +29,20 @@ public class UserServiceImpl implements UserService {
     // 密码格式正则：至少包含大小写字母和数字，长度6-20位
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{6,20}$");
 
+    // **新增：手机号码格式正则：精确11位数字**
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{11}$");
+
     private boolean isValidEmail(String email) {
         return EMAIL_PATTERN.matcher(email).matches();
     }
 
     private boolean isValidPassword(String password) {
         return PASSWORD_PATTERN.matcher(password).matches();
+    }
+
+    // **新增：手机号码格式校验方法**
+    private boolean isValidPhone(String phone) {
+        return PHONE_PATTERN.matcher(phone).matches();
     }
 
     private String getLoggedInUserEmail(HttpServletRequest request) {
@@ -114,6 +122,10 @@ public class UserServiceImpl implements UserService {
         if (!isValidPassword(password)) {
             return ResultVo.fail("操作错误", "密码格式不符合要求", "密码必须包含大小写字母和数字，长度6-20位");
         }
+        // **新增：注册时手机号码格式校验**
+        if (!isValidPhone(phone)) {
+            return ResultVo.fail("操作错误", "手机号码格式错误", "手机号码必须是11位数字");
+        }
 
         User existing = userMapper.findAnyByEmail(email);
         if (existing != null) {
@@ -146,14 +158,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResultVo logout(HttpServletRequest request, String password) { // **新增 password 参数**
-        String loggedInEmail = getLoggedInUserEmail(request); // 从 Cookie 中获取登录邮箱
+    public ResultVo logout(HttpServletRequest request, String password) {
+        String loggedInEmail = getLoggedInUserEmail(request);
 
         if (!StringUtils.hasText(loggedInEmail)) {
             return ResultVo.fail("操作错误", "用户未登录", "无法执行注销操作，因为用户未登录");
         }
 
-        if (!StringUtils.hasText(password)) { // **新增密码验证**
+        if (!StringUtils.hasText(password)) {
             return ResultVo.fail("操作错误", "请提供密码进行注销确认", "注销操作需要密码确认");
         }
 
@@ -162,11 +174,10 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "用户不存在或已是注销状态", "登录会话有效但用户在数据库中不存在或已失效");
         }
 
-        if (!bCryptPasswordEncoder.matches(password, user.getPassword())) { // **验证密码**
+        if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {
             return ResultVo.fail("操作错误", "密码不正确", "提供的密码与当前用户密码不匹配，无法注销");
         }
 
-        // 执行逻辑删除：更新当前登录用户的状态为0
         int updated = userMapper.updateUserStatus(loggedInEmail, 0);
         if (updated <= 0) {
             return ResultVo.fail("操作错误", "注销失败，请重试", "数据库更新用户状态失败");
@@ -182,10 +193,9 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "当前没有用户处于登录状态", "无法执行退出操作，因为用户未登录");
         }
 
-        // 清除登录状态的 Cookie
         Cookie cookie = new Cookie("loginUserEmail", null);
         cookie.setPath("/");
-        cookie.setMaxAge(0); // 设置有效期为0，浏览器会立即删除该 Cookie
+        cookie.setMaxAge(0);
         response.addCookie(cookie);
 
         return ResultVo.success("退出成功");
@@ -235,6 +245,10 @@ public class UserServiceImpl implements UserService {
         }
         if (!StringUtils.hasText(newPhone)) {
             return ResultVo.fail("操作错误", "新手机号不能为空", "请输入新的手机号码");
+        }
+        // **新增：修改手机号时格式校验**
+        if (!isValidPhone(newPhone)) {
+            return ResultVo.fail("操作错误", "新手机号码格式错误", "新手机号码必须是11位数字");
         }
 
         User user = userMapper.findByEmail(email);

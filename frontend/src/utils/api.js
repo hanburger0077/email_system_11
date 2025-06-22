@@ -99,9 +99,10 @@ export const updatePassword = (userData) => {
   return request('/user/updatePassword', {
     method: 'POST',
     body: {
-      email: userData.email,
+      //email: userData.email,
       oldPassword: userData.oldPassword,
-      newPassword: userData.newPassword
+      newPassword: userData.newPassword,
+      confirmNewPassword: userData.confirmNewPassword || userData.newPassword // ✅ 新增这行
     }
   })
 }
@@ -140,8 +141,10 @@ export const resetPassword = (userData) => {
 
 // 统一错误处理
 export const handleApiError = (response) => {
-  if (response.code === 'code.error') {
-    throw new Error(response.reason || response.message || '操作失败')
+  if (response.code === 'code.ok') {
+    return response
   }
-  return response
+  
+  // 所有非成功的响应都视为错误
+  throw new Error(response.reason || response.message || '操作失败')
 } 

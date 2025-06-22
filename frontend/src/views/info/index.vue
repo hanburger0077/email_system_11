@@ -304,7 +304,8 @@ const savePassword = async () => {
     const response = await updatePassword({
       email: userStore.userInfo.email,
       oldPassword: passwordForm.oldPassword,
-      newPassword: passwordForm.newPassword
+      newPassword: passwordForm.newPassword,
+      confirmNewPassword: passwordForm.confirmPassword
     })
     
     // 处理API响应
