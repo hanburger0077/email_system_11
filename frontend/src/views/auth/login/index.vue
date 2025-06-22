@@ -152,7 +152,7 @@ const handleLogin = async () => {
     }
     
     // 3. 登录和IMAP连接都成功后的处理
-    ElMessage.success('登录成功！')
+    ElMessage.success('登录成功')
     
     // 存储用户信息，包括从 IMAP 连接中获取的邮箱相关数据
     userStore.setUserInfo({

@@ -55,18 +55,27 @@
       </el-form>
     </template>
   </LoginForm>
+  <RecoveryCode ref="recoveryCodeDialog" :recovery-code="form.newRecoveryCode" :title="'密码重置成功'" />
 </template>
 
 <script setup>
 import LoginForm from '../components/loginForm.vue'
-import { resetPassword, handleApiError } from '@/utils/api'
+import RecoveryCode from '../components/recoveryCode.vue'
+import { resetPassword, handleApiError, loginUser } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const form = ref({
   email: '',
   recoveryCode: '',
   newPassword: '',
   confirmPassword: '',
+  newRecoveryCode: '', // 用于存储新生成的恢复码
 })
+
+const recoveryCodeDialog = ref(null)
 
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== form.value.newPassword) {
@@ -104,6 +113,7 @@ const rules = ref({
 const formRef = ref(null)
 const loading = ref(false)
 const router = useRouter()
+const userStore = useUserStore()
 
 const handleResetPassword = async () => {
   if (!formRef.value) return
@@ -125,11 +135,40 @@ const handleResetPassword = async () => {
     // 处理API响应
     handleApiError(response)
     
-    // 重置密码成功
-    ElMessage.success('密码重置成功！请使用新密码登录')
-    
-    // 跳转到登录页面
-    router.push('/auth/login')
+    // 检查后端是否返回了新的恢复码（注意字段名是 newRecoveryCode）
+    if (response.data && response.data.newRecoveryCode) {
+      form.value.newRecoveryCode = response.data.newRecoveryCode
+      ElMessage.success('密码重置成功！请保存您的新恢复码')
+      
+      // 显示恢复码对话框
+      await recoveryCodeDialog.value.open()
+      
+      // 自动登录
+      try {
+        const loginResponse = await loginUser({
+          email: form.value.email,
+          password: form.value.newPassword
+        })
+        handleApiError(loginResponse)
+        
+        userStore.setUserInfo(loginResponse.data)
+        ElMessage.success('登录成功')
+        
+        // 跳转到主页面
+        router.push('/main')
+      } catch (loginError) {
+        console.error('自动登录失败:', loginError)
+        ElMessage.warning('密码重置成功，但自动登录失败，请手动登录')
+        // 跳转到登录页面
+        router.push('/auth/login')
+      }
+    } else {
+      // 如果后端没有返回恢复码，报错
+      console.error('密码重置成功但后端未返回新恢复码:', response)
+      ElMessage.error('密码重置成功，但获取新恢复码失败，请联系管理员')
+      // 跳转到登录页面
+      router.push('/auth/login')
+    }
     
   } catch (error) {
     console.error('密码重置失败:', error)
