@@ -29,13 +29,13 @@ const handleAccountClick = () => {
 const timer = ref(null)
 
 const handleAccountMouseEnter = () => {
-  console.log('账号按钮鼠标进入');
+  // console.log('账号按钮鼠标进入');
   isMenuVisible.value = true
   clearTimeout(timer.value)
 };
 
 const handleAccountMouseLeave = () => {
-  console.log('账号按钮鼠标离开');
+  // console.log('账号按钮鼠标离开');
   clearTimeout(timer.value)
   timer.value = setTimeout(() => {
     isMenuVisible.value = false
