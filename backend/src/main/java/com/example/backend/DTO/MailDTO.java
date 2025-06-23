@@ -112,6 +112,7 @@ public class MailDTO implements Serializable {
         length += sender_email.length();
         length += receiver_email.length();
         length += subject.length();
+        length += Math.min(content.length(),20);
         length += create_at.toString().length();
         length += String.valueOf(read).length();
         length += String.valueOf(sender_star).length();
