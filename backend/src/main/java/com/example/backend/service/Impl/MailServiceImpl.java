@@ -231,6 +231,73 @@ public class MailServiceImpl implements MailService {
 
 
     @Override
+    public ResultVo searchMail(String mailbox, String from, String to, String subject, String body, int since, String unseen, boolean sender_star, boolean receiver_star) {
+        List<Long> mailId = null;
+        List<MailDTO> mails = null;
+        LocalDateTime dateTime;
+        int totalPageNum = 0;
+        if (since > 0) {
+            dateTime = LocalDateTime.now().minusDays(since).withHour(0).withMinute(0).withSecond(0);
+        }
+        else {
+            dateTime = null;
+        }
+        try {
+            imapClient.doneCommand();
+        } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
+            return ResultVo.fail("操作失败", "Failed to send DONE command" + e.getMessage());
+        }
+        try {
+            imapClient.selectCommand(mailbox);
+        } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
+            return ResultVo.fail("操作失败", "Failed to send SELECT command" + e.getMessage());
+        }
+        try {
+            mailId = imapClient.searchCommand(from, to, subject, body, dateTime, unseen, sender_star, receiver_star);
+        } catch (InterruptedException e) {
+            // 强行恢复空闲
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException ee) {
+                throw new RuntimeException(ee);
+            }
+            return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
+        }
+        try {
+            if(mailId != null) {
+                mails = new ArrayList<>();
+                for(long id : mailId) {
+                    mails.add(imapClient.fetchCommand("SIMPLE", id));
+                }
+                return ResultVo.success(String.valueOf(totalPageNum), mails);
+            } else {
+                return ResultVo.success("操作成功", new ArrayList<>());
+            }
+        } catch (InterruptedException e) {
+            return ResultVo.fail("操作失败", "Failed to send SEARCH command" + e.getMessage());
+        } finally {
+            try {
+                imapClient.idleCommand();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+    @Override
     public ResultVo searchMail(String mailbox, int pageNum, int pageSize, String from, String to, String subject, String body, int since, String unseen, boolean sender_star, boolean receiver_star) {
         List<Long> mailId = null;
         List<Long> pageMailIds = null;
