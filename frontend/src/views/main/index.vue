@@ -135,6 +135,7 @@
             :key="mail.mail_id || mail.globalIndex" 
             class="mail-item" 
             :class="{ 'unread': !mail.isRead }"
+            :data-mail-id="mail.mail_id"
           >
             <div class="checkbox-container">
               <el-checkbox v-model="selectedMails" :value="mail.mail_id || mail.globalIndex" class="item-checkbox" />
@@ -494,6 +495,36 @@ export default {
         this.groupAndIndexMails();
       } finally {
         this.isLoading = false;
+      }
+    },
+    
+    // 检查mailId参数并高亮邮件
+    checkMailIdParam() {
+      const mailId = this.$route.query.mailId;
+      if (mailId) {
+        // 延迟执行，确保邮件列表已加载
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.highlightMail(parseInt(mailId));
+          }, 500);
+        });
+      }
+    },
+    
+    // 高亮指定邮件
+    highlightMail(mailId) {
+      // 查找并高亮对应的邮件项
+      const mailElement = document.querySelector(`[data-mail-id="${mailId}"]`);
+      if (mailElement) {
+        mailElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        mailElement.style.backgroundColor = '#ecf5ff';
+        mailElement.style.border = '2px solid #409eff';
+        
+        // 3秒后移除高亮效果
+        setTimeout(() => {
+          mailElement.style.backgroundColor = '';
+          mailElement.style.border = '';
+        }, 3000);
       }
     },
     
@@ -858,6 +889,9 @@ export default {
     
     // 初始化SSE连接
     this.initSSE();
+    
+    // 检查是否有mailId参数，如果有则高亮显示对应邮件
+    this.checkMailIdParam();
   },
   beforeDestroy() {
     // 组件销毁前关闭SSE连接
