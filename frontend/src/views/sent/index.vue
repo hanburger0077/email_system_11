@@ -6,48 +6,68 @@
         <!-- 全选 -->
         <el-checkbox 
           v-model="allSelected" 
-          @change="toggleSelectAll"
-          class="select-all-checkbox"
-          :disabled="mailList.length === 0"
+          @change="toggleSelectAll" 
+          class="select-all-checkbox" 
         />
+
         <!-- 删除 -->
-        <el-button 
-          class="delete-button" 
+        <el-button  
           :disabled="selectedMails.length === 0"
           @click="deleteSelected"
+          class="delete-button"
         >
           删除
         </el-button>
-        <!-- 标记为已读（仅收件箱支持，此处仅做占位，可用于其他操作） -->
-        <el-tooltip content="标为已读" placement="bottom">
+
+        <!-- 标记为已读 -->
+        <el-tooltip 
+          content="标为已读"
+          placement="bottom"
+        >
           <el-button 
-            class="mark-button"
-            :disabled="selectedMails.length === 0"
             @click="markAsRead"
-          >
-            <img :src="mark1Icon" class="mark-icon" alt="标为已读" />
-          </el-button>
-        </el-tooltip>
-        <!-- 标记为未读/取消星标 -->
-        <el-tooltip content="取消星标" placement="bottom">
-          <el-button 
-            class="mark-button"
             :disabled="selectedMails.length === 0"
-            @click="markSelectedAsUnstarred"
+            class="mark-button"
           >
-            <img :src="mark2Icon" class="mark-icon" alt="取消星标" />
+            <img 
+              :src="mark1Icon" 
+              class="mark-icon"
+              alt="标为已读"
+            />
           </el-button>
         </el-tooltip>
-        <!-- 更多操作下拉菜单 -->
+
+        <!-- 标记为未读 -->
+        <el-tooltip 
+          content="标为未读"
+          placement="bottom"
+        >
+          <el-button 
+            @click="markAsUnread"
+            :disabled="selectedMails.length === 0"
+            class="mark-button"
+          >
+            <img 
+              :src="mark2Icon" 
+              class="mark-icon"
+              alt="标为未读"
+            />
+          </el-button>
+        </el-tooltip>
+
+        <!-- 更多标记下拉菜单 -->
         <el-dropdown @command="handleMarkCommand" :disabled="selectedMails.length === 0">
-          <el-button class="mark-more-button">
-            更多操作 <el-icon><ArrowDown /></el-icon>
+          <el-button 
+            class="mark-more-button" 
+            :disabled="selectedMails.length === 0"
+          >
+            更多标记 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="star" class="dropdown-item">
                 <i class="star-icon starred">★</i>
-                <span>添加星标</span>
+                <span>星标邮件</span>
               </el-dropdown-item>
               <el-dropdown-item command="unstar" class="dropdown-item">
                 <i class="star-icon">☆</i>
@@ -56,75 +76,104 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+
         <!-- 刷新按钮 -->
         <el-tooltip content="刷新" placement="bottom">
-          <el-button class="refresh-button" @click="handleReceive">
+          <el-button 
+            class="refresh-button" 
+            @click="handleReceive"
+          >
             <img :src="mark3Icon" class="refresh-icon" alt="刷新" />
           </el-button>
         </el-tooltip>
-        <!-- 删除全部 -->
+        
+        <!-- 全部删除 -->
         <el-tooltip content="全部删除" placement="bottom">
-          <el-button class="delete-all-button" @click="deleteAll">
+          <el-button 
+            class="delete-all-button" 
+            @click="deleteAll"
+          >
             全部删除
           </el-button>
         </el-tooltip>
       </div>
+
       <div class="toolbar-right">
-        <span class="mail-count">
-          <span v-if="mailList.length === 0">暂无邮件</span>
-          <span v-else>共 {{ totalMails }} 封</span>
-        </span>
+        <span class="mail-count">{{ mailList.length }} 封邮件</span>
+        <!-- 当没有数据时，显示"暂无分页"而不是页码信息 -->
         <span class="page-info" v-if="totalPages > 0">{{ currentPage }}/{{ totalPages }}页</span>
         <span class="page-info" v-else>暂无分页</span>
         <div class="pagination-controls">
-          <el-button size="small" :disabled="currentPage <= 1" @click="prevPage">上一页</el-button>
-          <el-button size="small" :disabled="currentPage >= totalPages || totalPages === 0" @click="nextPage">下一页</el-button>
+          <el-button 
+            size="small" 
+            :disabled="currentPage <= 1"
+            @click="prevPage"
+          >
+            上一页
+          </el-button>
+          <el-button 
+            size="small" 
+            :disabled="currentPage >= totalPages || totalPages === 0"
+            @click="nextPage"
+          >
+            下一页
+          </el-button>
         </div>
       </div>
     </div>
-    
+
     <!-- 邮件列表头部 -->
-    <div class="mail-header" v-if="mailList.length > 0">
-      <span class="column checkbox-col">
-        <el-checkbox 
-          v-model="allSelected" 
-          @change="toggleSelectAll"
-          class="select-all-checkbox"
-          :disabled="mailList.length === 0"
-        />
-      </span>
+    <div class="mail-header">
+      <span class="column checkbox-col"></span>
       <span class="column receiver">收件人</span>
       <span class="column subject">主题</span>
       <span class="column time">时间</span>
       <span class="column star-col">星标</span>
     </div>
-    
+
     <!-- 邮件列表内容 -->
     <div class="list-content" v-if="!isLoading">
-      <div v-for="mail in mailList" :key="mail.mail_id" class="mail-item" :class="{ 'unread': false }">
-        <div class="checkbox-container">
-          <el-checkbox 
-            v-model="selectedMails" 
-            :value="mail.mail_id" 
-            class="item-checkbox" 
-            @change="updateAllSelectedState" 
-          />
-        </div>
-        <div class="mail-content" @click="openMail(mail)">
-          <span class="column receiver">{{ mail.receiver_email }}</span>
-          <span class="column subject">{{ mail.subject }}</span>
-          <span class="column time">{{ formatTime(mail.create_at) }}</span>
-          <span class="star-icon" :class="{ 'star-filled': mail.sender_star === 1 }" @click.stop="toggleStar(mail)">
-            {{ mail.sender_star === 1 ? '★' : '☆' }}
-          </span>
+      <div v-for="(group, index) in groupedMails" :key="index" class="mail-group">
+        <h3 class="group-title" @click="toggleExpand(index)">
+          {{ group.title }}
+          <span class="expand-icon">{{ group.isExpanded ? '−' : '+' }}</span>
+        </h3>
+
+        <div v-show="group.isExpanded" class="mail-items">
+          <div 
+            v-for="(mail, mailIndex) in group.mails" 
+            :key="mail.mail_id || mail.globalIndex" 
+            class="mail-item" 
+            :class="{ 'unread': !mail.isRead }"
+          >
+            <div class="checkbox-container">
+              <el-checkbox v-model="selectedMails" :value="mail.mail_id || mail.globalIndex" class="item-checkbox" />
+            </div>
+            <div class="mail-content" @click="openMail(mail)">
+              <span class="column receiver">{{ mail.receiver_email }}</span>
+              <span class="column subject">{{ mail.subject }}</span>
+              <span class="column time">{{ formatTime(mail.create_at || mail.send_time || mail.time) }}</span>
+              <span 
+                class="star-icon" 
+                :class="{ 'star-filled': isStarred(mail) }" 
+                @click.stop="toggleStar(mail)"
+              >{{ isStarred(mail) ? '★' : '☆' }}</span>
+            </div>
+          </div>
+
+          <div v-if="group.mails.length === 0 && group.isExpanded" class="empty-message">
+            该分类暂无邮件
+          </div>
         </div>
       </div>
-      <div v-if="mailList.length === 0" class="empty-message">当前未找到已发送邮件</div>
+
+      <div v-if="mailList.length === 0" class="empty-message">
+        当前未找到已发送邮件
+      </div>
     </div>
+
     <div v-else class="loading-container">
-      <el-icon class="is-loading">
-        <Loading />
-      </el-icon>
+      <el-icon class="is-loading"><Loading /></el-icon>
       <span>加载中...</span>
     </div>
   </div>
@@ -138,508 +187,894 @@ import mark3Icon from '../main/assets/mark3.png'
 
 export default {
   name: 'SentMails',
-  components: { ArrowDown, Loading },
+  components: {
+    ArrowDown,
+    Loading
+  },
   data() {
     return {
-      mailList: [],
-      selectedMails: [],
-      allSelected: false,
-      currentPage: 1,
-      totalPages: 0,
-      totalMails: 0,
-      to: '',
-      subject: '',
-      body: '',
-      senderStar: false,
-      isLoading: false,
-      refreshInterval: null,
       mark1Icon,
       mark2Icon,
       mark3Icon,
+      currentPage: 1,
+      totalPages: 0,
+      itemsPerPage: 10,
+      selectedMails: [],
+      allSelected: false,
+      showMarkDropdown: false,
+      mailList: [],
+      groupedMails: [
+        { title: "最近三天", isExpanded: true, mails: [] },
+        { title: "最近一周", isExpanded: true, mails: [] },
+        { title: "更早", isExpanded: true, mails: [] },
+      ],
+      currentFolder: 'SENT', // 默认文件夹
+      isLoading: false,
+      refreshInterval: null
     };
   },
+  computed: {
+    paginatedMails() {
+      return this.mailList.map((mail, i) => ({
+        ...mail,
+        isRead: mail.read === 1,
+        globalIndex: i
+      }));
+    }
+  },
   methods: {
-    // 格式化时间
+    // 格式化时间显示 - 始终显示完整年月日和时间
     formatTime(dateStr) {
       if (!dateStr) return '未知时间';
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return '未知时间';
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      
+      try {
+        // 解析日期
+        let date;
+        if (typeof dateStr === 'number') {
+          date = new Date(dateStr);
+        } else if (typeof dateStr === 'string') {
+          date = new Date(dateStr);
+        } else {
+          return '未知时间';
+        }
+        
+        // 检查日期是否有效
+        if (isNaN(date.getTime())) {
+          console.warn('无法解析的时间:', dateStr);
+          return '未知时间';
+        }
+        
+        // 获取年月日时分秒
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        // 始终返回完整格式的日期时间
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } catch (error) {
+        console.error('格式化时间错误:', error);
+        return '未知时间';
+      }
     },
-    // 加载邮件数据（调用 /api/mail/SENT/pages/{page}）
+    
+    // 解析日期为Date对象，用于比较
+    parseDate(dateStr) {
+      if (!dateStr) return new Date(0); // 默认最早时间
+      
+      let date;
+      try {
+        if (typeof dateStr === 'number') {
+          date = new Date(dateStr);
+        } else if (typeof dateStr === 'string') {
+          date = new Date(dateStr);
+        } else {
+          date = new Date();
+        }
+        
+        if (isNaN(date.getTime())) {
+          console.warn(`无法解析的日期: ${dateStr}`);
+          date = new Date(0);
+        }
+      } catch (error) {
+        console.error(`日期解析错误: ${error}`, dateStr);
+        date = new Date(0);
+      }
+      
+      return date;
+    },
+    
+    // 检查邮件是否被星标
+    isStarred(mail) {
+      if (this.currentFolder === 'INBOX') {
+        return mail.receiver_star === 1 || mail.isStarred === true;
+      } else if (this.currentFolder === 'SENT') {
+        return mail.sender_star === 1 || mail.isStarred === true;
+      }
+      return mail.isStarred === true;
+    },
+    
+    // 分组邮件 - 根据邮件日期进行分组
+    groupAndIndexMails() {
+      const today = new Date().setHours(0, 0, 0, 0);
+      const groups = {
+        "最近三天": [],
+        "最近一周": [],
+        "更早": []
+      };
+
+      this.paginatedMails.forEach(mail => {
+        // 获取邮件日期，优先使用create_at字段
+        const mailDate = this.parseDate(mail.create_at || mail.send_time || mail.time);
+        const mailTimestamp = mailDate.setHours(0, 0, 0, 0);
+        
+        // 根据日期差分组
+        const daysDiff = Math.floor((today - mailTimestamp) / (24 * 60 * 60 * 1000));
+        
+        if (daysDiff <= 2) {
+          groups["最近三天"].push(mail);
+        } else if (daysDiff <= 6) {
+          groups["最近一周"].push(mail);
+        } else {
+          groups["更早"].push(mail);
+        }
+      });
+
+      // 更新分组
+      this.groupedMails.forEach(group => {
+        group.mails = groups[group.title];
+      });
+      
+      // 打印日志信息，帮助调试
+      console.log('邮件分组结果:', {
+        '最近三天': groups["最近三天"].length,
+        '最近一周': groups["最近一周"].length, 
+        '更早': groups["更早"].length
+      });
+    },
+    
+    // 加载邮件
     async loadMails(page) {
       if (page < 1) page = 1;
+      if (this.totalPages > 0 && page > this.totalPages) page = this.totalPages;
+      
       this.isLoading = true;
+      this.currentPage = page;
+      
       try {
-        const response = await fetch(`/api/mail/SENT/pages/${page}`);
+        const response = await fetch(`/api/mail/${this.currentFolder}/pages/${page}`);
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.mailList = result.data || [];
+          console.log('加载邮件数据样本:', this.mailList.length > 0 ? this.mailList[0] : 'No emails');
+          // 更新总页数
           this.totalPages = parseInt(result.message, 10) || 0;
-          this.currentPage = page;
-          this.totalMails = this.mailList.length;
+          this.groupAndIndexMails();
+          console.log('邮件加载成功，共', this.mailList.length, '封');
         } else {
+          console.error('加载邮件失败:', result.message, result.reason);
+          this.$message.error(`加载邮件失败: ${result.message}`);
+          // 失败时重置数据状态
           this.mailList = [];
           this.totalPages = 0;
-          this.totalMails = 0;
-          this.$message.error(`${result.message} ${result.reason || ''}`);
+          this.groupAndIndexMails();
         }
       } catch (error) {
-        console.error('加载已发送邮件出错:', error);
-        this.$message.error('加载邮件失败');
+        console.error('请求邮件出错:', error);
+        this.$message.error('加载邮件失败，请检查网络连接');
+        // 错误时重置数据状态
         this.mailList = [];
         this.totalPages = 0;
-        this.totalMails = 0;
+        this.groupAndIndexMails();
       } finally {
         this.isLoading = false;
       }
     },
-    // 搜索邮件（调用 /api/mail/SENT/pages/{page}/search）
-    async searchMails(page = 1) {
-      if (page < 1) page = 1;
+    
+    // 搜索邮件
+    async searchMails(from = '', to = '', subject = '', body = '', since = 0, unseen = null) {
       this.isLoading = true;
+      
       try {
-        const url = new URL(`/api/mail/SENT/pages/${page}/search`, window.location.origin);
-        url.searchParams.append('to', this.to);
-        url.searchParams.append('subject', this.subject);
-        url.searchParams.append('body', this.body);
-        url.searchParams.append('sender_star', this.senderStar);
+        // 构建URL
+        const url = new URL(`/api/mail/${this.currentFolder}/pages/${this.currentPage}/search`, window.location.origin);
+        url.searchParams.append('from', from);
+        url.searchParams.append('to', to);
+        url.searchParams.append('subject', subject);
+        url.searchParams.append('body', body);
+        url.searchParams.append('since', since);
+        
+        if (unseen === 'UNSEEN' || unseen === 'SEEN') {
+          url.searchParams.append('unseen', unseen);
+        }
+        
+        // 根据当前文件夹设置星标搜索条件
+        if (this.currentFolder === 'SENT') {
+          url.searchParams.append('sender_star', true);
+        }
+        
         const response = await fetch(url);
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.mailList = result.data || [];
           this.totalPages = parseInt(result.message, 10) || 0;
-          this.currentPage = page;
-          this.totalMails = this.mailList.length;
+          this.groupAndIndexMails();
+          this.$message.success('搜索完成');
         } else {
-          this.$message.error(`${result.message} ${result.reason || ''}`);
+          console.error('搜索邮件失败:', result.message, result.reason);
+          this.$message.error(`搜索失败: ${result.message}`);
+          // 搜索失败时重置数据状态
+          this.mailList = [];
+          this.totalPages = 0;
+          this.groupAndIndexMails();
         }
       } catch (error) {
-        console.error('搜索已发送邮件出错:', error);
-        this.$message.error('搜索邮件失败');
+        console.error('搜索请求出错:', error);
+        this.$message.error('搜索失败，请检查网络连接');
+        // 搜索错误时重置数据状态
+        this.mailList = [];
+        this.totalPages = 0;
+        this.groupAndIndexMails();
       } finally {
         this.isLoading = false;
       }
     },
-    // 上一页
+    
+    // 展开/收起邮件组
+    toggleExpand(index) {
+      this.groupedMails[index].isExpanded = !this.groupedMails[index].isExpanded;
+    },
+    
+    // 翻页函数
     prevPage() {
       if (this.currentPage > 1) {
         this.loadMails(this.currentPage - 1);
       }
     },
-    // 下一页
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.loadMails(this.currentPage + 1);
       }
     },
-    // 修改 toggleStar 方法，确保对“发件人星标”操作使用 S_STAR 与+FLAG/-FLAG
-    async toggleStar(mail) {
-        if (!mail.mail_id) return;
-        try {
-            const operation = mail.sender_star === 1 ? '-FLAG' : '+FLAG';
-            const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/S_STAR/${operation}`, {
-                method: 'POST'
-            });
-            const result = await response.json();
-            if (result.code === 'code.ok') {
-                mail.sender_star = mail.sender_star === 1 ? 0 : 1;
-                this.$message.success(`已成功${mail.sender_star === 1 ? '添加' : '取消'}星标`);
-            } else {
-                this.$message.error(`修改星标状态失败: ${result.reason || result.message}`);
-            }
-        } catch (error) {
-            console.error('修改星标状态出错:', error);
-            this.$message.error('修改星标状态失败');
-        }
+    
+    // 刷新邮件列表
+    handleReceive() {
+      this.loadMails(1);
+      this.$message.success('刷新成功，已获取最新邮件');
     },
-    // 更新全选状态
-    updateAllSelectedState() {
-      this.allSelected = this.mailList.length > 0 && this.selectedMails.length === this.mailList.length;
-    },
+    
     // 切换全选
     toggleSelectAll() {
       if (this.allSelected) {
-        this.selectedMails = this.mailList.map(mail => mail.mail_id);
+        this.selectedMails = this.paginatedMails.map(mail => mail.mail_id || mail.globalIndex);
       } else {
         this.selectedMails = [];
       }
     },
-    // 删除选中的邮件（永久删除，调用回收站接口）
+    
+    // 删除选中的邮件（放入回收站）
     async deleteSelected() {
       if (this.selectedMails.length === 0) return;
       try {
-        await this.$confirm(`确认删除选中的 ${this.selectedMails.length} 封邮件吗？`, '提示', {
+        this.$confirm('确认删除选中的邮件吗？', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
-        });
-        for (const mailId of this.selectedMails) {
-          try {
-            await fetch(`/api/mail/TRASH/mails/${mailId}/delete`, { method: 'DELETE' });
-          } catch (err) {
-            console.error(`删除邮件 ${mailId} 失败:`, err);
+        }).then(async () => {
+          this.isLoading = true;
+          for (const mailId of this.selectedMails) {
+            try {
+              // 使用当前文件夹（SENT）作为发起源，然后将邮件移入回收站
+              await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/change/TRASH/+FLAG`, {
+                method: 'POST'
+              });
+            } catch (error) {
+              console.error(`删除邮件 ${mailId} 失败:`, error);
+            }
           }
-        }
-        this.$message.success('删除成功');
-        this.selectedMails = [];
-        this.allSelected = false;
-        this.loadMails(this.currentPage);
-      } catch (error) {
-        this.$message.info('已取消删除操作');
-      }
-    },
-    // 删除所有邮件（永久删除，调用回收站接口）
-    async deleteAll() {
-      try {
-        await this.$confirm('确认删除所有邮件吗？', '警告', {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning'
-        });
-        this.isLoading = true;
-        // 获取第一页邮件列表
-        const response = await fetch(`/api/mail/SENT/pages/1`);
-        const result = await response.json();
-        if (result.code === 'code.ok' && result.data) {
-          for (const mail of result.data) {
-            await fetch(`/api/mail/TRASH/mails/${mail.mail_id}/delete`, { method: 'DELETE' });
-          }
-          this.mailList = [];
+          this.$message.success('删除成功，邮件已移入回收站');
           this.selectedMails = [];
           this.allSelected = false;
-          this.currentPage = 1;
-          this.totalPages = 0;
-          this.totalMails = 0;
-          this.$message.success('已删除所有邮件');
-        } else {
-          this.$message.error('获取邮件列表失败，无法删除');
-        }
+          this.loadMails(this.currentPage);
+        }).catch(() => {
+          this.$message.info('已取消删除操作');
+        });
       } catch (error) {
-        console.error('删除所有邮件出错:', error);
+        console.error('删除邮件出错:', error);
         this.$message.error('删除邮件失败');
       } finally {
         this.isLoading = false;
       }
     },
-    // 处理下拉菜单命令
+
+    // 删除所有邮件（放入回收站）
+    async deleteAll() {
+      this.$confirm('确认删除所有邮件吗？', '警告', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }).then(async () => {
+        this.isLoading = true;
+        try {
+          const response = await fetch(`/api/mail/${this.currentFolder}/pages/1`);
+          const result = await response.json();
+          if (result.code === 'code.ok' && result.data) {
+            for (const mail of result.data) {
+              // 使用当前文件夹作为发起源，将邮件移入回收站
+              await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/TRASH/+FLAG`, {
+                method: 'POST'
+              });
+            }
+            this.mailList = [];
+            this.selectedMails = [];
+            this.allSelected = false;
+            this.currentPage = 1;
+            this.totalPages = 0;
+            this.groupAndIndexMails();
+            this.$message.success('已删除所有邮件，邮件已移入回收站');
+          } else {
+            this.$message.error('获取邮件列表失败，无法删除');
+          }
+        } catch (error) {
+          console.error('删除所有邮件出错:', error);
+          this.$message.error('删除邮件失败');
+        } finally {
+          this.isLoading = false;
+        }
+      }).catch(() => {
+        // 取消删除操作
+      });
+    },
+    
+    // 打开邮件详情
+    async openMail(mail) {
+      const mailId = mail.mail_id || mail.globalIndex;
+      
+      // 存储当前所有邮件数据到sessionStorage，以便在详情页面可以访问和修改
+      sessionStorage.setItem('allMails', JSON.stringify(this.mailList));
+      
+      // 使用sessionStorage存储当前邮件数据
+      sessionStorage.setItem('currentMail', JSON.stringify(mail));
+      
+      // 跳转到邮件详情页面
+      this.$router.push({
+        path: '/mail-detail',
+        query: { 
+          id: mailId,
+          mailbox: this.currentFolder,
+          from: this.currentFolder.toLowerCase()
+        }
+      });
+    },
+    
+    // 标记为已读（已发送邮件不支持，但保留API）
+    async markAsRead() {
+      if (this.selectedMails.length === 0) return;
+      
+      this.$message.info('已发送邮件无需标记已读/未读状态');
+    },
+    
+    // 标记为未读（已发送邮件不支持，但保留API）
+    async markAsUnread() {
+      if (this.selectedMails.length === 0) return;
+      
+      this.$message.info('已发送邮件无需标记已读/未读状态');
+    },
+
+    // 修改星标状态
+    async toggleStar(mail) {
+      if (!mail.mail_id) return;
+      
+      try {
+        const operation = mail.sender_star === 1 ? '-FLAG' : '+FLAG';
+        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/S_STAR/${operation}`, {
+          method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.code === 'code.ok') {
+          mail.sender_star = mail.sender_star === 1 ? 0 : 1;
+          this.$message.success(`已${mail.sender_star === 1 ? '添加' : '取消'}星标`);
+        } else {
+          this.$message.error(`修改星标状态失败: ${result.reason || result.message}`);
+        }
+      } catch (error) {
+        console.error('修改星标状态出错:', error);
+        this.$message.error('修改星标状态失败，请检查网络连接');
+      }
+    },
+    
+    // 标记/取消标记星标
+    async markSelectedAsStarred(starred) {
+      if (this.selectedMails.length === 0) return;
+      
+      // 已发送邮件使用S_STAR
+      const starSign = 'S_STAR';
+      const operation = starred ? '+FLAG' : '-FLAG';
+      
+      try {
+        this.isLoading = true;
+        let successCount = 0;
+        let failureCount = 0;
+        
+        for (const mailId of this.selectedMails) {
+          // 确保只处理有效的邮件ID（忽略模拟数据）
+          if (typeof mailId === 'number' && mailId > 0) {
+            try {
+              // 使用API修改星标状态
+              const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/change/${starSign}/${operation}`, {
+                method: 'POST'
+              });
+              
+              const result = await response.json();
+              
+              if (result.code === 'code.ok') {
+                // 更新本地邮件的星标状态
+                const mailIndex = this.mailList.findIndex(m => m.mail_id === mailId);
+                if (mailIndex !== -1) {
+                  this.mailList[mailIndex].sender_star = starred ? 1 : 0;
+                }
+                successCount++;
+              } else {
+                failureCount++;
+                console.error(`邮件 ${mailId} 星标操作失败:`, result);
+              }
+            } catch (err) {
+              failureCount++;
+              console.error(`邮件 ${mailId} 星标操作异常:`, err);
+            }
+          }
+        }
+        
+        // 重新组织邮件分组
+        this.groupAndIndexMails();
+        
+        // 显示操作结果
+        if (successCount > 0) {
+          if (failureCount === 0) {
+            this.$message({
+              message: starred ? `已成功为 ${successCount} 封邮件添加星标` : `已成功为 ${successCount} 封邮件取消星标`,
+              type: 'success',
+              duration: 3000
+            });
+          } else {
+            this.$message({
+              message: `已为 ${successCount} 封邮件更新星标状态，${failureCount} 封邮件操作失败`,
+              type: 'warning',
+              duration: 3000
+            });
+          }
+        } else if (failureCount > 0) {
+          this.$message.error(`星标操作失败，请稍后重试`);
+        }
+      } catch (error) {
+        console.error('批量修改星标状态出错:', error);
+        this.$message.error('修改星标状态失败，请检查网络连接');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    
+    // 处理标记命令
     async handleMarkCommand(command) {
       if (this.selectedMails.length === 0) return;
+      
       if (command === 'star') {
         await this.markSelectedAsStarred(true);
       } else if (command === 'unstar') {
         await this.markSelectedAsStarred(false);
       }
     },
-    // 批量标记（添加或取消星标）
-    async markSelectedAsStarred(starred) {
-      let starSign = 'S_STAR';
-      const operation = starred ? '+FLAG' : '-FLAG';
-      try {
-        this.isLoading = true;
-        let successCount = 0;
-        for (const mailId of this.selectedMails) {
-          if (typeof mailId === 'number' && mailId > 0) {
-            try {
-              const response = await fetch(`/api/mail/SENT/mails/${mailId}/change/${starSign}/${operation}`, {
-                method: 'POST'
-              });
-              const result = await response.json();
-              if (result.code === 'code.ok') {
-                const index = this.mailList.findIndex(m => m.mail_id === mailId);
-                if (index !== -1) {
-                  this.mailList[index].sender_star = starred ? 1 : 0;
-                }
-                successCount++;
-              }
-            } catch (err) {
-              console.error(`邮件 ${mailId} 操作异常:`, err);
-            }
-          }
-        }
-        if (successCount > 0) {
-          this.$message.success(starred ? `已为 ${successCount} 封邮件添加星标` : `已为 ${successCount} 封邮件取消星标`);
-        } else {
-          this.$message.error('星标操作失败');
-        }
-      } catch (error) {
-        console.error('批量修改星标状态出错:', error);
-        this.$message.error('修改星标状态失败');
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    // 取消批量星标操作
-    async markSelectedAsUnstarred() {
-      await this.markSelectedAsStarred(false);
-    },
-    // 刷新邮件列表
-    handleReceive() {
-      this.loadMails(1);
-      this.$message.success('刷新成功，已获取最新邮件');
-    },
-    // 点击邮件跳转详情
-    openMail(mail) {
-      sessionStorage.setItem('currentMail', JSON.stringify(mail));
-      this.$router.push({
-        path: '/mail-detail',
-        query: { id: mail.mail_id, mailbox: 'SENT', from: 'sent' }
-      });
-    },
-    // 启动自动刷新（每60秒刷新一次）
-    startAutoRefresh() {
-      this.refreshInterval = setInterval(() => {
-        this.loadMails(this.currentPage);
-      }, 60000);
-    }
+  },
+  created() {
+    // 从路由参数获取当前文件夹
+    this.currentFolder = 'SENT';
   },
   mounted() {
+    // 初始化加载邮件
     this.loadMails(1);
-    this.startAutoRefresh();
   },
   beforeDestroy() {
+    // 组件销毁前清除定时器
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
   }
-};
+}
 </script>
 
 <style scoped>
 .sent-mails-page {
-  padding: 20px 28px;
-  font-family: Arial, sans-serif;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px 28px 28px 28px;
+  height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
 }
 
-/* 顶部工具栏，参考主页面布局，缩小左右间距 */
 .mail-toolbar {
-  padding: 12px 16px;
+  padding: 15px 20px;
   border-bottom: 1px solid #e6f2fb;
-  background: #f8faff;
-  border-radius: 6px;
   display: flex;
-  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
+  background: #f8faff;
+  margin-bottom: 14px;
+  border-radius: 6px;
 }
 
-/* 左侧工具栏，按钮间距调整为6px */
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* 右侧工具栏，间距统一调整 */
+.toolbar-left > * {
+  margin: 0;
+}
+
+.select-all-checkbox {
+  margin-right: 12px;
+}
+
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
   font-size: 14px;
   color: #666;
 }
 
-/* 调整全选复选框尺寸 */
-.select-all-checkbox {
-  margin: 0;
-  width: 16px;
-  height: 16px;
-}
-
-/* 按钮统一调整为高度32px，提升易点击性 */
-.delete-button,
-.mark-button,
-.mark-more-button,
-.refresh-button,
-.delete-all-button {
-  font-size: 14px;
-  border-radius: 4px;
-  height: 32px;
-  padding: 0 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-/* 删除按钮 */
+/* 删除按钮样式 */
 .delete-button {
-  border: 1px solid #f56c6c;
-  background: #f56c6c;
-  color: #fff;
+  font-size: 14px;
+  border: 1px solid #dcdfe6;  
+  background: #fff;         
+  color: #606266;         
+  border-radius: 4px;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 12px;
+  line-height: 30px;
 }
+
 .delete-button:hover {
-  background: #f78989;
+  background: #f5f7fa;        
+  border-color: #c6e2ff;      
+  color: #409eff;            
 }
+
+.delete-button:active {
+  background: #f5f7fa;
+  border-color: #3a8ee6;
+}
+
 .delete-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #f5f7fa;
 }
 
-/* 标记按钮 */
-.mark-button {
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-.mark-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.mark-icon {
-  width: 22px;
-  height: 22px;
-  object-fit: cover;
-}
-
-/* 更多操作下拉按钮 */
+/* 更多标记按钮样式 */
 .mark-more-button {
+  font-size: 14px;
   border: 1px solid #dcdfe6;
   background: #fff;
   color: #606266;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 32px;
+  padding: 0 12px;
+  line-height: 30px;
+  display: flex;
+  align-items: center;
 }
+
 .mark-more-button:hover {
   background: #f5f7fa;
   color: #409eff;
 }
 
-/* 刷新按钮尺寸保持32px，但图标稍大 */
-.refresh-button {
-  width: 32px;
+.mark-more-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f7fa;
+}
+
+.delete-all-button {
+  padding: 0;
+  margin: 0;
+  width: 70px;
   height: 32px;
-  border: 1px solid #dcdfe6;
-  background: #fff;
+  min-width: 32px;
   border-radius: 4px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid #f56c6c;
+  background: #f56c6c;
+  color: white;
+  font-size: 14px;
 }
-.refresh-icon {
-  width: 22px;
-  height: 22px;
+
+.delete-all-button:hover {
+  background: #f78989;
+  border-color: #f78989;
+}
+
+.delete-all-button:active {
+  background: #e64242;
+  border-color: #e64242;
+}
+
+.mark-button {
+  padding: 0;
+  margin: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+}
+
+.mark-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mark-button:disabled .mark-icon {
+  filter: grayscale(100%);
+}
+
+.mark-icon {
+  width: 20px;
+  height: 20px;
   object-fit: cover;
 }
 
-/* 删除全部按钮 */
-.delete-all-button {
-  border: 1px solid #f56c6c;
-  background: #f56c6c;
-  color: #fff;
-  min-width: 70px;
-}
-
-/* 右侧信息 */
-.mail-count,
-.page-info {
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
   font-size: 14px;
-  color: #666;
+  padding: 8px 12px;
 }
 
-/* 分页容器 */
+.dropdown-item span {
+  margin-left: 8px;
+  flex-grow: 1;
+}
+
+.refresh-button {
+  padding: 0;
+  margin: 0;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+}
+
+.refresh-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  display: block;
+}
+
+.star-icon {
+  font-size: 1.2em;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.star-filled {
+  color: #ffc107;
+}
+
 .pagination-controls {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* 邮件列表头部 */
+.mail-count {
+  font-size: 14px;
+  color: #666;
+  margin-right: 20px;
+}
+
+.page-info {
+  color: #666;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
 .mail-header {
   padding: 12px 16px;
-  background: #f5f7fa;
   border-radius: 4px;
   margin: 12px 0;
+  background-color: #f5f7fa;
+  font-weight: bold;
+  color: #666;
   display: flex;
   align-items: center;
   gap: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-.column {
-  display: flex;
-  align-items: center;
-}
-.checkbox-col {
-  min-width: 24px;
-}
-.receiver {
-  min-width: 180px;
-  color: #666;
-  font-size: 0.9em;
-}
-.subject {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.time {
-  min-width: 120px;
-  text-align: right;
-  color: #999;
-  font-size: 0.85em;
-}
-.star-col {
+
+.mail-header .star-col {
   min-width: 40px;
   text-align: center;
 }
-.star-icon {
-  font-size: 1.2em;
-  color: #999;
-  margin-left: 8px;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.star-filled {
-  color: #ffc107;
+
+.mail-group {
+  margin-bottom: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  padding: 16px;
 }
 
-/* 邮件项 */
+.group-title {
+  font-weight: bold;
+  color: #1f74c0;
+  margin: 0 0 16px 0;
+  font-size: 17px;
+  border-bottom: 2px solid #cce2fa;
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.expand-icon {
+  font-size: 1.2em;
+  color: #666;
+}
+
 .mail-item {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
+
+.mail-item:hover {
+  background-color: #f5f7fa;
+}
+
+.unread {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.unread .subject {
+  font-weight: bold;
+}
+
 .checkbox-container {
   min-width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .mail-content {
-  flex: 1;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   gap: 20px;
+  width: 100%;
   cursor: pointer;
 }
 
-/* 邮件列表滚动区域 */
+.column {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.receiver {
+  min-width: 180px;
+  color: #666;
+  font-size: 0.9em;
+  text-align: left;
+}
+
+.subject {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.time {
+  min-width: 120px;
+  text-align: right;
+  color: #999;
+  font-size: 0.85em;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 30px;
+  color: #999;
+}
+
+.header-checkbox,
+.item-checkbox {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+}
+
 .list-content {
-  max-height: calc(100vh - 220px);
+  flex: 1;
   overflow-y: auto;
 }
 
-/* 空状态 */
-.empty-message {
-  padding: 20px;
-  text-align: center;
-  color: #777;
-}
-
-/* 加载状态 */
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 200px;
-  font-size: 16px;
   color: #1f74c0;
+  gap: 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .mail-toolbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .toolbar-left {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .receiver {
+    min-width: 140px;
+  }
+
+  .time {
+    min-width: 100px;
+  }
 }
 </style>

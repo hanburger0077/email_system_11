@@ -18,13 +18,13 @@
         </button>
         
         <!-- 根据文件夹类型显示不同操作按钮 -->
-        <template v-if="mailbox === 'INBOX' || mailbox === 'JUNK'">
+        <template v-if="currentFolder === 'INBOX' || currentFolder === 'JUNK'">
           <button class="action-btn" @click="moveToTrash">
             <span class="action-icon">🗑</span> 移至回收站
           </button>
         </template>
         
-        <template v-if="mailbox === 'TRASH'">
+        <template v-if="currentFolder === 'TRASH'">
           <button class="action-btn" @click="restoreMail">
             <span class="action-icon">↩</span> 还原邮件
           </button>
@@ -48,7 +48,7 @@
         </button>
         
         <!-- 收件箱才显示已读/未读切换 -->
-        <template v-if="mailbox === 'INBOX'">
+        <template v-if="currentFolder === 'INBOX'">
           <button 
             class="action-btn" 
             @click="toggleReadStatus"
@@ -84,23 +84,21 @@
       
       <!-- 邮件附件 -->
       <div class="attachments-section" v-if="attachments && attachments.length > 0">
-        <h3 class="attachments-title">附件 ({{ attachments.length }})</h3>
+        <h4>附件:</h4>
         <div class="attachments-list">
-          <div v-for="attachment in attachments" :key="attachment.id" class="attachment-item">
-            <a 
-              :href="`/attachments/download/${attachment.id}`" 
-              target="_blank"
-              class="attachment-link"
-              @click.prevent="downloadAttachment(attachment)"
+          <div 
+            v-for="attachment in attachments" 
+            :key="attachment.id" 
+            class="attachment-item"
+          >
+            <span class="attachment-name">{{ attachment.name || `附件-${attachment.id}` }}</span>
+            <button 
+              class="attachment-download-btn" 
+              @click="downloadAttachment(attachment.id, attachment.name)"
+              :disabled="isDownloading"
             >
-              {{ attachment.name || `附件-${attachment.id}` }}
-              <span v-if="attachment.downloading" class="downloading-indicator">
-                <span class="downloading-spinner"></span> 下载中...
-              </span>
-              <span v-else>
-                ({{ formatFileSize(attachment.size) }})
-              </span>
-            </a>
+              {{ isDownloading ? '下载中...' : '下载' }}
+            </button>
           </div>
         </div>
       </div>
@@ -116,6 +114,14 @@
           <button class="modal-confirm-btn" @click="deleteMail">确认删除</button>
         </div>
       </div>
+    </div>
+    
+    <!-- 下载错误提示 -->
+    <div 
+      class="download-error" 
+      v-if="downloadError"
+    >
+      {{ downloadErrorMessage }}
     </div>
     
     <!-- Toast消息提示 -->
@@ -152,14 +158,17 @@ export default {
       showToast: false,
       toastMessage: '',
       toastType: 'success',
-      toastTimeout: null
+      toastTimeout: null,
+      downloadError: false,
+      downloadErrorMessage: '',
+      isDownloading: false
     };
   },
   computed: {
     isStarred() {
-      if (this.mailbox === 'INBOX') {
+      if (this.currentFolder === 'INBOX') {
         return this.mail.receiver_star === 1;
-      } else if (this.mailbox === 'SENT') {
+      } else if (this.currentFolder === 'SENT') {
         return this.mail.sender_star === 1;
       }
       return false;
@@ -175,13 +184,11 @@ export default {
     this.initMailData();
   },
   methods: {
-    // 初始化邮件数据
     initMailData() {
       this.currentFolder = this.mailbox;
-      this.fetchMailData(this.mailbox, this.mailId);
+      this.fetchMailData(this.currentFolder, this.mailId);
     },
     
-    // 获取邮件数据
     async fetchMailData(mailbox, mailId) {
       if (!mailId) {
         this.showToastMessage('邮件ID无效', 'error');
@@ -197,11 +204,8 @@ export default {
         
         if (result.code === 'code.ok') {
           this.mail = result.data;
-          
-          // 更新sessionStorage缓存
           sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
           
-          // 获取附件信息
           if (this.mail.attachmentIds && this.mail.attachmentIds.length > 0) {
             await this.fetchAttachmentsInfo();
           }
@@ -218,7 +222,6 @@ export default {
       }
     },
     
-    // 回复邮件
     replyMail() {
       if (!this.mail.mail_id) {
         this.showToastMessage('无法回复，邮件数据无效', 'error');
@@ -236,15 +239,16 @@ export default {
           replySubject = '回复: ' + replySubject;
         }
         
-        const quotedContent = `<br><br><hr>
-          <div style="color: #666; font-size: 0.9em; padding: 10px; background-color: #f9f9f9; border-left: 3px solid #ccc;">
-            <p><strong>原始邮件</strong></p>
-            <p><strong>发件人:</strong> ${originalSender}</p>
-            <p><strong>时间:</strong> ${formattedTime}</p>
-            <p><strong>主题:</strong> ${originalSubject}</p>
-            <div style="margin-top: 10px;">${originalContent}</div>
-          </div>
-        `;
+        const quotedContent = `
+
+
+
+------------------ 原始邮件 ------------------
+发件人: ${originalSender}
+发送时间: ${formattedTime}
+主题: ${originalSubject}
+内容: ${originalContent}
+`;
         
         const replyData = {
           to: originalSender,
@@ -265,17 +269,12 @@ export default {
       }
     },
     
-    // 格式化时间显示
     formatTime(dateStr) {
       if (!dateStr) return '未知时间';
       
       try {
         const date = new Date(dateStr);
-        
-        if (isNaN(date.getTime())) {
-          console.warn('无法解析的时间:', dateStr);
-          return '未知时间';
-        }
+        if (isNaN(date.getTime())) return '未知时间';
         
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -291,11 +290,8 @@ export default {
       }
     },
     
-    // 显示提示信息
     showToastMessage(message, type = 'success') {
-      if (this.toastTimeout) {
-        clearTimeout(this.toastTimeout);
-      }
+      if (this.toastTimeout) clearTimeout(this.toastTimeout);
       
       this.toastMessage = message;
       this.toastType = type;
@@ -306,7 +302,6 @@ export default {
       }, 3000);
     },
     
-    // 获取附件信息
     async fetchAttachmentsInfo() {
       try {
         if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
@@ -322,16 +317,18 @@ export default {
             if (result.code === 'code.ok' && result.data) {
               return { 
                 id: attachmentId,
-                name: result.data.fileName || `附件-${attachmentId}`,
-                size: result.data.size || 0
+                name: result.data.fileName || `附件-${attachmentId}`
               };
+            } else if (result.code === 'code.error') {
+              this.showToastMessage(`获取附件信息失败: ${result.message}${result.reason ? ': ' + result.reason : ''}`, 'error');
+              return { id: attachmentId, name: `附件-${attachmentId}` };
             } else {
               console.warn(`获取附件 ${attachmentId} 信息失败:`, result.message);
-              return { id: attachmentId, name: `附件-${attachmentId}`, size: 0 };
+              return { id: attachmentId, name: `附件-${attachmentId}` };
             }
           } catch (error) {
             console.error(`获取附件 ${attachmentId} 信息出错:`, error);
-            return { id: attachmentId, name: `附件-${attachmentId}`, size: 0 };
+            return { id: attachmentId, name: `附件-${attachmentId}` };
           }
         });
         
@@ -342,57 +339,24 @@ export default {
       }
     },
     
-    // 格式化文件大小
-    formatFileSize(bytes) {
-      if (bytes === 0 || bytes === undefined) return '0 B';
-      const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]);
-    },
-    
-    // 下载附件
-    async downloadAttachment(attachment) {
-      // 标记为下载中
-      this.$set(attachment, 'downloading', true);
-      
-      try {
-        const link = document.createElement('a');
-        link.href = `/attachments/download/${attachment.id}`;
-        link.setAttribute('download', attachment.name);
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => {
-          document.body.removeChild(link);
-          this.$set(attachment, 'downloading', false);
-        }, 100);
-        console.log(`开始下载附件: ${attachment.name}`);
-      } catch (error) {
-        console.error('下载附件出错:', error);
-        this.showToastMessage('下载附件失败', 'error');
-        this.$set(attachment, 'downloading', false);
-      }
-    },
-    
-    // 返回上一页
     goBack() {
       const from = this.$route.query.from;
+
       if (from && window.history.length > 1) {
         this.$router.back();
         return;
       }
+
       if (from === 'star') {
         this.$router.push('/star');
       } else {
         this.$router.push({
           path: '/main',
-          query: { folder: this.mailbox }
+          query: { folder: this.currentFolder || 'INBOX' }
         });
       }
     },
     
-    // 切换星标状态
     async toggleStar() {
       if (!this.mail.mail_id) {
         this.showToastMessage('无法操作，邮件ID无效', 'error');
@@ -401,9 +365,9 @@ export default {
       
       try {
         let starSign;
-        if (this.mailbox === 'INBOX') {
+        if (this.currentFolder === 'INBOX') {
           starSign = 'R_STAR';
-        } else if (this.mailbox === 'SENT') {
+        } else if (this.currentFolder === 'SENT') {
           starSign = 'S_STAR';
         } else {
           this.showToastMessage('当前文件夹不支持星标操作', 'error');
@@ -413,18 +377,19 @@ export default {
         const operation = this.isStarred ? '-FLAG' : '+FLAG';
         const isAdding = !this.isStarred;
         
-        const response = await fetch(`/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/${starSign}/${operation}`, {
+        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/${starSign}/${operation}`, {
           method: 'POST'
         });
         
         const result = await response.json();
         
         if (result.code === 'code.ok') {
-          if (this.mailbox === 'INBOX') {
+          if (this.currentFolder === 'INBOX') {
             this.mail.receiver_star = isAdding ? 1 : 0;
           } else {
             this.mail.sender_star = isAdding ? 1 : 0;
           }
+          
           sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
           this.showToastMessage(isAdding ? '已添加星标' : '已取消星标');
         } else {
@@ -436,18 +401,22 @@ export default {
       }
     },
     
-    // 切换已读/未读状态
     async toggleReadStatus() {
-      if (!this.mail.mail_id || this.mailbox !== 'INBOX') {
+      if (!this.mail.mail_id || this.currentFolder !== 'INBOX') {
         this.showToastMessage('无法操作，邮件ID无效或不在收件箱', 'error');
         return;
       }
       
       try {
         const operation = this.mail.read === 1 ? '-FLAG' : '+FLAG';
-        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/READ/${operation}`;
-        const response = await fetch(endpoint, { method: 'POST' });
+        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/READ/${operation}`;
+        
+        const response = await fetch(endpoint, {
+          method: 'POST'
+        });
+        
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.mail.read = this.mail.read === 1 ? 0 : 1;
           sessionStorage.setItem('currentMail', JSON.stringify(this.mail));
@@ -461,7 +430,6 @@ export default {
       }
     },
     
-    // 移至回收站
     async moveToTrash() {
       if (!this.mail.mail_id) {
         this.showToastMessage('无法操作，邮件ID无效', 'error');
@@ -469,10 +437,14 @@ export default {
       }
       
       try {
-        // 修改为使用 URL query 中的 mailbox
-        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/TRASH/+FLAG`;
-        const response = await fetch(endpoint, { method: 'POST' });
+        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/TRASH/+FLAG`;
+        
+        const response = await fetch(endpoint, {
+          method: 'POST'
+        });
+        
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.showToastMessage('邮件已移至回收站');
           setTimeout(() => this.goBack(), 1500);
@@ -485,17 +457,21 @@ export default {
       }
     },
     
-    // 从回收站还原邮件
     async restoreMail() {
-      if (!this.mail.mail_id || this.mailbox !== 'TRASH') {
+      if (!this.mail.mail_id || this.currentFolder !== 'TRASH') {
         this.showToastMessage('无法操作，邮件ID无效或不在回收站', 'error');
         return;
       }
       
       try {
-        const endpoint = `/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/change/TRASH/-FLAG`;
-        const response = await fetch(endpoint, { method: 'POST' });
+        const endpoint = `/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/change/TRASH/-FLAG`;
+        
+        const response = await fetch(endpoint, {
+          method: 'POST'
+        });
+        
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.showToastMessage('邮件已还原');
           setTimeout(() => this.goBack(), 1500);
@@ -508,12 +484,10 @@ export default {
       }
     },
     
-    // 显示删除确认模态框
     confirmDelete() {
       this.showDeleteModal = true;
     },
     
-    // 永久删除邮件
     async deleteMail() {
       if (!this.mail.mail_id) {
         this.showToastMessage('无法操作，邮件ID无效', 'error');
@@ -522,11 +496,12 @@ export default {
       }
       
       try {
-        // 修改为使用URL query中的 mailbox
-        const response = await fetch(`/api/mail/${this.mailbox}/mails/${this.mail.mail_id}/delete`, {
+        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/delete`, {
           method: 'DELETE'
         });
+        
         const result = await response.json();
+        
         if (result.code === 'code.ok') {
           this.showDeleteModal = false;
           this.showToastMessage('邮件已永久删除');
@@ -540,12 +515,59 @@ export default {
         this.showToastMessage('删除邮件失败', 'error');
         this.showDeleteModal = false;
       }
+    },
+    
+    async downloadAttachment(attachmentId, fileName) {
+      this.downloadError = false;
+      this.isDownloading = true;
+      
+      try {
+        const response = await fetch(`/attachments/download/${attachmentId}`);
+        
+        if (!response.ok) {
+          throw new Error(`下载失败: ${response.statusText}`);
+        }
+        
+        let suggestedFileName = fileName;
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+          const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (fileNameMatch && fileNameMatch[1]) {
+            suggestedFileName = fileNameMatch[1].replace(/['"]/g, '');
+          }
+        }
+        
+        if (!suggestedFileName) {
+          suggestedFileName = `附件-${attachmentId}`;
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = suggestedFileName;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        this.showToastMessage('下载已开始');
+      } catch (error) {
+        console.error('下载附件出错:', error);
+        this.downloadError = true;
+        this.downloadErrorMessage = `下载失败: ${error.message}`;
+      } finally {
+        this.isLoading = false;
+        this.isDownloading = false;
+      }
     }
   },
   beforeDestroy() {
-    if (this.toastTimeout) {
-      clearTimeout(this.toastTimeout);
-    }
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
   }
 };
 </script>
@@ -680,72 +702,53 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-/* 附件样式 */
 .attachments-section {
-  margin-top: 30px;
+  margin-top: 20px;
   padding: 15px;
   background-color: #f0f8ff;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.attachments-title {
-  font-size: 16px;
-  margin-bottom: 15px;
-  color: #606266;
-  font-weight: bold;
+  border-radius: 5px;
 }
 
 .attachments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin-top: 10px;
 }
 
 .attachment-item {
-  padding: 5px 0;
-}
-
-.attachment-link {
-  color: #0066cc;
-  text-decoration: none;
-  cursor: pointer;
-  display: block;
-  font-size: 14px;
-  padding: 5px 0;
-}
-
-.attachment-link:hover {
-  text-decoration: underline;
-}
-
-.downloading-indicator {
-  color: #666;
-  font-size: 0.9em;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  margin-left: 5px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #ddd;
 }
 
-.downloading-spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(0,0,0,0.1);
-  border-radius: 50%;
-  border-top-color: #409EFF;
-  animation: spin 1s linear infinite;
-  margin-right: 5px;
+.attachment-name {
+  flex-grow: 1;
+  margin-right: 10px;
+  color: #333;
 }
 
-/* 模态框样式 */
+.attachment-download-btn {
+  padding: 4px 10px;
+  background-color: #409EFF;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.attachment-download-btn:disabled {
+  background-color: #90caf9;
+  cursor: not-allowed;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -758,7 +761,7 @@ export default {
   border-radius: 8px;
   width: 400px;
   max-width: 90%;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .modal-title {
@@ -811,7 +814,6 @@ export default {
   border-color: #f78989;
 }
 
-/* Toast提示样式 */
 .toast-message {
   position: fixed;
   top: 60px;
@@ -836,6 +838,15 @@ export default {
 @keyframes fadeIn {
   from { opacity: 0; transform: translate(-50%, -20px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.download-error {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 @media (max-width: 600px) {
