@@ -8,20 +8,22 @@
           class="select-all-checkbox" 
         />
 
-        <el-button  
-          :disabled="selectedMails.length === 0"
-          @click="deleteSelected"
-          class="delete-button"
-        >
-          删除
-        </el-button>
+        <el-tooltip content="删除" placement="bottom">
+          <el-button  
+            :disabled="selectedMails.length === 0"
+            @click="deleteSelected"
+            class="delete-button icon-button"
+          >
+            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
+          </el-button>
+        </el-tooltip>
         
         <el-tooltip content="刷新" placement="bottom">
           <el-button 
             class="refresh-button" 
             @click="loadDrafts"
           >
-            <i class="refresh-icon">🔄</i>
+            <img src="@/assets/refresh-icon.svg" class="refresh-icon" alt="刷新" />
           </el-button>
         </el-tooltip>
         
@@ -479,6 +481,20 @@ export default {
   line-height: 30px;
 }
 
+.delete-button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .delete-button:hover {
   background: #f5f7fa;        
   border-color: #c6e2ff;      
@@ -545,8 +561,9 @@ export default {
 }
 
 .refresh-icon {
-  font-style: normal;
-  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  object-fit: cover;
 }
 
 .pagination-controls {

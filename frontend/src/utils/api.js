@@ -139,6 +139,13 @@ export const resetPassword = (userData) => {
   })
 }
 
+// 搜索邮件
+export const searchMails = (keyword) => {
+  return request(`/search?keyword=${encodeURIComponent(keyword)}`, {
+    method: 'GET'
+  })
+}
+
 // 统一错误处理
 export const handleApiError = (response) => {
  if (response.code === 'code.ok') {

@@ -8,11 +8,13 @@
           @change="toggleSelectAll" 
           class="select-all-checkbox">
         </el-checkbox>
-        <button class="toolbar-button delete-button" @click="deleteSelected">删除</button>
+        <button class="toolbar-button delete-button icon-button" @click="deleteSelected" title="删除">
+          <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
+        </button>
         <button class="toolbar-button delete-all-button" @click="deleteAll">全部删除</button>
         <button class="toolbar-button cancel-star-button" @click="cancelSelectedStars">取消星标</button>
         <button class="toolbar-button refresh-button" @click="refreshMails">
-          <i class="refresh-icon">⟳</i> 刷新
+          <img src="@/assets/refresh-icon.svg" class="refresh-icon" alt="刷新" /> 刷新
         </button>
       </div>
       <div class="toolbar-right">
@@ -539,12 +541,27 @@ export default {
 }
 /* 删除和取消星标按钮背景采用底色，即默认背景 */
 .delete-button {
-  background-color: #f0f0f0;
+  background-color: #fff;
   color: #444;
   border-color: #ddd;
 }
+
+.delete-button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .delete-button:hover {
-  background-color: #e0e0e0;
+  background-color: #f5f7fa;
 }
 .delete-all-button {
   background-color: #f56c6c;
@@ -571,9 +588,9 @@ export default {
   background-color: #e0e0e0;
 }
 .refresh-icon {
-  font-style: normal;
+  width: 20px;
+  height: 20px;
   margin-right: 4px;
-  font-size: 14px;
   display: inline-block;
 }
 .mail-info {
