@@ -13,15 +13,15 @@
             class="restore-button" 
             :disabled="selectedMails.length === 0" 
             @click="restoreSelected">
-            恢复邮件
+            恢复
           </el-button>
         </el-tooltip>
         <el-tooltip content="永久删除" placement="bottom">
           <el-button 
-            class="delete-button" 
+            class="delete-button icon-button" 
             :disabled="selectedMails.length === 0" 
             @click="permanentDeleteAll">
-            永久删除
+            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="永久删除" />
           </el-button>
         </el-tooltip>
         <el-tooltip content="刷新" placement="bottom">
@@ -101,7 +101,7 @@
 
 <script>
 import { Loading } from '@element-plus/icons-vue'
-import refreshIcon from './assets/mark3.png'
+import refreshIcon from '@/assets/refresh-icon.svg'
 export default {
   name: 'DeletedPage',
   components: {
@@ -313,18 +313,38 @@ export default {
 }
 .delete-button {
   font-size: 14px;
-  border: 1px solid #f56c6c;
-  background: #f56c6c;
-  color: white;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+  color: #606266;
   border-radius: 4px;
   cursor: pointer;
   height: 32px;
   padding: 0 12px;
   line-height: 30px;
 }
+
+.delete-button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .delete-button:hover {
-  background: #e64242;
-  border-color: #e64242;
+  background: #f5f7fa;
+  border-color: #c6e2ff;
+  color: #409eff;
+}
+
+.delete-button:disabled .delete-icon {
+  opacity: 0.5;
 }
 .refresh-button {
   padding: 0;

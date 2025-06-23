@@ -10,23 +10,13 @@
           :disabled="isLoading"
         >
         </el-checkbox>
-        <button class="toolbar-button delete-button" 
-                :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading"
-                @click="deleteSelected"
-        >删除</button>
-        <button class="toolbar-button delete-all-button" 
-                :disabled="(receivedStarred.length === 0 && sentStarred.length === 0) || isLoading"
-                @click="deleteAll"
-        >全部删除</button>
-        <button class="toolbar-button cancel-star-button" 
-                :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading"
-                @click="cancelSelectedStars"
-        >取消星标</button>
-        <button class="toolbar-button refresh-button" 
-                @click="refreshMails"
-                :disabled="isLoading"
-        >
-          <i class="refresh-icon">⟳</i> 刷新
+        <button class="toolbar-button delete-button icon-button" @click="deleteSelected" title="删除" :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading">
+          <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
+        </button>
+        <button class="toolbar-button delete-all-button" @click="deleteAll" :disabled="(receivedStarred.length === 0 && sentStarred.length === 0) || isLoading">全部删除</button>
+        <button class="toolbar-button cancel-star-button" @click="cancelSelectedStars" :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading">取消星标</button>
+        <button class="toolbar-button refresh-button" @click="refreshMails" :disabled="isLoading">
+          <img src="@/assets/refresh-icon.svg" class="refresh-icon" alt="刷新" /> 刷新
         </button>
       </div>
       <div class="toolbar-right">
@@ -643,28 +633,18 @@ export default {
 }
 
 .mail-toolbar {
-  padding: 15px 20px;
-  border-bottom: 1px solid #e6f2fb;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8faff;
-  margin-bottom: 14px;
-  border-radius: 6px;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
 }
 
 .toolbar-left {
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 8px;
-}
-
-.toolbar-left > * {
-  margin: 0;
-}
-
-.select-all-checkbox {
-  margin-right: 12px;
 }
 
 .toolbar-right {
@@ -675,84 +655,94 @@ export default {
   color: #666;
 }
 
-.mail-count {
-  font-size: 14px;
-  color: #666;
-  margin-right: 20px;
-}
-
-.page-info {
-  color: #666;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.pagination-controls {
-  display: flex;
-  gap: 8px;
-}
-
 .toolbar-button {
-  font-size: 14px;
-  border: 1px solid #dcdfe6;  
-  background: #fff;         
-  color: #606266;         
+  padding: 8px 12px;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  background-color: #f0f0f0;
   cursor: pointer;
   height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
-  transition: all 0.2s;
-}
-
-.toolbar-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f5f7fa;
-  border-color: #dcdfe6;
-  color: #909399;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
 }
 
 .toolbar-button:hover:not(:disabled) {
-  background: #f5f7fa;
-  border-color: #c6e2ff;
-  color: #409eff;
+  background-color: #e0e0e0;
 }
 
+.toolbar-button:disabled {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+/* 删除和取消星标按钮背景采用底色，即默认背景 */
 .delete-button {
-  background: #fff;
-  color: #606266;
+  background-color: #fff;
+  color: #444;
+  border-color: #ddd;
+}
+
+.delete-button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #f5f7fa;
 }
 
 .delete-all-button {
   background-color: #f56c6c;
-  color: white;
+  color: #fff;
   border-color: #f56c6c;
 }
 
-.delete-all-button:disabled {
-  background-color: #f78989;
-  border-color: #f78989;
+.delete-all-button:hover:not(:disabled) {
+  background-color: #e64242;
 }
 
-.delete-all-button:hover:not(:disabled) {
-  background-color: #f78989;
-  border-color: #f78989;
+.delete-all-button:disabled {
+  background-color: #fab6b6;
+  border-color: #fab6b6;
 }
 
 .cancel-star-button {
-  background: #fff;
-  color: #606266;
+  background-color: #f0f0f0;
+  color: #444;
+  border-color: #ddd;
+}
+
+.cancel-star-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
 }
 
 .refresh-button {
-  background: #fff;
-  color: #606266;
+  background-color: #f0f0f0;
+  color: #444;
+  border-color: #ddd;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
 }
 
 .refresh-icon {
-  font-style: normal;
+  width: 20px;
+  height: 20px;
   margin-right: 4px;
+  display: inline-block;
 }
 
 .mail-section {
