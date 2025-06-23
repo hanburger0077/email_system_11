@@ -178,6 +178,7 @@ public class ImapClient {
                 // Assume this is part of the email content
                 if (content == null) {
                     content = line;
+                    getCount += 2;
                 } else {
                     content += "\r\n" + line;
                     getCount += 2;

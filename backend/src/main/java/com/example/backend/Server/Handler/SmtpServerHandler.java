@@ -185,7 +185,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
                 String contentType = bodyPart.getContentType();
 
                 if (contentType.contains("text/plain")) {
-                    String textContent = ((String) bodyPart.getContent()).replace("\r\n", "");
+                    String textContent = ((String) bodyPart.getContent());
                     contentBuilder.append(textContent);
                     System.out.println(textContent);
                 } /* else if (contentType.contains("text/html")) {
@@ -213,8 +213,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
             // 这里可以将附件信息保存到数据库或其他地方
             // 例如：mail.setAttachments(attachmentNames, attachmentContents);
         } else if (content instanceof String) {
-            // 去除末尾的 \r\n
-            mail.setContent(content.toString().replace("\r\n", ""));
+            mail.setContent(content.toString());
         }
         //邮件信息设置
         mail.setCreate_at(LocalDateTime.now());
