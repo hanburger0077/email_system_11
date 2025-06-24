@@ -3,6 +3,7 @@ package com.example.backend.DTO;
 import com.example.backend.entity.Mail;
 import com.example.backend.entity.User;
 import com.example.backend.mapper.UserMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 @Component
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MailDTO implements Serializable {
     private long mail_id;
     private String sender_email;

@@ -30,7 +30,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Attachment attachment = null;
         try {
             attachment = imapClient.attachmentCommand(attachmentId);
-            return ResultVo.success("Attachment information gotten successfully", attachment);
+            return ResultVo.success("操作成功", attachment);
         } catch (InterruptedException e) {
             return ResultVo.fail("操作失败", "Failed to send ATTACHMENT command" + e.getMessage());
         } finally {

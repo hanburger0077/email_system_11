@@ -74,6 +74,8 @@ public class MailController {
         ResultVo<List<MailDTO>> mail2 = mailService.searchMail("SENT", null, null, null, keywords, 0, null, false, false);
         ResultVo<List<MailDTO>> mail3 = mailService.searchMail("INBOX", null, null, keywords, null, 0, null, false, false);
         ResultVo<List<MailDTO>> mail4 = mailService.searchMail("INBOX", null, null, null, keywords, 0, null, false, false);
+        ResultVo<List<MailDTO>> mail5 = mailService.searchMail("DRAFT", null, null, keywords, null, 0, null, false, false);
+        ResultVo<List<MailDTO>> mail6 = mailService.searchMail("DRAFT", null, null, null, keywords, 0, null, false, false);
         List<MailDTO> mailDTO = new ArrayList<>();
         int count = 0;
         if(mail1.getCode().equals("code.ok")) {
@@ -92,8 +94,19 @@ public class MailController {
             mailDTO.addAll(mail4.getData());
             count++;
         }
+        if(mail5.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail5.getData());
+            count++;
+        }
+        if(mail6.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail6.getData());
+            count++;
+        }
         Set<MailDTO> set = new LinkedHashSet<>(mailDTO);
         mailDTO = new ArrayList<>(set);
+        for(MailDTO m:mailDTO){
+            System.out.println(m.getMailbox());
+        }
         if(count == 0) {
             return mail1;
         } else {
