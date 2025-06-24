@@ -406,6 +406,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
             // 发送方为自身，选择发送方标签为0的邮件
             case "SENT":
                 sender_sign = 0;
+                System.out.println(userId);
                 count = mailMapper.countBySenderIdWithSign(userId, sender_sign);
                 break;
             // 发送方为自身，发选择送方标签为1的邮件

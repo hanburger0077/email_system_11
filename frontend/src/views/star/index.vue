@@ -73,6 +73,15 @@
       </div>
     </div>
     
+    <!-- 表头 -->
+    <div class="mail-header">
+      <span class="column checkbox-col"></span>
+      <span class="column sender">发件人/收件人</span>
+      <span class="column subject">主题</span>
+      <span class="column time">时间</span>
+      <span class="column star-col">星标</span>
+    </div>
+    
     <!-- 接收星标邮件区域 -->
     <div class="mail-section" v-if="!isLoading">
       <h2>接收星标邮件</h2>
@@ -89,9 +98,9 @@
               <span class="column sender">{{ formatSender(mail.sender_email) }}</span>
               <span class="column subject">{{ mail.subject }}</span>
               <span class="column time">{{ formatTime(mail.create_at) }}</span>
-              <!-- 固定显示实心星，点击取消星标 -->
-              <span class="star-icon star-filled" @click.stop="toggleStarReceived(mail)">★</span>
             </div>
+            <!-- 固定显示实心星，点击取消星标 -->
+            <span class="star-icon star-filled" @click.stop="toggleStarReceived(mail)">★</span>
           </div>
           <div v-else class="empty-message">
             当前无接收星标邮件
@@ -116,9 +125,9 @@
               <span class="column receiver">{{ mail.receiver_email }}</span>
               <span class="column subject">{{ mail.subject }}</span>
               <span class="column time">{{ formatTime(mail.create_at) }}</span>
-              <!-- 固定显示实心星，点击取消星标 -->
-              <span class="star-icon star-filled" @click.stop="toggleStarSent(mail)">★</span>
             </div>
+            <!-- 固定显示实心星，点击取消星标 -->
+            <span class="star-icon star-filled" @click.stop="toggleStarSent(mail)">★</span>
           </div>
           <div v-else class="empty-message">
             当前无发送星标邮件
@@ -664,20 +673,25 @@ export default {
   flex-direction: column;
 }
 
-.mail-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.toolbar-left {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+  .mail-toolbar {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e6f2fb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    border-radius: 6px;
+  }
+  
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .select-all-checkbox {
+    margin-right: 12px;
+  }
 
 .toolbar-right {
   display: flex;
@@ -764,6 +778,54 @@ export default {
   border-color: #fab6b6;
 }
 
+.mail-header {
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 12px 0;
+  background-color: #f5f7fa;
+  font-weight: bold;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.mail-header .checkbox-col {
+  width: 40px;
+}
+
+.mail-header .sender {
+  flex: 1;
+}
+
+.mail-header .subject {
+  flex: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.mail-header .time {
+  flex: 1;
+  white-space: nowrap;
+  text-align: right;
+  color: #999;
+  font-size: 0.85em;
+}
+
+.mail-header .star-col {
+  min-width: 40px;
+  text-align: center;
+}
+
+.header-checkbox {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+}
+
 .mail-section {
   margin-bottom: 20px;
 }
@@ -804,11 +866,9 @@ export default {
 .mail-item {
   display: flex;
   align-items: center;
-  gap: 10px;
   padding: 12px 16px;
-  border-radius: 4px;
+  border-bottom: 1px solid #e6f2fb;
   transition: background-color 0.2s;
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .mail-item:last-child {
@@ -829,17 +889,15 @@ export default {
 }
 
 .checkbox-container {
-  min-width: 24px;
+  width: 40px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
 .mail-content {
-  flex-grow: 1;
   display: flex;
-  align-items: center;
-  gap: 20px;
+  justify-content: space-between;
   width: 100%;
   cursor: pointer;
 }
@@ -851,14 +909,14 @@ export default {
 }
 
 .sender, .receiver {
-  min-width: 180px;
+  flex: 1;
   color: #666;
   font-size: 0.9em;
   text-align: left;
 }
 
 .subject {
-  flex-grow: 1;
+  flex: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -866,7 +924,8 @@ export default {
 }
 
 .time {
-  min-width: 120px;
+  flex: 1;
+  white-space: nowrap;
   text-align: right;
   color: #999;
   font-size: 0.85em;
@@ -874,7 +933,8 @@ export default {
 
 .star-icon {
   font-size: 1.2em;
-  margin-left: 8px;
+  min-width: 40px;
+  text-align: center;
   cursor: pointer;
   color: #999;
   transition: color 0.2s;

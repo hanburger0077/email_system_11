@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @NoArgsConstructor
@@ -29,6 +30,7 @@ public class MailDTO implements Serializable {
     private short sender_star;
     private short receiver_star;
     private List<Long> attachmentIds;
+    private String mailbox;
 
 
     public MailDTO (Mail mail, UserMapper userMapper, List<Long> attachmentIds) {
@@ -118,5 +120,20 @@ public class MailDTO implements Serializable {
         length += String.valueOf(sender_star).length();
         length += String.valueOf(receiver_star).length();
         return length;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (((MailDTO)o).getMail_id()==mail_id) {
+           return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mail_id);
     }
 }

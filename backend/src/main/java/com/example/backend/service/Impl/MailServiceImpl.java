@@ -216,7 +216,7 @@ public class MailServiceImpl implements MailService {
                 }
                 return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
-                return ResultVo.fail("操作失败", "No mail in the mailbox");
+                return ResultVo.success("操作成功", new ArrayList<MailDTO>());
             }
         } catch (InterruptedException e) {
             return ResultVo.fail("操作失败", "Failed to send FETCH command" + e.getMessage());
@@ -279,7 +279,9 @@ public class MailServiceImpl implements MailService {
             if(mailId != null) {
                 mails = new ArrayList<>();
                 for(long id : mailId) {
-                    mails.add(imapClient.fetchCommand("SIMPLE", id));
+                    MailDTO mailDTO = imapClient.fetchCommand("SIMPLE", id);
+                    mailDTO.setMailbox(mailbox);
+                    mails.add(mailDTO);
                 }
                 return ResultVo.success(String.valueOf(totalPageNum), mails);
             } else {
