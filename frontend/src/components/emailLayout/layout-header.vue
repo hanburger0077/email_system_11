@@ -45,18 +45,18 @@
           <div v-if="searchResults.length > 0" class="search-results">
             <div 
               v-for="mail in searchResults" 
-              :key="`${mail.source}-${mail.mail_id}`"
+              :key="`${mail.mailbox}-${mail.mail_id}`"
               class="search-result-item"
               :class="{ 'highlighted': highlightedMailId === mail.mail_id }"
               @click="openMail(mail)"
             >
               <div class="result-header">
-                <span class="result-source">{{ mail.source === 'INBOX' ? '收件箱' : '已发送' }}</span>
+                <span class="result-source">{{ translateMailbox(mail.mailbox) }}</span>
                 <span class="result-time">{{ formatTime(mail.create_at) }}</span>
               </div>
               <div class="result-subject">{{ mail.subject || '(无主题)' }}</div>
               <div class="result-content">
-                <span class="result-from">{{ mail.source === 'INBOX' ? mail.sender_email : mail.receiver_email }}</span>
+                <span class="result-from">{{ mail.mailbox === 'INBOX' ? mail.sender_email : mail.receiver_email }}</span>
               </div>
             </div>
           </div>
@@ -104,13 +104,13 @@ const highlightedMailId = ref(null);
 // 移除自动搜索监听，只在用户主动输入时搜索
 
 // 搜索选项卡
-const searchTabs = reactive([
-  { key: 'all', label: '全部' },
-  { key: 'subject', label: '主题' },
-  { key: 'body', label: '正文' },
-  { key: 'from', label: '发件人' },
-  { key: 'to', label: '收件人' }
-])
+// const searchTabs = reactive([
+//   { key: 'all', label: '全部' },
+//   { key: 'subject', label: '主题' },
+//   { key: 'body', label: '正文' },
+//   { key: 'from', label: '发件人' },
+//   { key: 'to', label: '收件人' }
+// ])
 
 // 原有的下拉菜单逻辑
 const isMenuVisible = ref(false)
@@ -295,7 +295,7 @@ const openMail = (mail) => {
   // 跳转到详情页
   const query = {
     id: mail.mail_id,
-    mailbox: mail.source, // 确保传递了正确的 mailbox
+    mailbox: mail.mailbox, // 确保传递了正确的 mailbox
     from: 'search'
   };
   router.push({ path: '/mail-detail', query });
@@ -303,6 +303,17 @@ const openMail = (mail) => {
   // 清空搜索结果并隐藏面板
   handleClearSearch();
 }
+
+const translateMailbox = (mailbox) => {
+  const map = {
+    'INBOX': '收件箱',
+    'SENT': '已发送',
+    'DRAFT': '草稿箱',
+    'JUNK': '垃圾邮件',
+    'TRASH': '已删除',
+  };
+  return map[mailbox] || '未知来源';
+};
 
 // 格式化时间
 const formatTime = (dateStr) => {
