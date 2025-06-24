@@ -167,20 +167,17 @@ const handleSearch = async () => {
       isSearching.value = true
       showSearchPanel.value = true
       
-      // 调用后端搜索接口
       const response = await searchMails(searchKeyword.value)
-      console.log('搜索数据:', response)
-      
-      // 处理搜索结果
-      const validResponse = handleApiError(response)
-      searchResults.value = validResponse.data || []
-      
+      // 直接处理响应，不再调用 handleApiError
+      if (response && response.code === 'code.ok') {
+        searchResults.value = response.data || []
+      } else {
+        console.error('搜索失败:', response?.message || '未知错误')
+        searchResults.value = []
+      }
     } catch (error) {
-      console.error('搜索请求失败:', error)
+      console.error('搜索请求异常:', error)
       searchResults.value = []
-      
-      // 可以在这里添加用户友好的错误提示
-      // ElMessage.error('搜索失败，请稍后重试')
     } finally {
       isSearching.value = false
     }

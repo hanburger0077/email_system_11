@@ -139,11 +139,11 @@ export const resetPassword = (userData) => {
   })
 }
 
-// 搜索邮件
-export const searchMails = (keyword) => {
-  return request(`/search?keyword=${encodeURIComponent(keyword)}`, {
-    method: 'GET'
-  })
+// 邮件搜索
+export const searchMails = (keywords) => {
+  return request(`/api/mail/search?keywords=${encodeURIComponent(keywords)}`, {
+    method: 'GET',
+  });
 }
 
 // 统一错误处理
