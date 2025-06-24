@@ -9,47 +9,33 @@
         />
 
         <el-tooltip content="删除" placement="bottom">
-          <el-button  
+          <button
             :disabled="selectedMails.length === 0"
             @click="deleteSelected"
-            class="delete-button icon-button"
+            class="toolbar-button"
           >
-            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
-          </el-button>
+            <img src="./assets/mark5.png" class="toolbar-icon-small" alt="删除" />
+          </button>
         </el-tooltip>
 
-        <el-tooltip 
-          content="标为已读"
-          placement="bottom"
-        >
-          <el-button 
+        <el-tooltip content="标为已读" placement="bottom">
+          <button
             @click="markAsRead"
             :disabled="selectedMails.length === 0"
-            class="mark-button"
+            class="toolbar-button"
           >
-            <img 
-              :src="mark1Icon" 
-              class="mark-icon"
-              alt="标为已读"
-            />
-          </el-button>
+            <img src="./assets/mark2.png" class="toolbar-icon-large" alt="标为已读" />
+          </button>
         </el-tooltip>
 
-        <el-tooltip 
-          content="标为未读"
-          placement="bottom"
-        >
-          <el-button 
+        <el-tooltip content="标为未读" placement="bottom">
+          <button
             @click="markAsUnread"
             :disabled="selectedMails.length === 0"
-            class="mark-button"
+            class="toolbar-button"
           >
-            <img 
-              :src="mark2Icon" 
-              class="mark-icon"
-              alt="标为未读"
-            />
-          </el-button>
+            <img src="./assets/mark1.png" class="toolbar-icon-large" alt="标为未读" />
+          </button>
         </el-tooltip>
 
         <el-dropdown @command="handleMarkCommand" :disabled="selectedMails.length === 0">
@@ -74,12 +60,12 @@
         </el-dropdown>
 
         <el-tooltip content="刷新" placement="bottom">
-          <el-button 
-            class="refresh-button" 
+          <button
+            class="toolbar-button"
             @click="handleReceive"
           >
-            <img :src="mark3Icon" class="refresh-icon" alt="刷新" />
-          </el-button>
+            <img src="./assets/mark3.png" class="toolbar-icon-large" alt="刷新" />
+          </button>
         </el-tooltip>
         
         <el-tooltip content="全部删除" placement="bottom">
@@ -183,10 +169,6 @@
 
 <script>
 import { ArrowDown, Loading } from '@element-plus/icons-vue'
-import mark1Icon from '@/assets/read-icon.svg'
-import mark2Icon from '@/assets/unread-icon.svg'
-import mark3Icon from '@/assets/refresh-icon.svg'
-import mark4Icon from './assets/mark4.png'
 
 export default {
   name: 'MainPage',
@@ -196,10 +178,6 @@ export default {
   },
   data() {
     return {
-      mark1Icon,
-      mark2Icon,
-      mark3Icon,
-      mark4Icon,
       currentPage: 1,  // 修改：初始化为1而不是0
       totalPages: 0,
       itemsPerPage: 10, // 使用API的页大小
@@ -410,8 +388,11 @@ export default {
     },
     
     // 加载邮件
+    // 加载邮件 - 优化后的版本
     async loadMails(page) {
+      // 确保页码至少为1
       if (page < 1) page = 1;
+      // 只有当totalPages已知且大于0时才限制最大页码
       if (this.totalPages > 0 && page > this.totalPages) page = this.totalPages;
       
       this.isLoading = true;
@@ -419,30 +400,46 @@ export default {
       
       try {
         const response = await fetch(`/api/mail/${this.currentFolder}/pages/${page}`);
+        if (!response.ok) { 
+          throw new Error(`请求失败，状态码: ${response.status}`); 
+        }
+        
         const result = await response.json();
         
         if (result.code === 'code.ok') {
+          // 设置邮件列表数据
           this.mailList = result.data || [];
-          console.log('加载邮件数据样本:', this.mailList.length > 0 ? this.mailList[0] : 'No emails');
-          // 更新总页数
-          this.totalPages = parseInt(result.message, 10) || 0; // 修改：没有邮件时totalPages为0
+          
+          // 更新分页信息，如果没有数据，总页数为0
+          this.totalPages = parseInt(result.message, 10) || 0;
+          
+          // 如果当前页没有数据，但总页数大于0且当前页大于1，则返回第一页重试
+          if (this.mailList.length === 0 && this.totalPages > 0 && this.currentPage > 1) {
+            return this.loadMails(1);
+          }
+          
+          // 分组处理邮件
           this.groupAndIndexMails();
-          console.log('邮件加载成功，共', this.mailList.length, '封');
+          console.log(`邮件加载成功，${this.currentFolder}文件夹，第${this.currentPage}页，共${this.totalPages}页，${this.mailList.length}封邮件`);
         } else {
           console.error('加载邮件失败:', result.message, result.reason);
           this.$message.error(`加载邮件失败: ${result.message}`);
-          // 修改：失败时重置数据状态
-          this.mailList = [];
-          this.totalPages = 0;
-          this.groupAndIndexMails();
+          
+          // 保留旧数据，避免不必要的清空
+          if (!this.mailList.length) {
+            this.totalPages = 0;
+            this.groupAndIndexMails();
+          }
         }
       } catch (error) {
         console.error('请求邮件出错:', error);
         this.$message.error('加载邮件失败，请检查网络连接');
-        // 修改：错误时重置数据状态
-        this.mailList = [];
-        this.totalPages = 0;
-        this.groupAndIndexMails();
+        
+        // 保留旧数据，避免不必要的清空
+        if (!this.mailList.length) {
+          this.totalPages = 0;
+          this.groupAndIndexMails();
+        }
       } finally {
         this.isLoading = false;
       }
@@ -711,7 +708,7 @@ export default {
       }
     },
 
-    // 修改 toggleStar 方法，确保对“收件人星标”操作使用 R_STAR 与+FLAG/-FLAG
+    // 修改 toggleStar 方法，确保对"收件人星标"操作使用 R_STAR 与+FLAG/-FLAG
     async toggleStar(mail) {
         if (!mail.mail_id) return;
         try {
@@ -945,22 +942,47 @@ export default {
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 20px;
-  font-size: 14px;
-  color: #666;
+  gap: 12px;
 }
 
-/* 删除按钮样式 */
-.delete-button {
-  font-size: 14px;
-  border: 1px solid #dcdfe6;  
-  background: #fff;         
-  color: #606266;         
-  border-radius: 4px;
-  cursor: pointer;
+.toolbar-button {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  width: 32px;
   height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa; /* 背景稍微变灰 */
+  border-color: #c0c4cc;
+}
+
+.toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #fff;
+}
+
+.toolbar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: all 0.2s;
+}
+
+.delete-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .delete-button.icon-button {
@@ -975,12 +997,13 @@ export default {
 .delete-icon {
   width: 18px;
   height: 18px;
+  
 }
 
 .delete-button:hover {
-  background: #f5f7fa;        
+  background: #fff;        
   border-color: #c6e2ff;      
-  color: #409eff;            
+  color: #f5f7fa;            
 }
 
 .delete-button:active {
@@ -991,7 +1014,7 @@ export default {
 .delete-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: #f5f7fa;
+  background: #fff;
 }
 
 /* 更多标记按钮样式 */
@@ -1011,7 +1034,7 @@ export default {
 
 .mark-more-button:hover {
   background: #f5f7fa;
-  color: #409eff;
+  color: #409eff; /* 恢复原来的蓝色 */
 }
 
 .mark-more-button:disabled {

@@ -9,22 +9,22 @@
         />
 
         <el-tooltip content="删除" placement="bottom">
-          <el-button  
+          <button  
             :disabled="selectedMails.length === 0"
             @click="deleteSelected"
-            class="delete-button icon-button"
+            class="toolbar-button delete-button"
           >
-            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
-          </el-button>
+            <img src="../main/assets/mark5.png" alt="删除" />
+          </button>
         </el-tooltip>
         
         <el-tooltip content="刷新" placement="bottom">
-          <el-button 
-            class="refresh-button" 
+          <button 
+            class="toolbar-button" 
             @click="loadDrafts"
           >
-            <img src="@/assets/refresh-icon.svg" class="refresh-icon" alt="刷新" />
-          </el-button>
+            <img src="../main/assets/mark3.png" alt="刷新" />
+          </button>
         </el-tooltip>
         
         <el-tooltip content="全部删除" placement="bottom">
@@ -66,7 +66,7 @@
       <span class="column checkbox-col"></span>
       <span class="column sender">收件人</span>
       <span class="column subject">主题</span>
-      <span class="column time">保存时间</span>
+      <span class="column time">时间</span>
     </div>
 
     <div class="list-content" v-if="!isLoading">
@@ -468,48 +468,45 @@ export default {
   color: #666;
 }
 
-/* 删除按钮样式 */
-.delete-button {
-  font-size: 14px;
-  border: 1px solid #dcdfe6;  
-  background: #fff;         
-  color: #606266;         
-  border-radius: 4px;
-  cursor: pointer;
-  height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
-}
-
-.delete-button.icon-button {
+/* 工具栏按钮统一样式 */
+.toolbar-button {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
   width: 32px;
   height: 32px;
-  padding: 0;
+  padding: 0; /* 移除内边距，让图标填充整个按钮 */
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden; /* 确保图标不会超出按钮边界 */
 }
 
-.delete-icon {
-  width: 18px;
-  height: 18px;
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa; /* 背景稍微变灰 */
+  border-color: #c0c4cc;
 }
 
-.delete-button:hover {
-  background: #f5f7fa;        
-  border-color: #c6e2ff;      
-  color: #409eff;            
-}
-
-.delete-button:active {
-  background: #f5f7fa;
-  border-color: #3a8ee6;
-}
-
-.delete-button:disabled {
-  opacity: 0.6;
+.toolbar-button:disabled {
   cursor: not-allowed;
-  background: #f5f7fa;
+  opacity: 0.6;
+  background: #fff;
+}
+
+.toolbar-button img {
+  width: 100%; /* 图标填充整个按钮宽度 */
+  height: 100%; /* 图标填充整个按钮高度 */
+  object-fit: contain; /* 保持图标比例，完全显示在按钮内 */
+  transition: all 0.2s;
+}
+
+.delete-button img {
+  width: 100%; /* 删除按钮图标也填充整个按钮 */
+  height: 100%;
+  object-fit: contain;
 }
 
 .delete-all-button {
@@ -543,27 +540,6 @@ export default {
   opacity: 0.6;
   cursor: not-allowed;
   background: #f78989;
-}
-
-.refresh-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-
-.refresh-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: cover;
 }
 
 .pagination-controls {

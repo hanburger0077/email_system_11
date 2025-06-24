@@ -12,13 +12,13 @@
 
         <!-- 删除 -->
         <el-tooltip content="删除" placement="bottom">
-          <el-button  
+          <button  
             :disabled="selectedMails.length === 0"
             @click="deleteSelected"
-            class="delete-button icon-button"
+            class="toolbar-button delete-button"
           >
-            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
-          </el-button>
+            <img src="../main/assets/mark5.png" alt="删除" />
+          </button>
         </el-tooltip>
 
         <!-- 标记为已读 -->
@@ -26,17 +26,13 @@
           content="标为已读"
           placement="bottom"
         >
-          <el-button 
+          <button 
             @click="markAsRead"
             :disabled="selectedMails.length === 0"
-            class="mark-button"
+            class="toolbar-button"
           >
-            <img 
-              :src="mark1Icon" 
-              class="mark-icon"
-              alt="标为已读"
-            />
-          </el-button>
+            <img src="./assets/mark2.png" alt="标为已读" />
+          </button>
         </el-tooltip>
 
         <!-- 标记为未读 -->
@@ -44,17 +40,13 @@
           content="标为未读"
           placement="bottom"
         >
-          <el-button 
+          <button 
             @click="markAsUnread"
             :disabled="selectedMails.length === 0"
-            class="mark-button"
+            class="toolbar-button"
           >
-            <img 
-              :src="mark2Icon" 
-              class="mark-icon"
-              alt="标为未读"
-            />
-          </el-button>
+            <img src="./assets/mark1.png" alt="标为未读" />
+          </button>
         </el-tooltip>
 
         <!-- 更多标记下拉菜单 -->
@@ -81,12 +73,12 @@
 
         <!-- 刷新按钮 -->
         <el-tooltip content="刷新" placement="bottom">
-          <el-button 
-            class="refresh-button" 
+          <button 
+            class="toolbar-button" 
             @click="handleReceive"
           >
-            <img :src="mark3Icon" class="refresh-icon" alt="刷新" />
-          </el-button>
+            <img src="./assets/mark3.png" alt="刷新" />
+          </button>
         </el-tooltip>
         
         <!-- 全部删除 -->
@@ -776,48 +768,45 @@ export default {
   color: #666;
 }
 
-/* 删除按钮样式 */
-.delete-button {
-  font-size: 14px;
-  border: 1px solid #dcdfe6;  
-  background: #fff;         
-  color: #606266;         
-  border-radius: 4px;
-  cursor: pointer;
-  height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
-}
-
-.delete-button.icon-button {
+/* 工具栏按钮统一样式 */
+.toolbar-button {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
   width: 32px;
   height: 32px;
-  padding: 0;
+  padding: 0; /* 移除内边距，让图标填充整个按钮 */
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden; /* 确保图标不会超出按钮边界 */
 }
 
-.delete-icon {
-  width: 18px;
-  height: 18px;
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa; /* 背景稍微变灰 */
+  border-color: #c0c4cc;
 }
 
-.delete-button:hover {
-  background: #f5f7fa;        
-  border-color: #c6e2ff;      
-  color: #409eff;            
-}
-
-.delete-button:active {
-  background: #f5f7fa;
-  border-color: #3a8ee6;
-}
-
-.delete-button:disabled {
-  opacity: 0.6;
+.toolbar-button:disabled {
   cursor: not-allowed;
-  background: #f5f7fa;
+  opacity: 0.6;
+  background: #fff;
+}
+
+.toolbar-button img {
+  width: 100%; /* 图标填充整个按钮宽度 */
+  height: 100%; /* 图标填充整个按钮高度 */
+  object-fit: contain; /* 保持图标比例，完全显示在按钮内 */
+  transition: all 0.2s;
+}
+
+.delete-button img {
+  width: 100%; /* 删除按钮图标也填充整个按钮 */
+  height: 100%;
+  object-fit: contain;
 }
 
 /* 更多标记按钮样式 */
@@ -837,7 +826,7 @@ export default {
 
 .mark-more-button:hover {
   background: #f5f7fa;
-  color: #409eff;
+  color: #409eff; /* 保持蓝色悬停效果 */
 }
 
 .mark-more-button:disabled {
@@ -873,36 +862,6 @@ export default {
   border-color: #e64242;
 }
 
-.mark-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-
-.mark-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.mark-button:disabled .mark-icon {
-  filter: grayscale(100%);
-}
-
-.mark-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: cover;
-}
-
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -917,28 +876,6 @@ export default {
 .dropdown-item span {
   margin-left: 8px;
   flex-grow: 1;
-}
-
-.refresh-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-
-.refresh-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: cover;
-  display: block;
 }
 
 .star-icon {

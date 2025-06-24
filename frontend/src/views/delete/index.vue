@@ -9,27 +9,27 @@
           class="select-all-checkbox" 
         />
         <el-tooltip content="恢复邮件" placement="bottom">
-          <el-button 
+          <button 
             class="restore-button" 
             :disabled="selectedMails.length === 0" 
             @click="restoreSelected">
             恢复
-          </el-button>
+          </button>
         </el-tooltip>
         <el-tooltip content="永久删除" placement="bottom">
-          <el-button 
-            class="delete-button icon-button" 
+          <button 
+            class="toolbar-button delete-button" 
             :disabled="selectedMails.length === 0" 
             @click="permanentDeleteAll">
-            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="永久删除" />
-          </el-button>
+            <img src="../main/assets/mark5.png" alt="永久删除" />
+          </button>
         </el-tooltip>
         <el-tooltip content="刷新" placement="bottom">
-          <el-button 
-            class="refresh-button" 
+          <button 
+            class="toolbar-button refresh-button" 
             @click="handleReceive">
-            <img :src="refreshIcon" class="refresh-icon" alt="刷新" />
-          </el-button>
+            <img src="../main/assets/mark3.png" alt="刷新" />
+          </button>
         </el-tooltip>
       </div>
       <div class="toolbar-right">
@@ -101,7 +101,6 @@
 
 <script>
 import { Loading } from '@element-plus/icons-vue'
-import refreshIcon from '@/assets/refresh-icon.svg'
 export default {
   name: 'DeletedPage',
   components: {
@@ -109,7 +108,6 @@ export default {
   },
   data() {
     return {
-      refreshIcon,
       currentPage: 1,
       totalPages: 0,
       mailList: [],
@@ -311,8 +309,44 @@ export default {
 .select-all-checkbox {
   margin-right: 12px;
 }
-.delete-button {
+.toolbar-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
+}
+
+.toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #fff;
+}
+
+.toolbar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: all 0.2s;
+}
+
+.restore-button {
+  width: auto;
   font-size: 14px;
+  font-weight: bold;
   border: 1px solid #dcdfe6;
   background: #fff;
   color: #606266;
@@ -321,63 +355,20 @@ export default {
   height: 32px;
   padding: 0 12px;
   line-height: 30px;
-}
-
-.delete-button.icon-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
-.delete-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.delete-button:hover {
+.restore-button:hover:not(:disabled) {
   background: #f5f7fa;
-  border-color: #c6e2ff;
   color: #409eff;
+  border-color: #c0c4cc;
 }
 
-.delete-button:disabled .delete-icon {
-  opacity: 0.5;
-}
-.refresh-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-.refresh-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: cover;
-}
-.restore-button {
-  font-size: 14px;
-  border: 1px solid #409eff;
-  background: #409eff;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
-}
-.restore-button:hover {
-  background: #66b1ff;
-  border-color: #66b1ff;
+.restore-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f7fa;
 }
 .mail-count {
   font-size: 14px;
