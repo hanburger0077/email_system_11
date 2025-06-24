@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.entity.Attachment;
 import com.example.backend.service.AttachmentService;
 import com.example.backend.utils.ResultVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,11 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/attachments")
+@RequestMapping("/api/attachments")
 public class AttachmentController {
+
+    @Autowired
     private final AttachmentService attachmentService;
 
     public AttachmentController(AttachmentService attachmentService) {
