@@ -84,7 +84,7 @@
     
     <!-- 接收星标邮件区域 -->
     <div class="mail-section" v-if="!isLoading">
-      <h2>接收星标邮件</h2>
+      <!-- <h2>接收星标邮件</h2> -->
       <div v-for="group in groupedReceivedMails" :key="group.title" class="mail-group">
         <h3 class="group-title" @click="toggleExpand('received', group.title)">
           {{ group.title }} <span class="expand-icon">{{ group.isExpanded ? '−' : '+' }}</span>
@@ -111,7 +111,7 @@
     
     <!-- 发送星标邮件区域 -->
     <div class="mail-section" v-if="!isLoading" style="margin-top: 30px;">
-      <h2>发送星标邮件</h2>
+      <!-- <h2>发送星标邮件</h2> -->
       <div v-for="group in groupedSentMails" :key="group.title" class="mail-group">
         <h3 class="group-title" @click="toggleExpand('sent', group.title)">
           {{ group.title }} <span class="expand-icon">{{ group.isExpanded ? '−' : '+' }}</span>

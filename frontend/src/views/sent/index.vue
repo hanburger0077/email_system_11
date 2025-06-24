@@ -116,7 +116,7 @@
       </div>
     </div>
 
-    <!-- 邮件列表头部 -->
+    <!-- 邮件列表头部 - 修改为与main一致的样式 -->
     <div class="mail-header">
       <span class="column checkbox-col"></span>
       <span class="column receiver">收件人</span>
@@ -741,7 +741,6 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   margin-bottom: 14px;
   border-radius: 6px;
 }
@@ -763,9 +762,7 @@ export default {
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 20px;
-  font-size: 14px;
-  color: #666;
+  gap: 12px;
 }
 
 /* 工具栏按钮统一样式 */
@@ -774,7 +771,7 @@ export default {
   border: 1px solid #dcdfe6;
   width: 32px;
   height: 32px;
-  padding: 0; /* 移除内边距，让图标填充整个按钮 */
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -782,11 +779,11 @@ export default {
   border-radius: 4px;
   transition: all 0.2s;
   box-sizing: border-box;
-  overflow: hidden; /* 确保图标不会超出按钮边界 */
+  overflow: hidden;
 }
 
 .toolbar-button:hover:not(:disabled) {
-  background-color: #f5f7fa; /* 背景稍微变灰 */
+  background-color: #f5f7fa;
   border-color: #c0c4cc;
 }
 
@@ -797,14 +794,14 @@ export default {
 }
 
 .toolbar-button img {
-  width: 100%; /* 图标填充整个按钮宽度 */
-  height: 100%; /* 图标填充整个按钮高度 */
-  object-fit: contain; /* 保持图标比例，完全显示在按钮内 */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   transition: all 0.2s;
 }
 
 .delete-button img {
-  width: 100%; /* 删除按钮图标也填充整个按钮 */
+  width: 100%;
   height: 100%;
   object-fit: contain;
 }
@@ -826,7 +823,7 @@ export default {
 
 .mark-more-button:hover {
   background: #f5f7fa;
-  color: #409eff; /* 保持蓝色悬停效果 */
+  color: #409eff;
 }
 
 .mark-more-button:disabled {
@@ -878,23 +875,6 @@ export default {
   flex-grow: 1;
 }
 
-.star-icon {
-  font-size: 1.2em;
-  margin-left: 8px;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.2s;
-}
-
-.star-filled {
-  color: #ffc107;
-}
-
-.pagination-controls {
-  display: flex;
-  gap: 8px;
-}
-
 .mail-count {
   font-size: 14px;
   color: #666;
@@ -907,6 +887,12 @@ export default {
   font-size: 14px;
 }
 
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* 修改mail-header样式，使各列对齐 - 与main保持一致 */
 .mail-header {
   padding: 12px 16px;
   border-radius: 4px;
@@ -916,13 +902,45 @@ export default {
   color: #666;
   display: flex;
   align-items: center;
-  gap: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
+.mail-header .checkbox-col {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.mail-header .receiver {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
+.mail-header .subject {
+  flex: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+}
+
+.mail-header .time {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 120px;
+  font-size: 14px;
+  color: #333;
+}
+
 .mail-header .star-col {
-  min-width: 40px;
+  width: 40px;
   text-align: center;
+  font-size: 14px;
+  color: #333;
 }
 
 .mail-group {
@@ -980,11 +998,11 @@ export default {
   justify-content: center;
 }
 
+/* 修改mail-content样式，与main保持一致 */
 .mail-content {
   flex-grow: 1;
   display: flex;
   align-items: center;
-  gap: 20px;
   width: 100%;
   cursor: pointer;
 }
@@ -992,29 +1010,50 @@ export default {
 .column {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
 }
 
-.receiver {
-  min-width: 180px;
+/* 调整各列布局，与header和main一致 */
+.mail-content .receiver {
+  flex: 1;
+  min-width: auto;
   color: #666;
   font-size: 0.9em;
   text-align: left;
+  padding-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.subject {
-  flex-grow: 1;
+.mail-content .subject {
+  flex: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
+  padding-right: 10px;
 }
 
-.time {
-  min-width: 120px;
+.mail-content .time {
+  flex: 1;
   text-align: right;
+  min-width: 120px;
   color: #999;
   font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.star-icon {
+  width: 40px;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: #999;
+  text-align: center;
+}
+
+.star-filled {
+  content: "\9733";
+  color: #ffc107;
 }
 
 .empty-message {

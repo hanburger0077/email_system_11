@@ -104,7 +104,7 @@
 
     <div class="mail-header">
       <span class="column checkbox-col"></span>
-      <span class="column sender">收件人</span>
+      <span class="column sender">发件人</span>
       <span class="column subject">主题</span>
       <span class="column time">时间</span>
       <span class="column star-col">星标</span>
@@ -1166,6 +1166,7 @@ export default {
   font-size: 14px;
 }
 
+/* 修改mail-header样式，使各列对齐 */
 .mail-header {
   padding: 12px 16px;
   border-radius: 4px;
@@ -1175,13 +1176,45 @@ export default {
   color: #666;
   display: flex;
   align-items: center;
-  gap: 10px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
+.mail-header .checkbox-col {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.mail-header .sender {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+}
+
+.mail-header .subject {
+  flex: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+}
+
+.mail-header .time {
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 120px;
+  font-size: 14px;
+  color: #333;
+}
+
 .mail-header .star-col {
-  min-width: 40px;
+  width: 40px;
   text-align: center;
+  font-size: 14px;
+  color: #333;
 }
 
 .mail-group {
@@ -1239,11 +1272,11 @@ export default {
   justify-content: center;
 }
 
+/* 修改mail-content样式，使其与header对齐 */
 .mail-content {
   flex-grow: 1;
   display: flex;
   align-items: center;
-  gap: 20px;
   width: 100%;
   cursor: pointer;
 }
@@ -1251,36 +1284,45 @@ export default {
 .column {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
 }
 
-.sender {
-  min-width: 180px;
+/* 调整各列布局，与header一致 */
+.mail-content .sender {
+  flex: 1;
+  min-width: auto;
   color: #666;
   font-size: 0.9em;
   text-align: left;
+  padding-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.subject {
-  flex-grow: 1;
+.mail-content .subject {
+  flex: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
+  padding-right: 10px;
 }
 
-.time {
-  min-width: 120px;
+.mail-content .time {
+  flex: 1;
   text-align: right;
+  min-width: 120px;
   color: #999;
   font-size: 0.85em;
+  white-space: nowrap;
 }
 
 .star-icon {
+  width: 40px;
   font-size: 1.2em;
-  margin-left: 8px;
   cursor: pointer;
   color: #999;
+  text-align: center;
 }
 
 .star-filled {
