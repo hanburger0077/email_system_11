@@ -481,30 +481,54 @@ export default {
       }
     },
     
-    // 删除选中的邮件（放入回收站）
+    // 删除选中的邮件（永久删除）
     async deleteSelected() {
       if (this.selectedMails.length === 0) return;
       try {
-        this.$confirm('确认删除选中的邮件吗？', '提示', {
-          confirmButtonText: '确定',
+        this.$confirm('确认永久删除选中的邮件吗？此操作不可恢复', '警告', {
+          confirmButtonText: '确定删除',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
+          confirmButtonClass: 'el-button--danger'
         }).then(async () => {
           this.isLoading = true;
+          let successCount = 0;
+          let failureCount = 0;
+          
           for (const mailId of this.selectedMails) {
-            try {
-              // 使用当前文件夹（SENT）作为发起源，然后将邮件移入回收站
-              await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/change/TRASH/+FLAG`, {
-                method: 'POST'
-              });
-            } catch (error) {
-              console.error(`删除邮件 ${mailId} 失败:`, error);
+            if (typeof mailId === 'number' && mailId > 0) {
+              try {
+                // 使用DELETE方法调用永久删除API
+                const response = await fetch(`/api/mail/${this.currentFolder}/mails/${mailId}/delete`, {
+                  method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 'code.ok') {
+                  successCount++;
+                } else {
+                  failureCount++;
+                  console.error(`永久删除邮件 ${mailId} 失败:`, result);
+                }
+              } catch (error) {
+                failureCount++;
+                console.error(`永久删除邮件 ${mailId} 出错:`, error);
+              }
             }
           }
-          this.$message.success('删除成功，邮件已移入回收站');
-          this.selectedMails = [];
-          this.allSelected = false;
-          this.loadMails(this.currentPage);
+          
+          if (successCount > 0) {
+            this.$message.success(`已成功删除 ${successCount} 封邮件`);
+            // 重新加载邮件列表
+            this.selectedMails = [];
+            this.allSelected = false;
+            await this.loadMails(this.currentPage);
+          }
+          
+          if (failureCount > 0) {
+            this.$message.error(`${failureCount} 封邮件删除失败`);
+          }
         }).catch(() => {
           this.$message.info('已取消删除操作');
         });
@@ -516,9 +540,9 @@ export default {
       }
     },
 
-    // 删除所有邮件（放入回收站）
+    // 删除所有邮件（永久删除）
     async deleteAll() {
-      this.$confirm('确认删除所有邮件吗？', '警告', {
+      this.$confirm('确认永久删除所有已发送邮件吗？此操作不可恢复', '严重警告', {
         confirmButtonText: '确定删除',
         cancelButtonText: '取消',
         type: 'warning',
@@ -529,30 +553,53 @@ export default {
           const response = await fetch(`/api/mail/${this.currentFolder}/pages/1`);
           const result = await response.json();
           if (result.code === 'code.ok' && result.data) {
+            let successCount = 0;
+            let failureCount = 0;
+            
             for (const mail of result.data) {
-              // 使用当前文件夹作为发起源，将邮件移入回收站
-              await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/change/TRASH/+FLAG`, {
-                method: 'POST'
-              });
+              try {
+                // 使用DELETE方法调用永久删除API
+                const delResponse = await fetch(`/api/mail/${this.currentFolder}/mails/${mail.mail_id}/delete`, {
+                  method: 'DELETE'
+                });
+                
+                const delResult = await delResponse.json();
+                
+                if (delResult.code === 'code.ok') {
+                  successCount++;
+                } else {
+                  failureCount++;
+                }
+              } catch (error) {
+                failureCount++;
+                console.error(`永久删除邮件出错:`, error);
+              }
             }
+            
+            this.$message.success(`已永久删除 ${successCount} 封邮件`);
+            
+            if (failureCount > 0) {
+              this.$message.warning(`${failureCount} 封邮件删除失败`);
+            }
+            
+            // 重置状态并重新加载
             this.mailList = [];
             this.selectedMails = [];
             this.allSelected = false;
             this.currentPage = 1;
-            this.totalPages = 0;
-            this.groupAndIndexMails();
-            this.$message.success('已删除所有邮件，邮件已移入回收站');
+            this.loadMails(1);
           } else {
             this.$message.error('获取邮件列表失败，无法删除');
           }
         } catch (error) {
           console.error('删除所有邮件出错:', error);
-          this.$message.error('删除邮件失败');
+          this.$message.error('删除邮件失败，请检查网络连接');
         } finally {
           this.isLoading = false;
         }
       }).catch(() => {
         // 取消删除操作
+        this.$message.info('已取消删除操作');
       });
     },
     
