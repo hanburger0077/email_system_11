@@ -8,55 +8,73 @@
     <template v-else>
       <!-- 邮件操作栏 -->
       <div class="mail-actions">
-        <button class="action-btn" @click="goBack">
-          <span class="action-icon">←</span> 返回
-        </button>
+        <el-tooltip content="返回" placement="bottom">
+          <button class="toolbar-button" @click="goBack">
+            <img src="./assets/back.png" alt="返回" />
+          </button>
+        </el-tooltip>
         
-        <!-- 回复按钮 -->
-        <button class="action-btn reply-btn" @click="replyMail">
-          <span class="action-icon">↩️</span> 回复
-        </button>
+        <el-tooltip content="回复" placement="bottom">
+          <button class="toolbar-button" @click="replyMail">
+            <img src="./assets/reply.png" alt="回复" />
+          </button>
+        </el-tooltip>
         
         <!-- 根据文件夹类型显示不同操作按钮 -->
         <template v-if="currentFolder === 'INBOX' || currentFolder === 'JUNK'">
-          <button class="action-btn" @click="moveToTrash">
-            <span class="action-icon">🗑</span> 移至回收站
-          </button>
+          <el-tooltip content="移至回收站" placement="bottom">
+            <button class="toolbar-button" @click="moveToTrash">
+              <img src="./assets/delete.png" alt="移至回收站" />
+            </button>
+          </el-tooltip>
         </template>
         
         <template v-if="currentFolder === 'TRASH'">
-          <button class="action-btn" @click="restoreMail">
-            <span class="action-icon">↩</span> 还原邮件
-          </button>
+          <el-tooltip content="还原邮件" placement="bottom">
+            <button class="toolbar-button" @click="restoreMail">
+              <img src="./assets/reply.png" alt="还原邮件" style="transform: scaleX(-1);" />
+            </button>
+          </el-tooltip>
         </template>
         
         <!-- 永久删除按钮 -->
-        <button class="action-btn delete" @click="confirmDelete">
-          <span class="action-icon">❌</span> 永久删除
-        </button>
+        <el-tooltip content="永久删除" placement="bottom">
+          <button class="toolbar-button delete-button" @click="confirmDelete">
+            <span class="delete-icon-text">❌</span>
+          </button>
+        </el-tooltip>
         
         <!-- 星标按钮 -->
-        <button 
-          class="action-btn" 
-          @click="toggleStar" 
-          :title="isStarred ? '取消星标' : '加注星标'"
-        >
-          <span class="action-icon" :class="{ 'star-active': isStarred }">
-            {{ isStarred ? '★' : '☆' }}
-          </span>
-          {{ isStarred ? '取消星标' : '加注星标' }}
-        </button>
+        <template v-if="!isStarred">
+          <el-tooltip content="加注星标" placement="bottom">
+            <button class="toolbar-button" @click="toggleStar">
+              <img src="./assets/star.png" alt="加注星标" />
+            </button>
+          </el-tooltip>
+        </template>
+        <template v-else>
+          <el-tooltip content="取消星标" placement="bottom">
+            <button class="toolbar-button" @click="toggleStar">
+              <img src="./assets/unstar.png" alt="取消星标" />
+            </button>
+          </el-tooltip>
+        </template>
         
         <!-- 收件箱才显示已读/未读切换 -->
         <template v-if="currentFolder === 'INBOX'">
-          <button 
-            class="action-btn" 
-            @click="toggleReadStatus"
-            :title="mail.read === 1 ? '标为未读' : '标为已读'"
-          >
-            <span class="action-icon">{{ mail.read === 1 ? '📖' : '📕' }}</span>
-            {{ mail.read === 1 ? '标为未读' : '标为已读' }}
-          </button>
+          <!-- '标为已读' 按钮 -->
+          <el-tooltip v-if="mail.read !== 1" content="标为已读" placement="bottom">
+            <button class="toolbar-button" @click="toggleReadStatus">
+              <img src="./assets/read.png" alt="标为已读" />
+            </button>
+          </el-tooltip>
+          
+          <!-- '标为未读' 按钮 -->
+          <el-tooltip v-if="mail.read === 1" content="标为未读" placement="bottom">
+            <button class="toolbar-button" @click="toggleReadStatus">
+              <img src="./assets/unread.png" alt="标为未读" />
+            </button>
+          </el-tooltip>
         </template>
       </div>
       
@@ -110,18 +128,6 @@
       </div>
     </template>
     
-    <!-- 确认删除模态框 -->
-    <div class="modal-overlay" v-if="showDeleteModal">
-      <div class="modal-content">
-        <h3 class="modal-title">确认删除</h3>
-        <p class="modal-message">您确定要永久删除此邮件吗？此操作无法撤销。</p>
-        <div class="modal-buttons">
-          <button class="modal-cancel-btn" @click="showDeleteModal = false">取消</button>
-          <button class="modal-confirm-btn" @click="deleteMail">确认删除</button>
-        </div>
-      </div>
-    </div>
-    
     <!-- 下载错误提示 -->
     <div 
       class="download-error" 
@@ -142,7 +148,12 @@
 </template>
 
 <script>
+import { ElTooltip, ElMessageBox } from 'element-plus';
+
 export default {
+  components: {
+    ElTooltip,
+  },
   data() {
     return {
       mail: {
@@ -160,7 +171,6 @@ export default {
       isLoading: true,
       currentFolder: 'INBOX',
       attachments: [],
-      showDeleteModal: false,
       showToast: false,
       toastMessage: '',
       toastType: 'success',
@@ -356,35 +366,6 @@ export default {
       }, 3000);
     },
     
-    // 优化后的附件获取方法
-    // async fetchAttachmentsInfo() {
-    //   try {
-    //     if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
-    //       this.attachments = [];
-    //       return;
-    //     }
-        
-    //     // 并行获取所有附件信息
-    //     const attachmentPromises = this.mail.attachmentIds.map(attachmentId => 
-    //       this.getAttachmentInfo(attachmentId)
-    //         .then(attachmentInfo => ({ 
-    //           id: attachmentId, 
-    //           // name: attachmentInfo?.fileName || `附件-${attachmentId}` 
-    //           name: attachmentInfo.fileName 
-    //         }))
-    //         .catch(error => {
-    //           console.error(`获取附件 ${attachmentId} 信息失败:`, error);
-    //           // return { id: attachmentId, name: `附件-${attachmentId}` };
-    //           return { id: attachmentId, name: attachmentInfo.fileName  };
-    //         })
-    //     );
-        
-    //     this.attachments = await Promise.all(attachmentPromises);
-    //   } catch (error) {
-    //     console.error('获取附件信息失败:', error);
-    //     this.showToastMessage('获取附件信息失败', 'error');
-    //   }
-    // },
     async fetchAttachmentsInfo() {
       try {
         if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
@@ -598,35 +579,44 @@ export default {
     },
     
     confirmDelete() {
-      this.showDeleteModal = true;
+      ElMessageBox.confirm(
+        '确认永久删除该邮件吗?',
+        '警告',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      )
+      .then(() => {
+        this.deleteMail();
+      })
+      .catch(() => {
+        // 用户点击了取消
+      });
     },
     
     async deleteMail() {
-      if (!this.mail.mail_id) {
-        this.showToastMessage('无法操作，邮件ID无效', 'error');
-        this.showDeleteModal = false;
-        return;
-      }
-      
       try {
-        const response = await fetch(`/api/mail/${this.currentFolder}/mails/${this.mail.mail_id}/delete`, {
-          method: 'DELETE'
+        const response = await fetch(`/api/mail/delete/${this.mailId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
         const result = await response.json();
         
-        if (result.code === 'code.ok') {
-          this.showDeleteModal = false;
-          this.showToastMessage('邮件已永久删除');
-          setTimeout(() => this.goBack(), 1500);
+        if (result.code === 200) {
+          this.showToastMessage('邮件已永久删除', 'success');
+          setTimeout(() => {
+            this.goBack(); // 返回上一页
+          }, 1500);
         } else {
-          this.showToastMessage('删除邮件失败', 'error');
-          this.showDeleteModal = false;
+          throw new Error(result.message || '删除失败');
         }
       } catch (error) {
-        console.error('删除邮件出错:', error);
-        this.showToastMessage('删除邮件失败', 'error');
-        this.showDeleteModal = false;
+        this.showToastMessage(`删除失败: ${error.message}`, 'error');
       }
     },
     
@@ -687,124 +677,17 @@ export default {
 
 <style scoped>
 .mail-detail {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 1000px;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.6;
   position: relative;
-  min-height: calc(100vh - 120px);
-}
-
-.mail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eaeaea;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  padding: 8px 15px;
-  background-color: #f5f7fa;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  color: #606266;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.action-btn:hover {
-  background-color: #ecf5ff;
-  color: #409EFF;
-  border-color: #c6e2ff;
-}
-
-.reply-btn {
-  background-color: #ecf5ff;
-  color: #409EFF;
-  border-color: #c6e2ff;
-}
-
-.reply-btn:hover {
-  background-color: #409EFF;
-  color: white;
-  border-color: #409EFF;
-}
-
-.action-icon {
-  margin-right: 5px;
-  font-size: 16px;
-}
-
-.star-active {
-  color: #f1c40f;
-}
-
-.mail-header-info {
-  margin-bottom: 30px;
-}
-
-.mail-subject {
-  font-size: 24px;
-  margin-bottom: 15px;
-  color: #303133;
-  word-break: break-word;
-}
-
-.mail-meta {
-  color: #606266;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-.sender-info,
-.receiver-info,
-.time-info {
-  margin-bottom: 8px;
-  display: flex;
-}
-
-.label {
-  font-weight: bold;
-  min-width: 80px;
-}
-
-.value {
-  word-break: break-all;
-}
-
-.mail-content {
-  line-height: 1.8;
-  color: #303133;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  padding-bottom: 20px;
-}
-
-.mail-content p {
-  margin-bottom: 16px;
-}
-
-.mail-content pre {
-  white-space: pre-wrap;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-radius: 4px;
-  overflow: auto;
-  margin-bottom: 16px;
-}
-
-.mail-content a {
-  color: #409EFF;
-  text-decoration: underline;
-  transition: color 0.2s;
-}
-
-.mail-content a:hover {
-  color: #66b1ff;
+  overflow: hidden;
 }
 
 .loading-indicator {
@@ -812,17 +695,19 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 60vh;
+  height: 300px;
+  font-size: 1.2em;
+  color: #555;
 }
 
 .loader {
   border: 5px solid #f3f3f3;
-  border-top: 5px solid #409EFF;
+  border-top: 5px solid #3498db;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 @keyframes spin {
@@ -830,167 +715,202 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-.attachments-section {
-  margin-top: 20px;
+.mail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  align-items: center;
+}
+
+.toolbar-button {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
+}
+
+.toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.toolbar-button img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.delete-button {
+  border-color: #fde2e2;
+  background-color: #fef0f0;
+}
+
+.delete-button:hover:not(:disabled) {
+  border-color: #f56c6c;
+  background-color: #f56c6c;
+}
+
+.delete-button:hover:not(:disabled) .delete-icon-text {
+  color: white;
+}
+
+.delete-icon-text {
+  color: #f56c6c;
+  font-size: 16px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.mail-header-info {
+  margin-bottom: 20px;
+}
+
+.mail-subject {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.mail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 15px;
-  background-color: #f0f8ff;
-  border-radius: 5px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  font-size: 0.95em;
+}
+
+.mail-meta > div {
+  display: flex;
+  align-items: center;
+}
+
+.mail-meta .label {
+  font-weight: bold;
+  color: #555;
+  width: 70px;
+}
+
+.mail-meta .value {
+  color: #333;
+}
+
+.mail-content {
+  padding: 20px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 1.05em;
+  color: #333;
+  line-height: 1.8;
+}
+
+.attachments-section {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.attachments-section h4 {
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  color: #444;
 }
 
 .attachments-list {
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .attachment-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px dashed #ddd;
-}
-
-.attachment-link {
-  flex-grow: 1;
-  margin-right: 10px;
-  color: #409EFF;
-  text-decoration: underline;
-  word-break: break-all;
-}
-
-.attachment-download-btn {
-  padding: 4px 10px;
-  background-color: #409EFF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
   transition: background-color 0.2s;
 }
 
-.attachment-download-btn:disabled {
-  background-color: #90caf9;
-  cursor: not-allowed;
+.attachment-item:hover {
+  background-color: #f0f0f0;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+.attachment-link {
+  font-weight: 500;
+  color: #007bff;
+  text-decoration: none;
 }
 
-.modal-content {
+.attachment-link:hover {
+  text-decoration: underline;
+}
+
+.attachment-download-btn {
+  padding: 5px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   background-color: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  font-size: 18px;
-  margin-bottom: 15px;
-  color: #303133;
-  position: relative;
-}
-
-.modal-message {
-  margin-bottom: 20px;
-  color: #606266;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.modal-cancel-btn {
-  padding: 8px 20px;
-  background-color: #f5f7fa;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  color: #606266;
   cursor: pointer;
-  transition: all 0.3s;
 }
 
-.modal-cancel-btn:hover {
-  color: #409EFF;
-  border-color: #c6e2ff;
-  background-color: #ecf5ff;
+.attachment-download-btn:hover {
+  background-color: #f0f0f0;
 }
 
-.modal-confirm-btn {
-  padding: 8px 20px;
-  background-color: #f56c6c;
-  color: white;
-  border: 1px solid #f56c6c;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.modal-confirm-btn:hover {
-  background-color: #f78989;
-  border-color: #f78989;
+.attachment-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .toast-message {
   position: fixed;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 20px;
-  border-radius: 4px;
-  color: white;
-  font-size: 14px;
-  z-index: 2000;
-  animation: fadeIn 0.3s;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: #fff;
+  z-index: 1001;
+  font-size: 1em;
 }
 
 .toast-message.success {
-  background-color: #67C23A;
+  background-color: #67c23a;
 }
 
 .toast-message.error {
-  background-color: #F56C6C;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  background-color: #f56c6c;
 }
 
 .download-error {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background-color: #ffebee;
-  color: #c62828;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-@media (max-width: 600px) {
-  .mail-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .action-btn {
-    width: 100%;
-  }
-  
-  .mail-subject {
-    font-size: 20px;
-  }
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f56c6c;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 6px;
+  z-index: 1002;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 </style>

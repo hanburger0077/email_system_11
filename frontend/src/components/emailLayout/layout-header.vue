@@ -47,6 +47,7 @@
               v-for="mail in searchResults" 
               :key="`${mail.source}-${mail.mail_id}`"
               class="search-result-item"
+              :class="{ 'highlighted': highlightedMailId === mail.mail_id }"
               @click="openMail(mail)"
             >
               <div class="result-header">
@@ -98,6 +99,7 @@ const activeTab = ref('all')
 const searchResults = ref([])
 const isSearching = ref(false)
 const allMails = ref([]) // 缓存所有邮件数据
+const highlightedMailId = ref(null);
 
 // 移除自动搜索监听，只在用户主动输入时搜索
 
@@ -282,20 +284,24 @@ const handleClearSearch = () => {
 
 // 打开邮件详情
 const openMail = (mail) => {
-  showSearchPanel.value = false
+  // 设置高亮
+  highlightedMailId.value = mail.mail_id;
   
-  // 跳转到对应的邮件列表页面并定位到具体邮件
-  if (mail.source === 'INBOX') {
-    router.push({
-      path: '/main',
-      query: { folder: 'INBOX', mailId: mail.mail_id }
-    })
-  } else {
-    router.push({
-      path: '/sent',
-      query: { mailId: mail.mail_id }
-    })
-  }
+  // 1秒后自动移除高亮
+  setTimeout(() => {
+    highlightedMailId.value = null;
+  }, 1000);
+  
+  // 跳转到详情页
+  const query = {
+    id: mail.mail_id,
+    mailbox: mail.source, // 确保传递了正确的 mailbox
+    from: 'search'
+  };
+  router.push({ path: '/mail-detail', query });
+  
+  // 清空搜索结果并隐藏面板
+  handleClearSearch();
 }
 
 // 格式化时间
@@ -588,5 +594,10 @@ onUnmounted(() => {
   .search-container {
     width: 250px;
   }
+}
+
+.search-result-item.highlighted {
+  background-color: #e6f7ff; /* 淡蓝色高亮 */
+  transition: background-color 0.3s ease;
 }
 </style>

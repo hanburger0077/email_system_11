@@ -141,7 +141,7 @@ export const resetPassword = (userData) => {
 
 // 邮件搜索
 export const searchMails = (keywords) => {
-  return request(`/api/mail/search?keywords=${encodeURIComponent(keywords)}`, {
+  return request(`/mail/search?keywords=${encodeURIComponent(keywords)}`, {
     method: 'GET',
   });
 }

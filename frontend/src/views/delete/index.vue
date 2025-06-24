@@ -55,9 +55,7 @@
     
     <!-- 表头 -->
     <div class="mail-header">
-      <span class="column checkbox-col">
-        <el-checkbox v-model="allSelected" @change="toggleSelectAll" class="header-checkbox" />
-      </span>
+      <span class="column checkbox-col"></span>
       <span class="column sender">发件人</span>
       <span class="column subject">主题</span>
       <span class="column time">时间</span>

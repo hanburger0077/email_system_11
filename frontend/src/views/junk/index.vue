@@ -2,63 +2,23 @@
   <div class="mail-list">
     <div class="mail-toolbar">
       <div class="toolbar-left">
-        <el-checkbox 
-          v-model="allSelected" 
-          @change="toggleSelectAll" 
-          class="select-all-checkbox" 
-        />
-
-        <el-button  
-          :disabled="selectedMails.length === 0"
-          @click="deleteSelected"
-          class="delete-button"
-        >
-          删除
-        </el-button>
-
-        <el-tooltip 
-          content="标为已读"
-          placement="bottom"
-        >
-          <el-button 
-            @click="markAsRead"
+        <el-tooltip content="删除" placement="bottom">
+          <button
             :disabled="selectedMails.length === 0"
-            class="mark-button"
+            @click="deleteSelected"
+            class="toolbar-button"
           >
-            <img 
-              :src="mark1Icon" 
-              class="mark-icon"
-              alt="标为已读"
-            />
-          </el-button>
+            <img src="../main/assets/mark5.png" alt="删除" />
+          </button>
         </el-tooltip>
-
-        <el-tooltip 
-          content="标为未读"
-          placement="bottom"
-        >
-          <el-button 
-            @click="markAsUnread"
-            :disabled="selectedMails.length === 0"
-            class="mark-button"
-          >
-            <img 
-              :src="mark2Icon" 
-              class="mark-icon"
-              alt="标为未读"
-            />
-          </el-button>
-        </el-tooltip>
-
         <el-tooltip content="刷新" placement="bottom">
-          <el-button 
-            class="refresh-button" 
+          <button
+            class="toolbar-button"
             @click="handleReceive"
           >
-            <img :src="mark3Icon" class="refresh-icon" alt="刷新" />
-          </el-button>
+            <img src="../main/assets/mark3.png" alt="刷新" />
+          </button>
         </el-tooltip>
-        
         <el-tooltip content="全部删除" placement="bottom">
           <el-button 
             class="delete-all-button" 
@@ -133,9 +93,6 @@
 
 <script>
 import { Loading } from '@element-plus/icons-vue'
-import mark1Icon from '../main/assets/mark1.png'
-import mark2Icon from '../main/assets/mark2.png'
-import mark3Icon from '../main/assets/mark3.png'
 
 export default {
   name: 'JunkPage',
@@ -144,9 +101,6 @@ export default {
   },
   data() {
     return {
-      mark1Icon,
-      mark2Icon,
-      mark3Icon,
       currentPage: 1,
       totalPages: 0,
       itemsPerPage: 10,
@@ -543,7 +497,6 @@ export default {
   padding: 20px 28px 28px 28px;
   height: calc(100vh - 48px);
   overflow-y: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
 }
@@ -554,9 +507,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8faff;
-  margin-bottom: 14px;
   border-radius: 6px;
+  margin-bottom: 14px;
 }
 
 .toolbar-left {
@@ -565,12 +517,54 @@ export default {
   gap: 8px;
 }
 
-.toolbar-left > * {
-  margin: 0;
+.toolbar-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.select-all-checkbox {
-  margin-right: 12px;
+.toolbar-button:hover:not(:disabled) {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
+}
+
+.toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #fff;
+}
+
+.toolbar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: all 0.2s;
+}
+
+.delete-all-button {
+  height: 32px;
+  padding: 0 15px;
+  font-size: 14px;
+  background-color: #f56c6c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-all-button:hover {
+  background-color: #f78989;
+  border-color: #f78989;
 }
 
 .toolbar-right {
@@ -579,120 +573,6 @@ export default {
   gap: 20px;
   font-size: 14px;
   color: #666;
-}
-
-/* 删除按钮样式 */
-.delete-button {
-  font-size: 14px;
-  border: 1px solid #dcdfe6;  
-  background: #fff;         
-  color: #606266;         
-  border-radius: 4px;
-  cursor: pointer;
-  height: 32px;
-  padding: 0 12px;
-  line-height: 30px;
-}
-
-.delete-button:hover {
-  background: #f5f7fa;        
-  border-color: #c6e2ff;      
-  color: #409eff;            
-}
-
-.delete-button:active {
-  background: #f5f7fa;
-  border-color: #3a8ee6;
-}
-
-.delete-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #f5f7fa;
-}
-
-.delete-all-button {
-  padding: 0;
-  margin: 0;
-  width: 70px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #f56c6c;
-  background: #f56c6c;
-  color: white;
-  font-size: 14px;
-}
-
-.delete-all-button:hover {
-  background: #f78989;
-  border-color: #f78989;
-}
-
-.delete-all-button:active {
-  background: #e64242;
-  border-color: #e64242;
-}
-
-.mark-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-
-.mark-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.mark-button:disabled .mark-icon {
-  filter: grayscale(100%);
-}
-
-.mark-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: cover;
-}
-
-.refresh-button {
-  padding: 0;
-  margin: 0;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dcdfe6;
-  background: #fff;
-}
-
-.refresh-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: cover;
-  display: block;
-}
-
-.pagination-controls {
-  display: flex;
-  gap: 8px;
 }
 
 .mail-count {
@@ -705,6 +585,11 @@ export default {
   color: #666;
   margin-right: 8px;
   font-size: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
 }
 
 .mail-header {
