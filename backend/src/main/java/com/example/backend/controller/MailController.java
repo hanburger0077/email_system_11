@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.DTO.MailDTO;
 import com.example.backend.service.MailService;
 import com.example.backend.utils.ResultVo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -63,6 +65,40 @@ public class MailController {
     }
 
     // 搜索邮件
+    @GetMapping("/search")
+    public ResultVo searchMailbox(
+            @RequestParam String keywords) {
+        ResultVo<List<MailDTO>> mail1 = mailService.searchMail("SENT", null, null, keywords, null, 0, null, false, false);
+        ResultVo<List<MailDTO>> mail2 = mailService.searchMail("SENT", null, null, null, keywords, 0, null, false, false);
+        ResultVo<List<MailDTO>> mail3 = mailService.searchMail("INBOX", null, null, keywords, null, 0, null, false, false);
+        ResultVo<List<MailDTO>> mail4 = mailService.searchMail("INBOX", null, null, null, keywords, 0, null, false, false);
+        List<MailDTO> mailDTO = new ArrayList<>();
+        int count = 0;
+        if(mail1.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail1.getData());
+            count++;
+        }
+        if(mail2.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail2.getData());
+            count++;
+        }
+        if(mail3.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail3.getData());
+            count++;
+        }
+        if(mail4.getCode().equals("code.ok")) {
+            mailDTO.addAll(mail4.getData());
+            count++;
+        }
+        if(count == 0) {
+            return mail1;
+        } else {
+            return ResultVo.success("操作成功", mailDTO);
+        }
+    }
+
+
+    // 搜索邮件
     @GetMapping("/{mailbox}/pages/{pageNum}/search")
     public ResultVo searchMailbox(
             @PathVariable String mailbox,
@@ -77,6 +113,8 @@ public class MailController {
             @RequestParam(defaultValue = "false") boolean receiver_star) {
         return mailService.searchMail(mailbox, pageNum, pageSize, from, to, subject, body, since, unseen, sender_star, receiver_star);
     }
+
+
 
     // 修改邮件状态（标记、移动等）
     @PostMapping("/{mailbox}/mails/{mailId}/change/{sign}/{op}")

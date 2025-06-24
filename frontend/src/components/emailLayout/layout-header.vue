@@ -8,12 +8,13 @@
       </div>
     </div>
     <div class="header-content">
+      <br>
       <div class="search-container">
         <el-input 
           v-model="searchKeyword"
           placeholder="邮箱搜索" 
           class="search-input"
-          @input="handleSearchInput"
+          @input="handleSearch"
           @focus="showSearchPanel = true"
         >
           <template #suffix>
@@ -29,16 +30,16 @@
         <!-- 搜索面板 -->
         <div v-show="showSearchPanel" class="search-panel" @click.stop>
           <!-- 搜索类型选项卡 -->
-          <div class="search-tabs">
+          <!-- <div class="search-tabs">
             <div 
               v-for="tab in searchTabs" 
               :key="tab.key"
               :class="['search-tab', { active: activeTab === tab.key }]"
-              @click="activeTab = tab.key; handleSearchInput()"
+              @click="activeTab = tab.key; handleSearch()"
             >
               {{ tab.label }}
             </div>
-          </div>
+          </div> -->
           
           <!-- 搜索结果列表 -->
           <div v-if="searchResults.length > 0" class="search-results">
@@ -86,6 +87,7 @@ import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Loading } from '@element-plus/icons-vue'
 import DropDown from './drop-down.vue'
+import { searchMails, handleApiError } from '@/utils/api.js'
 
 const router = useRouter()
 
@@ -132,21 +134,59 @@ const handleAccountMouseLeave = () => {
 
 // 搜索功能
 let searchTimer = null
-const handleSearchInput = () => {
-  // 清除之前的定时器
-  clearTimeout(searchTimer)
+// const handleSearchInput = () => {
+//   // 清除之前的定时器
+//   // clearTimeout(searchTimer)
   
-  // 添加100ms防抖，避免输入过程中频繁搜索
-  searchTimer = setTimeout(() => {
-    performSearch()
-  }, 100)
+//   // 添加100ms防抖，避免输入过程中频繁搜索
+//   // searchTimer = setTimeout(() => {
+//     performSearch()
+//   // }, 100)
+// }
+
+// search 搜索 - 防抖优化版本
+let searchTimeout = null
+
+const handleSearch = async () => {
+  // 清除之前的定时器
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  
+  // 如果搜索关键词为空，清空结果并隐藏面板
+  if (!searchKeyword.value?.trim()) {
+    searchResults.value = []
+    showSearchPanel.value = false
+    isSearching.value = false
+    return
+  }
+  
+  // 设置防抖延迟（300ms）
+  searchTimeout = setTimeout(async () => {
+    try {
+      isSearching.value = true
+      showSearchPanel.value = true
+      
+      // 调用后端搜索接口
+      const response = await searchMails(searchKeyword.value)
+      console.log('搜索数据:', response)
+      
+      // 处理搜索结果
+      const validResponse = handleApiError(response)
+      searchResults.value = validResponse.data || []
+      
+    } catch (error) {
+      console.error('搜索请求失败:', error)
+      searchResults.value = []
+      
+      // 可以在这里添加用户友好的错误提示
+      // ElMessage.error('搜索失败，请稍后重试')
+    } finally {
+      isSearching.value = false
+    }
+  }, 300) // 300ms 防抖延迟
 }
 
-const handleSearch = () => {
-  if (searchKeyword.value?.trim()) {
-    performSearch()
-  }
-}
 
 const handleClearSearch = () => {
   searchKeyword.value = ''
@@ -155,90 +195,91 @@ const handleClearSearch = () => {
 }
 
 // 执行搜索
-const performSearch = () => {
-  const keyword = searchKeyword.value?.trim()
-  if (!keyword) {
-    searchResults.value = []
-    return
-  }
+// const performSearch = () => {
+//   const keyword = searchKeyword.value?.trim()
+//   if (!keyword) {
+//     searchResults.value = []
+//     return
+//   }
   
-  // 使用本地搜索，瞬时返回结果
-  const results = searchLocally(keyword)
-  searchResults.value = results.slice(0, 10) // 限制显示前10条结果
-}
+//   // 使用本地搜索，瞬时返回结果
+//   const results = searchLocally(keyword)
+//   searchResults.value = results.slice(0, 10) // 限制显示前10条结果
+// }
 
 // 本地搜索函数
-const searchLocally = (keyword) => {
-  if (!allMails.value.length) {
-    // 如果没有缓存数据，异步加载
-    loadAllMails()
-    return []
-  }
+// const searchLocally = (keyword) => {
+//   if (!allMails.value.length) {
+//     // 如果没有缓存数据，异步加载
+//     loadAllMails()
+//     return []
+//   }
   
-  const lowerKeyword = keyword.toLowerCase()
+//   const lowerKeyword = keyword.toLowerCase()
   
-  const results = allMails.value.filter(mail => {
-    let match = false
-    switch (activeTab.value) {
-      case 'subject':
-        match = mail.subject?.toLowerCase().includes(lowerKeyword)
-        break
-      case 'body':
-        match = mail.content?.toLowerCase().includes(lowerKeyword)
-        break
-      case 'from':
-        // 发件人搜索：统一搜索sender_email字段
-        match = mail.sender_email?.toLowerCase().includes(lowerKeyword)
-        break
-      case 'to':
-        // 收件人搜索：统一搜索receiver_email字段
-        match = mail.receiver_email?.toLowerCase().includes(lowerKeyword)
-        break
-      case 'all':
-      default:
-        match = (
-          mail.subject?.toLowerCase().includes(lowerKeyword) ||
-          mail.content?.toLowerCase().includes(lowerKeyword) ||
-          mail.sender_email?.toLowerCase().includes(lowerKeyword) ||
-          mail.receiver_email?.toLowerCase().includes(lowerKeyword)
-        )
-        break
-    }
-    return match
-  }).sort((a, b) => new Date(b.create_at) - new Date(a.create_at))
+//   const results = allMails.value.filter(mail => {
+//     let match = false
+//     switch (activeTab.value) {
+//       case 'subject':
+//         match = mail.subject?.toLowerCase().includes(lowerKeyword)
+//         break
+//       case 'body':
+//         match = mail.content?.toLowerCase().includes(lowerKeyword)
+//         break
+//       case 'from':
+//         // 发件人搜索：统一搜索sender_email字段
+//         match = mail.sender_email?.toLowerCase().includes(lowerKeyword)
+//         break
+//       case 'to':
+//         // 收件人搜索：统一搜索receiver_email字段
+//         match = mail.receiver_email?.toLowerCase().includes(lowerKeyword)
+//         break
+//       case 'all':
+//       default:
+//         match = (
+//           mail.subject?.toLowerCase().includes(lowerKeyword) ||
+//           mail.content?.toLowerCase().includes(lowerKeyword) ||
+//           mail.sender_email?.toLowerCase().includes(lowerKeyword) ||
+//           mail.receiver_email?.toLowerCase().includes(lowerKeyword)
+//         )
+//         break
+//     }
+//     return match
+//   }).sort((a, b) => new Date(b.create_at) - new Date(a.create_at))
   
-  return results
-}
+//   return results
+// }
 
 // 加载所有邮件数据到缓存
-const loadAllMails = async () => {
-  try {
-    const [inboxResponse, sentResponse] = await Promise.all([
-      fetch('/api/mail/INBOX/pages/1'),
-      fetch('/api/mail/SENT/pages/1')
-    ])
+// const loadAllMails = async () => {
+//   try {
+//     const [inboxResponse, sentResponse] = await Promise.all([
+//       fetch('/api/mail/INBOX/pages/1'),
+//       fetch('/api/mail/SENT/pages/1')
+//     ])
     
-    const [inboxResult, sentResult] = await Promise.all([
-      inboxResponse.json(),
-      sentResponse.json()
-    ])
+//     const [inboxResult, sentResult] = await Promise.all([
+//       inboxResponse.json(),
+//       sentResponse.json()
+//     ])
     
-    const inboxMails = inboxResult.code === 'code.ok' ? (inboxResult.data || []) : []
-    const sentMails = sentResult.code === 'code.ok' ? (sentResult.data || []) : []
+//     const inboxMails = inboxResult.code === 'code.ok' ? (inboxResult.data || []) : []
+//     const sentMails = sentResult.code === 'code.ok' ? (sentResult.data || []) : []
     
-    allMails.value = [
-      ...inboxMails.map(mail => ({ ...mail, source: 'INBOX' })),
-      ...sentMails.map(mail => ({ ...mail, source: 'SENT' }))
-    ]
+//     allMails.value = [
+//       ...inboxMails.map(mail => ({ ...mail, source: 'INBOX' })),
+//       ...sentMails.map(mail => ({ ...mail, source: 'SENT' }))
+//     ]
     
-    // 重新执行搜索
-    if (searchKeyword.value?.trim()) {
-      performSearch()
-    }
-  } catch (error) {
-    console.error('加载邮件数据失败:', error)
-  }
-}
+//     // 重新执行搜索
+//     if (searchKeyword.value?.trim()) {
+//       performSearch()
+//     }
+//   } catch (error) {
+//     console.error('加载邮件数据失败:', error)
+//   }
+// }
+
 
 
 
@@ -290,6 +331,10 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   clearTimeout(searchTimer)
+  // 清理搜索防抖定时器
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
 })
 </script>
 
