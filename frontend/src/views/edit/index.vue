@@ -56,12 +56,32 @@
       {{ toastMessage }}
     </div>
     
+    <div v-if="showDraftModal" class="modal-overlay" @click.self="showDraftModal = false">
+      <div class="modal-content">
+        <h3 class="modal-title">确认保存草稿</h3>
+        <p class="modal-message">您确定要将此邮件保存为草稿吗？</p>
+        <div class="modal-buttons">
+          <button class="modal-cancel-btn" @click="showDraftModal = false">取消</button>
+          <button class="modal-confirm-btn" @click="confirmSaveAsDraft">确认</button>
+        </div>
+      </div>
+    </div>
+    
+    <div v-if="showCancelModal" class="modal-overlay" @click.self="showCancelModal = false">
+      <div class="modal-content">
+        <h3 class="modal-title">确认取消写信</h3>
+        <p class="modal-message">确定要取消写信吗？未保存的内容将会丢失。</p>
+        <div class="modal-buttons">
+          <button class="modal-cancel-btn" @click="showCancelModal = false">返回编辑</button>
+          <button class="modal-confirm-btn" @click="confirmCancel">确认取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { useUserStore } from '@/stores/user';
-import { ElMessageBox } from 'element-plus';
 
 export default {
   data() {
@@ -72,6 +92,8 @@ export default {
       showToast: false,
       toastMessage: '',
       toastType: 'success',
+      showDraftModal: false,
+      showCancelModal: false,
       showLoading: false,
       attachments: [], // 存储上传的附件
       isReply: false,
@@ -297,27 +319,13 @@ export default {
     
     // 显示保存草稿确认框
     saveAsDraft() {
-      // 如果内容为空，不显示确认框，直接提示
+      // 如果内容为空，不保存草稿
       if (!this.to && !this.subject && !this.content.trim() && this.attachments.length === 0) {
         this.showToastMessage('邮件内容为空，无需保存草稿', 'error');
         return;
       }
       
-      ElMessageBox.confirm(
-        '您确定要将此邮件保存为草稿吗？',
-        '确认保存草稿',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      )
-      .then(() => {
-        this.confirmSaveAsDraft();
-      })
-      .catch(() => {
-        // 用户点击了"取消"，不做任何事
-      });
+      this.showDraftModal = true;
     },
     
     // 确认保存草稿
@@ -327,11 +335,15 @@ export default {
       }
       
       this.isSavingDraft = true;
+      this.showDraftModal = false; // 立即关闭确认对话框
       
       try {
+        // 处理回复邮件草稿的内容 - 解决NumberFormatException问题
         let processedContent = this.content;
         
+        // 检查是否为回复邮件，如果是回复邮件且内容包含原始邮件引用，则进行处理
         if (this.isReply && processedContent.includes('------------------ 原始邮件 ------------------')) {
+          // 确保引用内容前至少有一个换行，如果没有则添加
           if (!processedContent.match(/\n\s*------------------/)) {
             processedContent = processedContent.replace(
               /------------------ 原始邮件 ------------------/, 
@@ -340,32 +352,44 @@ export default {
           }
         }
         
+        // 创建FormData对象，用于保存草稿内容
         const formData = new FormData();
         formData.append('to', this.to);
         formData.append('subject', this.subject);
         formData.append('content', processedContent);
         
-        this.attachments.forEach(file => {
-          formData.append('attachments', file);
-        });
-
-        // 如果是编辑现有草稿，添加草稿ID
-        if (this.draftId) {
-          formData.append('draftId', this.draftId);
+        // 添加附件代码，与send-mail.html中的草稿保存保持一致
+        if (this.attachments.length > 0) {
+          this.attachments.forEach(file => {
+            formData.append('attachmentFiles', file);
+          });
         }
         
-        const response = await fetch('/api/mail/draft', {
-          method: 'POST',
-          body: formData
-        });
+        let response;
+        if (this.draftId) {
+          // 更新现有草稿
+          response = await fetch(`/api/mail/drafts/${this.draftId}`, {
+            method: 'PUT',
+            body: formData
+          });
+        } else {
+          // 创建新草稿
+          response = await fetch('/api/mail/drafts', {
+            method: 'POST',
+            body: formData
+          });
+        }
+        
         const result = await response.json();
+        console.log('草稿保存结果:', result);
         
         if (result.code === 'code.ok') {
+          // 更新草稿ID
+          if (!this.draftId && result.data) {
+            this.draftId = result.data.id || result.data;
+          }
           this.showToastMessage('草稿保存成功', 'success');
-          setTimeout(() => {
-            this.$router.push('/draft');
-          }, 1500);
-        } else {
+        } else if (result.code === 'code.error') {
           this.showToastMessage(`草稿保存失败: ${result.message}: ${result.reason || ''}`, 'error');
         }
       } catch (error) {
@@ -378,45 +402,45 @@ export default {
     
     // 取消写信
     cancelCompose() {
+      // 如果内容为空或只填写了很少内容，直接关闭
       if (!this.content && !this.subject && !this.to && this.attachments.length === 0) {
         this.confirmCancel();
         return;
       }
       
-      ElMessageBox.confirm(
-        '确定要取消写信吗？未保存的内容将会丢失。',
-        '确认取消',
-        {
-          confirmButtonText: '确认取消',
-          cancelButtonText: '返回编辑',
-          type: 'warning',
-        }
-      )
-      .then(() => {
-        this.confirmCancel();
-      })
-      .catch(() => {
-        // 用户点击了"返回编辑"，不做任何事
-      });
+      // 显示确认对话框
+      this.showCancelModal = true;
     },
     
     // 确认取消写信
     confirmCancel() {
+      // 关闭确认对话框
+      this.showCancelModal = false;
+      
+      // 如果是编辑草稿但未保存更改，询问是否先保存草稿
+      if (this.draftId && (this.to || this.subject || this.content)) {
+        // 这里可以根据需要添加保存草稿的逻辑
+      }
+      
+      // 清理回复邮件数据
       if (this.isReply) {
         sessionStorage.removeItem('replyMailData');
       }
       
-      this.isReply = false;
-      this.$router.back();
+      // 返回到邮箱主页面
+      this.$router.push('/main?folder=INBOX');
     },
     
-    showToastMessage(message, type = 'success', duration = 2000) {
+    showToastMessage(message, type) {
+      console.log('显示提示:', message, type);
       this.toastMessage = message;
       this.toastType = type;
       this.showToast = true;
+      
+      // 3秒后隐藏提示
       setTimeout(() => {
         this.showToast = false;
-      }, duration);
+      }, 3000);
     }
   }
 };
