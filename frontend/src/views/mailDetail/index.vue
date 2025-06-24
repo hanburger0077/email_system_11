@@ -110,7 +110,7 @@
             class="attachment-item"
           >
             <a 
-              :href="`/attachments/download/${attachment.id}`" 
+              :href="`/api/attachments/download/${attachment.id}`" 
               class="attachment-link" 
               target="_blank"
             >
@@ -373,35 +373,37 @@ export default {
           return;
         }
         
-        // 并行获取所有附件信息
-        const attachmentPromises = this.mail.attachmentIds.map(async attachmentId => {
+        // 串行获取所有附件信息
+        const attachments = [];
+        
+        for (const attachmentId of this.mail.attachmentIds) {
           try {
             const attachmentInfo = await this.getAttachmentInfo(attachmentId);
-            console.log('附件信息:', attachmentInfo); // 查看完整的附件信息对象
-            return { 
-              id: attachmentId, 
-              name: attachmentInfo && attachmentInfo.fileName ? attachmentInfo.fileName : `附件-${attachmentId}` 
-              // name: attachmentInfo && attachmentInfo.fileName 
-            };
+            console.log('附件信息:', attachmentInfo);
+            
+            attachments.push({
+              id: attachmentId,
+              name: attachmentInfo && attachmentInfo.fileName ? attachmentInfo.fileName : `附件-${attachmentId}`
+            });
           } catch (error) {
             console.error(`获取附件 ${attachmentId} 信息失败:`, error);
-            return { id: attachmentId, name: `附件-${attachmentId}` };
+            attachments.push({ id: attachmentId, name: `附件-${attachmentId}` });
           }
-        });
+        }
         
-        this.attachments = await Promise.all(attachmentPromises);
+        this.attachments = attachments;
       } catch (error) {
         console.error('获取附件信息失败:', error);
         this.showToastMessage('获取附件信息失败', 'error');
       }
     },
-    
+        
     // 单独提取的附件信息获取方法，与参考代码风格一致
     async getAttachmentInfo(attachmentId) {
       try {
-      console.log(`请求URL: /attachments/${attachmentId}`);
+      console.log(`请求URL: /api/attachments/${attachmentId}`);
       
-      const response = await fetch(`/attachments/${attachmentId}`);
+      const response = await fetch(`/api/attachments/${attachmentId}`);
       console.log('响应状态:', response.status, response.statusText);
       console.log('响应头:', [...response.headers.entries()]);
       
@@ -625,7 +627,7 @@ export default {
       this.isDownloading = true;
       
       try {
-        const response = await fetch(`/attachments/download/${attachmentId}`);
+        const response = await fetch(`/api/attachments/download/${attachmentId}`);
         
         if (!response.ok) {
           throw new Error(`下载失败: ${response.statusText}`);
