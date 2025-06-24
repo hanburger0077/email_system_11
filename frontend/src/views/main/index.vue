@@ -104,7 +104,7 @@
 
     <div class="mail-header">
       <span class="column checkbox-col"></span>
-      <span class="column sender">发件人</span>
+      <span class="column sender">收件人</span>
       <span class="column subject">主题</span>
       <span class="column time">时间</span>
       <span class="column star-col">星标</span>
@@ -423,7 +423,7 @@ export default {
           console.log(`邮件加载成功，${this.currentFolder}文件夹，第${this.currentPage}页，共${this.totalPages}页，${this.mailList.length}封邮件`);
         } else {
           console.error('加载邮件失败:', result.message, result.reason);
-          this.$message.error(`加载邮件失败: ${result.message}`);
+          // this.$message.error(`加载邮件失败: ${result.message}`);
           
           // 保留旧数据，避免不必要的清空
           if (!this.mailList.length) {
@@ -433,7 +433,7 @@ export default {
         }
       } catch (error) {
         console.error('请求邮件出错:', error);
-        this.$message.error('加载邮件失败，请检查网络连接');
+        // this.$message.error('加载邮件失败，请检查网络连接');
         
         // 保留旧数据，避免不必要的清空
         if (!this.mailList.length) {

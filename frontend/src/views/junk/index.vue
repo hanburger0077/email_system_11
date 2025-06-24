@@ -246,7 +246,7 @@ export default {
           console.log(`垃圾邮件加载成功，第${this.currentPage}页，共${this.totalPages}页，${this.mailList.length}封邮件`);
         } else {
           console.error('加载垃圾邮件失败:', result.message, result.reason);
-          this.$message.error(`加载邮件失败: ${result.message}`);
+        //   this.$message.error(`加载邮件失败: ${result.message}`);
           
           // 保留旧数据，避免不必要的清空
           if (!this.mailList.length) {

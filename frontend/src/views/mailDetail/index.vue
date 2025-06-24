@@ -399,8 +399,8 @@ export default {
             console.log('附件信息:', attachmentInfo); // 查看完整的附件信息对象
             return { 
               id: attachmentId, 
-              // name: attachmentInfo && attachmentInfo.fileName ? attachmentInfo.fileName : `附件-${attachmentId}` 
-              name: attachmentInfo && attachmentInfo.fileName 
+              name: attachmentInfo && attachmentInfo.fileName ? attachmentInfo.fileName : `附件-${attachmentId}` 
+              // name: attachmentInfo && attachmentInfo.fileName 
             };
           } catch (error) {
             console.error(`获取附件 ${attachmentId} 信息失败:`, error);
