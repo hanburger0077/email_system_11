@@ -5,7 +5,7 @@
         <el-form-item prop="email">
           <el-input 
             v-model="form.email"
-            type="email" 
+            type="text" 
             placeholder="请输入邮箱账号" 
             size="large"
             clearable
