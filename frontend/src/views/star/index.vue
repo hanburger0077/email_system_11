@@ -11,34 +11,45 @@
         >
         </el-checkbox>
 
-        <el-button 
-          type="text" 
-          :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading" 
-          @click="cancelSelectedStars"
-          class="unstar-button">
-          取消星标
-        </el-button>
-        <el-button 
-          type="text" 
-          :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading" 
-          @click="deleteSelected"
-          class="delete-button">
-          <el-icon><Delete /></el-icon>
-        </el-button>
-        <el-button 
-          type="text" 
-          @click="refreshMails"
-          :disabled="isLoading"
-          class="refresh-button">
-          <el-icon><Refresh /></el-icon>
-        </el-button>
-        <el-button 
-          type="text" 
-          :disabled="(receivedStarred.length === 0 && sentStarred.length === 0) || isLoading" 
-          @click="deleteAll"
-          class="delete-all-button">
-          全部删除
-        </el-button>
+        <el-tooltip content="删除" placement="bottom">
+          <button 
+            class="toolbar-button delete-button" 
+            @click="deleteSelected" 
+            :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading"
+          >
+            <img src="../main/assets/mark5.png" alt="删除" />
+          </button>
+        </el-tooltip>
+
+        <el-tooltip content="取消星标" placement="bottom">
+          <button 
+            class="toolbar-button cancel-star-button" 
+            @click="cancelSelectedStars" 
+            :disabled="(selectedReceived.length === 0 && selectedSent.length === 0) || isLoading"
+          >
+            取消星标
+          </button>
+        </el-tooltip>
+
+        <el-tooltip content="刷新" placement="bottom">
+          <button 
+            class="toolbar-button" 
+            @click="refreshMails" 
+            :disabled="isLoading"
+          >
+            <img src="../main/assets/mark3.png" alt="刷新" />
+          </button>
+        </el-tooltip>
+        
+        <el-tooltip content="全部删除" placement="bottom">
+          <el-button 
+            class="delete-all-button" 
+            @click="deleteAll" 
+            :disabled="(receivedStarred.length === 0 && sentStarred.length === 0) || isLoading"
+          >
+            全部删除
+          </el-button>
+        </el-tooltip>
       </div>
       <div class="toolbar-right">
         <span class="mail-count">{{ isLoading ? '0' : totalEmails }} 封邮件</span>
@@ -141,7 +152,7 @@
 </template>
 
 <script>
-import { Loading, Delete, Refresh } from '@element-plus/icons-vue'
+import { Loading } from '@element-plus/icons-vue'
 
 export default {
   name: 'StarredMailsPage',
