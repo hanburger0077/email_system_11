@@ -481,7 +481,7 @@ export default {
   padding: 12px 16px;
   border: 1px solid #cce2fa;
   border-radius: 4px;
-  background: #f8faff;
+
   font-size: 16px;
 }
 

@@ -920,7 +920,6 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8faff;
   margin-bottom: 14px;
   border-radius: 6px;
 }
