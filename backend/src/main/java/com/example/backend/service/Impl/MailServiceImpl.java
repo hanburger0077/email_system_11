@@ -280,6 +280,7 @@ public class MailServiceImpl implements MailService {
                 mails = new ArrayList<>();
                 for(long id : mailId) {
                     MailDTO mailDTO = imapClient.fetchCommand("SIMPLE", id);
+                    
                     mailDTO.setMailbox(mailbox);
                     mails.add(mailDTO);
                 }
