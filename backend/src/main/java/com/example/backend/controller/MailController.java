@@ -10,7 +10,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/mail")
@@ -90,6 +92,8 @@ public class MailController {
             mailDTO.addAll(mail4.getData());
             count++;
         }
+        Set<MailDTO> set = new LinkedHashSet<>(mailDTO);
+        mailDTO = new ArrayList<>(set);
         if(count == 0) {
             return mail1;
         } else {
