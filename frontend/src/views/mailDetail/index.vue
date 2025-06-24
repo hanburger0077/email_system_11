@@ -79,8 +79,8 @@
         </div>
       </div>
       
-      <!-- 邮件内容 -->
-      <div class="mail-content" v-html="mail.content"></div>
+      <!-- 邮件内容 - 使用处理后的格式化内容 -->
+      <div class="mail-content" v-html="formattedContent"></div>
       
       <!-- 邮件附件 -->
       <div class="attachments-section" v-if="attachments && attachments.length > 0">
@@ -91,7 +91,13 @@
             :key="attachment.id" 
             class="attachment-item"
           >
-            <span class="attachment-name">{{ attachment.name || `附件-${attachment.id}` }}</span>
+            <a 
+              :href="`/attachments/download/${attachment.id}`" 
+              class="attachment-link" 
+              target="_blank"
+            >
+              {{ attachment.name }} <!-- 附件名称 -->
+            </a>
             <button 
               class="attachment-download-btn" 
               @click="downloadAttachment(attachment.id, attachment.name)"
@@ -178,12 +184,60 @@ export default {
     },
     mailbox() {
       return this.$route.query.mailbox || 'INBOX';
+    },
+    // 新增计算属性：处理后的格式化内容
+    formattedContent() {
+      if (!this.mail.content) return '';
+      
+      // 先检查是否已有HTML标签，避免重复处理
+      if (/<[a-z][\s\S]*>/i.test(this.mail.content)) {
+        return this.mail.content;
+      }
+      
+      // 纯文本处理：转换换行符为<br>
+      let content = this.mail.content;
+      
+      // 转义HTML特殊字符，防止XSS
+      content = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+      
+      // 转换各种换行符为<br>
+      content = content
+        .replace(/\r\n/g, '<br>')
+        .replace(/\n\r/g, '<br>')
+        .replace(/\r/g, '<br>')
+        .replace(/\n/g, '<br>');
+      
+      // 处理连续换行（最多保留2个<br>）
+      content = content.replace(/(<br\s*\/?>\s*){3,}/g, '<br><br>');
+      
+      // 将两个<br>转换为段落
+      content = content.replace(/<br\s*\/?>\s*<br\s*\/?>/g, '</p><p>');
+      content = `<p>${content}</p>`;
+      
+      // 转换URL为可点击链接
+      content = this.convertUrlsToLinks(content);
+      
+      return content;
     }
   },
   created() {
     this.initMailData();
   },
   methods: {
+    // 转换URL为可点击链接
+    convertUrlsToLinks(text) {
+      const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+      return text.replace(urlRegex, url => {
+        const href = url.startsWith('http') ? url : `http://${url}`;
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
+    },
+    
     initMailData() {
       this.currentFolder = this.mailbox;
       this.fetchMailData(this.currentFolder, this.mailId);
@@ -302,6 +356,35 @@ export default {
       }, 3000);
     },
     
+    // 优化后的附件获取方法
+    // async fetchAttachmentsInfo() {
+    //   try {
+    //     if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
+    //       this.attachments = [];
+    //       return;
+    //     }
+        
+    //     // 并行获取所有附件信息
+    //     const attachmentPromises = this.mail.attachmentIds.map(attachmentId => 
+    //       this.getAttachmentInfo(attachmentId)
+    //         .then(attachmentInfo => ({ 
+    //           id: attachmentId, 
+    //           // name: attachmentInfo?.fileName || `附件-${attachmentId}` 
+    //           name: attachmentInfo.fileName 
+    //         }))
+    //         .catch(error => {
+    //           console.error(`获取附件 ${attachmentId} 信息失败:`, error);
+    //           // return { id: attachmentId, name: `附件-${attachmentId}` };
+    //           return { id: attachmentId, name: attachmentInfo.fileName  };
+    //         })
+    //     );
+        
+    //     this.attachments = await Promise.all(attachmentPromises);
+    //   } catch (error) {
+    //     console.error('获取附件信息失败:', error);
+    //     this.showToastMessage('获取附件信息失败', 'error');
+    //   }
+    // },
     async fetchAttachmentsInfo() {
       try {
         if (!this.mail.attachmentIds || this.mail.attachmentIds.length === 0) {
@@ -309,25 +392,18 @@ export default {
           return;
         }
         
+        // 并行获取所有附件信息
         const attachmentPromises = this.mail.attachmentIds.map(async attachmentId => {
           try {
-            const response = await fetch(`/attachments/${attachmentId}`);
-            const result = await response.json();
-            
-            if (result.code === 'code.ok' && result.data) {
-              return { 
-                id: attachmentId,
-                name: result.data.fileName || `附件-${attachmentId}`
-              };
-            } else if (result.code === 'code.error') {
-              this.showToastMessage(`获取附件信息失败: ${result.message}${result.reason ? ': ' + result.reason : ''}`, 'error');
-              return { id: attachmentId, name: `附件-${attachmentId}` };
-            } else {
-              console.warn(`获取附件 ${attachmentId} 信息失败:`, result.message);
-              return { id: attachmentId, name: `附件-${attachmentId}` };
-            }
+            const attachmentInfo = await this.getAttachmentInfo(attachmentId);
+            console.log('附件信息:', attachmentInfo); // 查看完整的附件信息对象
+            return { 
+              id: attachmentId, 
+              // name: attachmentInfo && attachmentInfo.fileName ? attachmentInfo.fileName : `附件-${attachmentId}` 
+              name: attachmentInfo && attachmentInfo.fileName 
+            };
           } catch (error) {
-            console.error(`获取附件 ${attachmentId} 信息出错:`, error);
+            console.error(`获取附件 ${attachmentId} 信息失败:`, error);
             return { id: attachmentId, name: `附件-${attachmentId}` };
           }
         });
@@ -336,6 +412,43 @@ export default {
       } catch (error) {
         console.error('获取附件信息失败:', error);
         this.showToastMessage('获取附件信息失败', 'error');
+      }
+    },
+    
+    // 单独提取的附件信息获取方法，与参考代码风格一致
+    async getAttachmentInfo(attachmentId) {
+      try {
+      console.log(`请求URL: /attachments/${attachmentId}`);
+      
+      const response = await fetch(`/attachments/${attachmentId}`);
+      console.log('响应状态:', response.status, response.statusText);
+      console.log('响应头:', [...response.headers.entries()]);
+      
+      // 尝试获取响应体文本以查看具体内容
+      const responseClone = response.clone();
+      const responseText = await responseClone.text();
+      console.log('响应体:', responseText);
+        
+        // 检查响应类型
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('附件API返回了非JSON响应:', contentType);
+          return null;
+        }
+        const result = await response.json();
+        
+        if (result.code === 'code.ok') {
+          return result.data;
+        } else if (result.code === 'code.error') {
+          this.showToastMessage(`获取附件信息失败: ${result.message}${result.reason ? ': ' + result.reason : ''}`, 'error');
+          return null;
+        } else {
+          console.error('获取附件信息失败:', result.message);
+          return null;
+        }
+      } catch (error) {
+        console.error('获取附件信息出错:', error);
+        return null;
       }
     },
     
@@ -530,16 +643,16 @@ export default {
         
         let suggestedFileName = fileName;
         const contentDisposition = response.headers.get('Content-Disposition');
-        if (contentDisposition) {
-          const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-          if (fileNameMatch && fileNameMatch[1]) {
-            suggestedFileName = fileNameMatch[1].replace(/['"]/g, '');
-          }
-        }
+        // if (contentDisposition) {
+        //   const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        //   if (fileNameMatch && fileNameMatch[1]) {
+        //     suggestedFileName = fileNameMatch[1].replace(/['"]/g, '');
+        //   }
+        // }
         
-        if (!suggestedFileName) {
-          suggestedFileName = `附件-${attachmentId}`;
-        }
+        // if (!suggestedFileName) {
+        //   suggestedFileName = `附件-${attachmentId}`;
+        // }
         
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -664,11 +777,15 @@ export default {
 }
 
 .mail-content {
-  line-height: 1.6;
+  line-height: 1.8;
   color: #303133;
   word-wrap: break-word;
   overflow-wrap: break-word;
   padding-bottom: 20px;
+}
+
+.mail-content p {
+  margin-bottom: 16px;
 }
 
 .mail-content pre {
@@ -677,6 +794,17 @@ export default {
   padding: 10px;
   border-radius: 4px;
   overflow: auto;
+  margin-bottom: 16px;
+}
+
+.mail-content a {
+  color: #409EFF;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.mail-content a:hover {
+  color: #66b1ff;
 }
 
 .loading-indicator {
@@ -720,10 +848,12 @@ export default {
   border-bottom: 1px dashed #ddd;
 }
 
-.attachment-name {
+.attachment-link {
   flex-grow: 1;
   margin-right: 10px;
-  color: #333;
+  color: #409EFF;
+  text-decoration: underline;
+  word-break: break-all;
 }
 
 .attachment-download-btn {

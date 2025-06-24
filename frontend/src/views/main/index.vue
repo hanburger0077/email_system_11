@@ -8,13 +8,15 @@
           class="select-all-checkbox" 
         />
 
-        <el-button  
-          :disabled="selectedMails.length === 0"
-          @click="deleteSelected"
-          class="delete-button"
-        >
-          删除
-        </el-button>
+        <el-tooltip content="删除" placement="bottom">
+          <el-button  
+            :disabled="selectedMails.length === 0"
+            @click="deleteSelected"
+            class="delete-button icon-button"
+          >
+            <img src="@/assets/delete-icon.svg" class="delete-icon" alt="删除" />
+          </el-button>
+        </el-tooltip>
 
         <el-tooltip 
           content="标为已读"
@@ -61,7 +63,7 @@
             <el-dropdown-menu>
               <el-dropdown-item command="star" class="dropdown-item">
                 <i class="star-icon starred">★</i>
-                <span>星标邮件</span>
+                <span>加注星标</span>
               </el-dropdown-item>
               <el-dropdown-item command="unstar" class="dropdown-item">
                 <i class="star-icon">☆</i>
@@ -181,9 +183,9 @@
 
 <script>
 import { ArrowDown, Loading } from '@element-plus/icons-vue'
-import mark1Icon from './assets/mark1.png'
-import mark2Icon from './assets/mark2.png'
-import mark3Icon from './assets/mark3.png'
+import mark1Icon from '@/assets/read-icon.svg'
+import mark2Icon from '@/assets/unread-icon.svg'
+import mark3Icon from '@/assets/refresh-icon.svg'
 import mark4Icon from './assets/mark4.png'
 
 export default {
@@ -959,6 +961,20 @@ export default {
   height: 32px;
   padding: 0 12px;
   line-height: 30px;
+}
+
+.delete-button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .delete-button:hover {

@@ -23,7 +23,6 @@
             type="file" 
             ref="fileInput" 
             @change="handleFileUpload" 
-            multiple
             style="display: none" 
           />
         </div>
@@ -174,25 +173,22 @@ export default {
     },
     
     handleFileUpload(event) {
-      // 处理文件上传
-      const files = event.target.files;
-      if (!files.length) return;
-      
-      // 将文件添加到附件列表
-      for (let i = 0; i < files.length; i++) {
-        if (files[i].size > 10 * 1024 * 1024) { // 10MB 大小限制
-          this.showToastMessage(`文件 ${files[i].name} 超过10MB，无法上传`, 'error');
-          continue;
+      // 参考send-mail.html中的附件处理方法
+      if (event.target.files.length > 0) {
+        const file = event.target.files[0];
+        // 添加文件大小限制检查
+        if (file.size > 10 * 1024 * 1024) { // 10MB 大小限制
+          this.showToastMessage(`文件 ${file.name} 超过10MB，无法上传`, 'error');
+          event.target.value = ''; // 清空文件输入以便再次选择
+          return;
         }
-        this.attachments.push(files[i]);
+        this.attachments.push(file);
+        event.target.value = ''; // 清空文件输入以便选择相同的文件
       }
-      
-      // 清空文件输入以便再次选择相同文件
-      event.target.value = '';
     },
     
     removeAttachment(index) {
-      // 从列表中移除附件
+      // 从列表中移除附件，与send-mail.html保持一致
       this.attachments.splice(index, 1);
     },
     
@@ -235,6 +231,7 @@ export default {
     },
     
     async sendEmail() {
+      // 参考send-mail.html中的邮件发送方法
       if (!this.to || !this.subject || !this.content) {
         this.showToastMessage('请填写完整信息', 'error');
         return;
@@ -253,13 +250,13 @@ export default {
       
       try {
         console.log('准备发送邮件...');
-        // 创建FormData对象，用于发送邮件内容和附件
+        // 创建FormData对象，用于发送邮件内容和附件，与send-mail.html保持一致
         const formData = new FormData();
         formData.append('to', this.to.trim());
         formData.append('subject', this.subject.trim());
         formData.append('content', this.content.trim());
         
-        // 添加附件到FormData - 匹配后端接口参数名称attachmentFiles
+        // 添加附件到FormData - 使用与send-mail.html相同的参数名
         if (this.attachments.length > 0) {
           this.attachments.forEach(file => {
             formData.append('attachmentFiles', file);
@@ -299,6 +296,12 @@ export default {
           if (this.isReply) {
             sessionStorage.removeItem('replyMailData');
           }
+          
+          // 清空表单，与send-mail.html保持一致
+          this.to = '';
+          this.subject = '';
+          this.content = '';
+          this.attachments = [];
           
           this.showToastMessage('邮件发送成功', 'success');
           // 发送成功后延迟跳转
@@ -355,13 +358,12 @@ export default {
         formData.append('subject', this.subject);
         formData.append('content', processedContent);
         
-        // 注意：根据控制器API，草稿功能可能不支持附件
-        // 但此处仍添加附件代码，以防后端实现了支持
-        // if (this.attachments.length > 0) {
-        //   this.attachments.forEach(file => {
-        //     formData.append('attachmentFiles', file);
-        //   });
-        // }
+        // 添加附件代码，与send-mail.html中的草稿保存保持一致
+        if (this.attachments.length > 0) {
+          this.attachments.forEach(file => {
+            formData.append('attachmentFiles', file);
+          });
+        }
         
         let response;
         if (this.draftId) {
