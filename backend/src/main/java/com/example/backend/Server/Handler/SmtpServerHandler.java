@@ -7,6 +7,8 @@ import com.example.backend.mapper.AttachmentMapper;
 import com.example.backend.mapper.MailMapper;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.service.AttachmentService;
+import com.example.backend.spam.SpamPredictionService;
+import com.example.backend.spam.SpamResult;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import jakarta.activation.MimetypesFileTypeMap;
@@ -34,6 +36,7 @@ import java.util.regex.Pattern;
 @Scope("prototype")
 public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
 
+    private final SpamPredictionService spamService = new SpamPredictionService();
     private boolean dataMode = false;
     private boolean attachmentMode = false;
     private boolean chunkMode = false;
@@ -214,6 +217,7 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
             // 例如：mail.setAttachments(attachmentNames, attachmentContents);
         } else if (content instanceof String) {
             mail.setContent(content.toString());
+            System.out.println(mail.getContent());
         }
         //邮件信息设置
         mail.setCreate_at(LocalDateTime.now());
@@ -222,6 +226,14 @@ public class SmtpServerHandler extends SimpleChannelInboundHandler<String> {
         mail.setRead((short) 0);
         mail.setSender_star((short) 0);
         mail.setReceiver_star((short) 0);
+        // 新增：输出垃圾邮件检测结果和原因
+        SpamResult result = spamService.predictSpam(mail.getContent());
+        System.out.println("Spam detection result: " + result.isSpam() + ", Reason: " + result.getReason());
+        if (result.isSpam()) {
+            mail.setReceiver_sign((short) 2);
+        } else {
+            mail.setReceiver_sign((short) 0);
+        }
         if (!attachmentNames.isEmpty() && attachmentNames.size() == attachmentContents.size()) {
             mail.setWithAttachment((short) 1);
         } else {
