@@ -1,3 +1,4 @@
+// com.example.backend.service.Impl.UserServiceImpl.java
 package com.example.backend.service.Impl;
 
 import com.example.backend.entity.User;
@@ -13,8 +14,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.regex.Pattern;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.security.SecureRandom;
-import java.util.HashMap; // 引入 HashMap
-import java.util.Map;    // 引入 Map
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
     // 密码格式正则：至少包含大小写字母和数字，长度6-20位
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{6,20}$");
 
-    // 新增：手机号码格式正则：精确11位数字
+    // 手机号码格式正则：精确11位数字
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{11}$");
 
     private boolean isValidEmail(String email) {
@@ -42,7 +43,6 @@ public class UserServiceImpl implements UserService {
         return PASSWORD_PATTERN.matcher(password).matches();
     }
 
-    // 新增：手机号码格式校验方法
     private boolean isValidPhone(String phone) {
         return PHONE_PATTERN.matcher(phone).matches();
     }
@@ -177,12 +177,23 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "请提供密码进行注销确认", "注销操作需要密码确认");
         }
 
-        User user = userMapper.findByEmail(loggedInEmail);
+        User user = userMapper.findByEmail(loggedInEmail); // findByEmail 只查找 status=1 的用户
         if (user == null) {
-            return ResultVo.fail("操作错误", "用户不存在或已是注销状态", "登录会话有效但用户在数据库中不存在或已失效");
+            // 如果 findByEmail 找不到，可能是用户不存在或者 status=0
+            // 此时需要用 findAnyByEmail 再次确认用户是否存在，如果存在但 status=0，则视为已注销。
+            User anyUser = userMapper.findAnyByEmail(loggedInEmail);
+            if (anyUser == null) {
+                return ResultVo.fail("操作错误", "用户不存在", "登录会话有效但用户在数据库中不存在");
+            } else if (anyUser.getStatus() == 0) {
+                return ResultVo.fail("操作错误", "用户已是注销状态", "无需重复注销");
+            }
+            // 如果 findByEmail 返回 null 但 findAnyByEmail 找到且 status != 0，这逻辑上不应该发生，
+            // 因为 findByEmail 应该能找到 status=1 的用户。
+            // 为了简化，这里假定如果 findByEmail 返回 null 且 findAnyByEmail 发现用户 status=0，
+            // 那么用户确实是已注销状态。
         }
 
-        if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {
+        if (user != null && !bCryptPasswordEncoder.matches(password, user.getPassword())) { // 仅当user不为null时才检查密码
             return ResultVo.fail("操作错误", "密码不正确", "提供的密码与当前用户密码不匹配，无法注销");
         }
 
@@ -220,7 +231,7 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "新用户名不能为空", "请输入新的用户名");
         }
 
-        User user = userMapper.findByEmail(email);
+        User user = userMapper.findByEmail(email); // findByEmail 只查找 status=1 的用户
         if (user == null) {
             return ResultVo.fail("操作错误", "用户不存在或已注销", "当前登录用户无效");
         }
@@ -259,7 +270,7 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "新手机号码格式错误", "新手机号码必须是11位数字");
         }
 
-        User user = userMapper.findByEmail(email);
+        User user = userMapper.findByEmail(email); // findByEmail 只查找 status=1 的用户
         if (user == null) {
             return ResultVo.fail("操作错误", "用户不存在或已注销", "当前登录用户无效");
         }
@@ -300,7 +311,7 @@ public class UserServiceImpl implements UserService {
             return ResultVo.fail("操作错误", "新密码格式不符合要求", "新密码必须包含大小写字母和数字，长度6-20位");
         }
 
-        User user = userMapper.findByEmail(email);
+        User user = userMapper.findByEmail(email); // findByEmail 只查找 status=1 的用户
         if (user == null) {
             return ResultVo.fail("操作错误", "用户不存在或已注销", "当前登录用户无效");
         }
@@ -329,6 +340,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResultVo recoverPassword(String email, String recoveryCode, String newPassword, String confirmNewPassword) {
+        // --- 输入校验部分不变 ---
         if (!StringUtils.hasText(email) || !StringUtils.hasText(recoveryCode) ||
                 !StringUtils.hasText(newPassword) || !StringUtils.hasText(confirmNewPassword)) {
             return ResultVo.fail("操作错误", "邮箱、恢复码和新密码都不能为空", "请填写所有必填字段");
@@ -342,34 +354,40 @@ public class UserServiceImpl implements UserService {
         if (!isValidPassword(newPassword)) {
             return ResultVo.fail("操作错误", "新密码格式不符合要求", "新密码必须包含大小写字母和数字，长度6-20位");
         }
+        // --- 输入校验部分结束 ---
 
+        // 1. 根据邮箱查找用户（使用 findAnyByEmail，因为它不限制 status）
         User user = userMapper.findAnyByEmail(email);
         if (user == null) {
             return ResultVo.fail("操作错误", "用户不存在", "指定邮箱未注册");
         }
 
+        // 2. 验证恢复码
         if (user.getHashedRecoveryCode() == null || !bCryptPasswordEncoder.matches(recoveryCode, user.getHashedRecoveryCode())) {
             return ResultVo.fail("操作错误", "恢复码不正确", "提供的恢复码与系统记录不匹配");
         }
 
-        user.setPassword(bCryptPasswordEncoder.encode(newPassword));
-
-        String newPlainRecoveryCode = generateSecureRecoveryCode();
-        String newHashedRecoveryCode = bCryptPasswordEncoder.encode(newPlainRecoveryCode);
-        user.setHashedRecoveryCode(newHashedRecoveryCode);
-
-        if (user.getStatus() == 0) {
-            user.setStatus(1); // 如果是注销用户，恢复密码后将其状态改回正常
+        // 3. 检查新密码是否与旧密码相同 (安全最佳实践)
+        if (bCryptPasswordEncoder.matches(newPassword, user.getPassword())) {
+            return ResultVo.fail("操作错误", "新密码不能与旧密码相同", "请设置一个与旧密码不同的新密码");
         }
 
-        int updatedPassword = userMapper.updatePassword(user);
-        int updatedRecoveryCode = userMapper.updateRecoveryCode(user);
+        // 4. 准备更新数据：设置新密码和新的哈希恢复码
+        user.setPassword(bCryptPasswordEncoder.encode(newPassword)); // 哈希新密码
+        String newPlainRecoveryCode = generateSecureRecoveryCode(); // 生成新的明文恢复码
+        String newHashedRecoveryCode = bCryptPasswordEncoder.encode(newPlainRecoveryCode); // 哈希新的恢复码
+        user.setHashedRecoveryCode(newHashedRecoveryCode);
 
-        if (updatedPassword <= 0 || updatedRecoveryCode <= 0) {
+        // 5. 调用新的 MyBatis 方法进行数据库更新 (将密码、恢复码和状态一并更新)
+        // 关键改动：这里使用 updatePasswordAndRecoveryCodeAndActivate 方法
+        int updatedRows = userMapper.updatePasswordAndRecoveryCodeAndActivate(user);
+
+        if (updatedRows <= 0) {
+            // 如果没有行被更新，说明操作失败
             return ResultVo.fail("操作错误", "密码重置失败，请重试", "数据库更新操作失败");
         }
 
-        // 将新的恢复码放入 data payload
+        // 6. 成功返回，并包含新的明文恢复码
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("newRecoveryCode", newPlainRecoveryCode);
 
