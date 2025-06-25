@@ -51,7 +51,7 @@
       </div>
     </form>
 
-    <!-- 浮窗和弹窗组件 -->
+    <!-- 居中显示的浮窗提示 -->
     <div v-show="showToast" class="toast-message" :class="{ 'toast-success': toastType === 'success', 'toast-error': toastType === 'error', 'active': showToast }">
       {{ toastMessage }}
     </div>
@@ -653,11 +653,12 @@ export default {
   background: #d32f2f;
 }
 
-/* 浮窗样式 */
+/* 浮窗样式 - 修改为居中显示 */
 .toast-message {
   position: fixed;
   top: 100px;
-  right: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
   padding: 12px 24px;
   border-radius: 4px;
   color: white;
@@ -665,14 +666,15 @@ export default {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   z-index: 9999;
   opacity: 0;
-  transform: translateY(-20px);
   transition: all 0.3s ease;
   pointer-events: none;
+  min-width: 250px;
+  text-align: center;
 }
 
 .toast-message.active {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .toast-success {

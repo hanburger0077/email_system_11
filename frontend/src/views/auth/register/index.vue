@@ -157,13 +157,51 @@ const handleProtocol = (type) => {
   window.open(`${window.location.origin}/protocol/${type}`)
 }
 
-const handleRegister = async () => {
+// 调用 IMAP 登录接口连接邮箱服务器
+const connectToIMAPServer = async (username, password) => {
   try {
+    // 创建请求数据
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
+    
+    // 发送 IMAP 连接请求
+    const response = await fetch('/api/mail/connect', {
+      method: 'POST',
+      body: formData
+    })
+    
+    // 解析响应
+    const result = await response.json()
+    
+    // 检查连接是否成功
+    if (result.code === 'code.ok') {
+      console.log('IMAP 连接成功:', result)
+      return { success: true, data: result.data }
+    } else {
+      console.error('IMAP 连接失败:', result)
+      return { success: false, message: result.message || '邮箱连接失败' }
+    }
+  } catch (error) {
+    console.error('IMAP 连接错误:', error)
+    return { success: false, message: '邮箱服务器连接错误' }
+  }
+}
+
+const handleRegister = async () => {
+  if (!formRef.value) return
+  
+  try {
+    // 验证表单
+    await formRef.value.validate()
+    
+    loading.value = true
+    
     // 1. 先注册
     const registerResponse = await registerUser(form.value)
     handleApiError(registerResponse)
     
-    // 2. 从后端响应的 data 中获取恢复码（修复：从 data.recoveryCode 获取）
+    // 2. 从后端响应的 data 中获取恢复码
     if (registerResponse.data && registerResponse.data.recoveryCode) {
       form.value.recoveryCode = registerResponse.data.recoveryCode;
       ElMessage.success('注册成功！请保存您的恢复码');
@@ -179,19 +217,37 @@ const handleRegister = async () => {
     })
     handleApiError(loginResponse)
     
-    userStore.setUserInfo(loginResponse.data)
+    // 4. 调用 IMAP 连接接口
+    const imapResult = await connectToIMAPServer(form.value.email, form.value.password)
+    
+    if (!imapResult.success) {
+      // IMAP 连接失败，记录错误但不中断后续流程
+      console.error('IMAP 连接失败:', imapResult.message);
+      ElMessage.warning('邮箱服务器连接失败，部分功能可能受限');
+    } else {
+      console.log('IMAP 连接成功');
+    }
+    
+    // 5. 存储用户信息，包括从 IMAP 连接中获取的邮箱相关数据
+    userStore.setUserInfo({
+      ...loginResponse.data,
+      emailInfo: imapResult.success ? imapResult.data : null
+    })
 
-    // 4. 显示恢复码对话框（只有在有恢复码时才显示）
+    // 6. 显示恢复码对话框（只有在有恢复码时才显示）
     if (form.value.recoveryCode) {
       await recoveryCodeDialog.value.open()
-      ElMessage.success('登录成功')  // 添加这一行
+      ElMessage.success('登录成功')
     }
 
+    // 7. 跳转到邮箱主页
     router.push('/main')
     
   } catch (error) {
     console.error('注册失败:', error)
     ElMessage.error(error.message || '注册失败，请重试')
+  } finally {
+    loading.value = false
   }
 }
 </script>
