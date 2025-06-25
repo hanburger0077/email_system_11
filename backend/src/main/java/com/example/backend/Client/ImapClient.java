@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
+import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -30,6 +31,12 @@ public class ImapClient {
     private final int port;
     private Channel channel;
     private EventLoopGroup group;
+
+    @Getter @Setter
+    private String userEmail;
+
+    @Getter @Setter
+    private boolean connected = false;
 
     @Setter
     private SseEmitter sseEmitter;
@@ -193,7 +200,7 @@ public class ImapClient {
         if (content != null) {
             mailDTO.setContent(content);
         }
-
+        /*
         // 打印解析结果
         System.out.println("Parsed Mail Info:");
         System.out.println("Id: " + mailDTO.getMail_id());
@@ -205,6 +212,7 @@ public class ImapClient {
         System.out.println("READ: " + mailDTO.getRead());
         System.out.println("S_STAR: " + mailDTO.getSender_star());
         System.out.println("R_STAR: " + mailDTO.getReceiver_star());
+         */
         return mailDTO;
     }
 
@@ -396,6 +404,17 @@ public class ImapClient {
         System.out.println(attachment.getFileSize());
         System.out.println(attachment.getFilePath());
         return attachment;
+    }
+
+
+    private void checkConnection() throws IllegalStateException {
+        if (!isConnected()) {
+            throw new IllegalStateException("IMAP client is not connected");
+        }
+    }
+
+    public boolean isConnected() {
+        return connected && channel != null && channel.isActive();
     }
 
 /*

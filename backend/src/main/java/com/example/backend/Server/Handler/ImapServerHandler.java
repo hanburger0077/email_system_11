@@ -464,7 +464,7 @@ public class ImapServerHandler extends SimpleChannelInboundHandler<String> {
 
         idlePollingFuture = ctx.executor().scheduleAtFixedRate(() -> {
             try {
-                System.out.println("polling: isIdling=" + isIdling + ", isAuthenticated=" + isAuthenticated);
+                System.out.println("polling: isIdling=" + isIdling + ", isAuthenticated=" + isAuthenticated + ", " + userId);
                 if (isIdling && isAuthenticated) {
                     checkForNewMails(ctx);
                 }

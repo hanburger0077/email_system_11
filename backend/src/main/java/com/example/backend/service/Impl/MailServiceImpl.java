@@ -2,13 +2,18 @@ package com.example.backend.service.Impl;
 
 
 import com.example.backend.Client.ImapClient;
+import com.example.backend.Client.Manager.ImapClientManager;
 import com.example.backend.Client.SmtpClient;
 import com.example.backend.DTO.MailDTO;
 import com.example.backend.service.MailService;
 import com.example.backend.utils.ResultVo;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -19,25 +24,46 @@ import java.util.List;
 
 
 @Service
+@RequestScope
 public class MailServiceImpl implements MailService {
 
     // 用户邮箱
-    @Value("${mail.username}")
     private String userEmail;
 
     // 用户密码
-    @Value("${mail.password}")
     private String userPassword;
 
     @Autowired
     private final SmtpClient smtpClient;
 
     @Autowired
-    private final ImapClient imapClient;
+    private final ImapClientManager imapClientManager;
 
-    public MailServiceImpl(SmtpClient smtpClient, ImapClient imapClient) {
+    private ImapClient imapClient;
+
+    public MailServiceImpl(SmtpClient smtpClient, ImapClientManager imapClientManager,  @Autowired(required = false) HttpServletRequest request) {
         this.smtpClient = smtpClient;
-        this.imapClient = imapClient;
+        this.imapClientManager = imapClientManager;
+        userEmail = extractUserEmailFromRequest(request);
+        imapClient = imapClientManager.getClientForUser(userEmail);
+    }
+
+
+    private String extractUserEmailFromRequest(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("loginUserEmail".equals(cookie.getName()) && StringUtils.hasText(cookie.getValue())) {
+                    System.out.println(cookie.getValue());
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
 
@@ -54,18 +80,16 @@ public class MailServiceImpl implements MailService {
     @Override
     public ResultVo loginIMAP(String username, String password) {
         try {
-            imapClient.connect();
-        } catch (InterruptedException e) {
-            return ResultVo.fail("操作失败", "Failed connect to Server");
-        }
-        this.userEmail = username;
-        this.userPassword = password;
-        try {
-            //登录后自动进入空闲状态
-            imapClient.loginCommand(userEmail, userPassword);
+            userEmail = username;
+            userPassword = password;
+            if (!imapClient.isConnected()) {
+                imapClient.connect();
+            }
+
+            imapClient.loginCommand(username, password);
             return ResultVo.success("LOGIN and IDLE successfully");
-        } catch (InterruptedException e) {
-            return ResultVo.fail("操作失败", "Failed to send LOGIN command");
+        } catch (Exception e) {
+            return ResultVo.fail("操作失败", "Failed to login: " + e.getMessage());
         }
     }
 
